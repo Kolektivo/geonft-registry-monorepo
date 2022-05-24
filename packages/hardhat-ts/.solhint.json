@@ -1,9 +1,0 @@
-{
-  "extends": "solhint:recommended",
-  "rules": {
-    "func-visibility": ["off",{"ignoreConstructors":false}],
-    "compiler-version": ["error", "^0.8.11"],
-    "no-empty-blocks": "off",
-    "mark-callable-contracts": "off"
-  }
-}
