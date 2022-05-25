@@ -36,7 +36,7 @@ module.exports = {
         "error",
         {
           allowModules: ["hardhat-deploy"],
-          "resolvePaths": [__dirname, __dirname + "/../../packages/hardhat-ts",  __dirname + "/typechain"],
+          "resolvePaths": [__dirname],
         },
       ],
     },
