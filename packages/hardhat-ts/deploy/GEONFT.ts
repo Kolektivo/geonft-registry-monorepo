@@ -11,7 +11,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
   await deploy("GEONFT", {
     from: deployer,
     // gas: 4000000,
-    args: [],
+    args: []
   });
 
   console.log("deployed GEONFT");

@@ -19,6 +19,7 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
     mapping(uint256 => uint8) private slmIndices; // mapping of tokenId to sustainable land mgmt index
     mapping(uint256 => uint8) private bioIndices; // mapping of tokenId to biodiversity index
 
+    // solhint-disable-next-line no-empty-blocks, func-visibility
     constructor() ERC721("GEONFT Minter", "GEONFT") {}
 
     function _baseURI() internal pure override returns (string memory) {
@@ -62,6 +63,7 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         uint256 i;
 
         for (i = 0; i < totalTokens; i++) {
+            // solhint-disable-next-line mark-callable-contracts
             _tokenIds[i] = ERC721Enumerable.tokenByIndex(i);
             _uris[i] = tokenURI(_tokenIds[i]);
             _geoJsons[i] = geoJsons[_tokenIds[i]];
@@ -79,6 +81,7 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
             string[] memory
         )
     {
+        // solhint-disable-next-line mark-callable-contracts
         uint256 totalTokensForOwner = ERC721.balanceOf(owner);
         uint256[] memory _tokenIds = new uint256[](totalTokensForOwner);
         string[] memory _uris = new string[](totalTokensForOwner);
@@ -86,6 +89,7 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         uint256 i;
 
         for (i = 0; i < totalTokensForOwner; i++) {
+            // solhint-disable-next-line mark-callable-contracts
             _tokenIds[i] = ERC721Enumerable.tokenOfOwnerByIndex(owner, i);
             _uris[i] = tokenURI(_tokenIds[i]);
             _geoJsons[i] = geoJsons[_tokenIds[i]];

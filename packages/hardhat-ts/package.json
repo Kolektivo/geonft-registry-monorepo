@@ -11,7 +11,7 @@
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "accounts": "npx hardhat accounts",
-    "checksol": "npx hardhat check"
+    "lint": "eslint . --ext .ts && npx hardhat check"
   },
   "license": "MIT",
   "devDependencies": {
@@ -29,7 +29,14 @@
     "@typescript-eslint/parser": "^5.10.2",
     "chai": "^4.3.6",
     "dotenv": "^15.0.0",
-    "eslint": "^8.8.0",
+    "eslint": "^8.16.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^6.0.0",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.4",
     "hardhat": "^2.8.3",

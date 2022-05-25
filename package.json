@@ -24,7 +24,7 @@
     "hardhat:deployalfa": "yarn workspace @project/hardhat-ts deployalfa",
     "hardhat:deploycelo": "yarn workspace @project/hardhat-ts deploycelo",
     "hardhat:accounts": "yarn workspace @project/hardhat-ts accounts",
-    "hardhat:check": "yarn workspace @project/hardhat-ts checksol"
+    "hardhat:lint": "yarn workspace @project/hardhat-ts lint"
   },
   "workspaces": {
     "packages": [
