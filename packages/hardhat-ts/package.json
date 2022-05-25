@@ -4,9 +4,9 @@
   "scripts": {
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
-    "deployalfa": "npx hardhat deploy --network alfajores --export-all ../dapp/src/deployments.json",
-    "deploycelo": "npx hardhat deploy --network celo --export-all ../dapp/src/deployments.json",
-    "localnode": "npx hardhat node --export-all ../dapp/src/deployments.json",
+    "deployalfa": "npx hardhat deploy --network alfajores --export-all ../dapp/src/deployments.json,../subgraph/config/deployments.json",
+    "deploycelo": "npx hardhat deploy --network celo --export-all ../dapp/src/deployments.json,../subgraph/config/deployments.json",
+    "localnode": "npx hardhat node --export-all ../dapp/src/deployments.json,../subgraph/config/deployments.json",
     "watch": "npx hardhat node --watch --export-all ../dapp/src/deployments.json",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",

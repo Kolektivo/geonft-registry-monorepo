@@ -26,3 +26,6 @@ packages/dapp/dist
 packages/dapp/test/coverage-jest
 packages/dapp/packages/dapp/test/coverage-jest/
 packages/dapp/config/map.json
+
+#local deployments
+packages/hardhat-ts/deployments/localhost/*
