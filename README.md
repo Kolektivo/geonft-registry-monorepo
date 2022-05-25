@@ -70,7 +70,7 @@ In the project directory, you can run:
 
 ### dapp
 
-TODO
+#### `yarn dapp:start`
 
 ### hardhat-ts
 
