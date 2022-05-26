@@ -15,8 +15,8 @@ describe('Stage App Component', () => {
 
   it('should render message', done => {
     component.create(bootstrap).then(() => {
-      const view = component.element;
-      expect(view.textContent.trim()).toBe('Astral Kolektivo Components');
+      const homeElement = document.querySelector(".home");
+      expect(homeElement).toBeDefined();
       done();
     }).catch(e => {
       throw new Error(e);

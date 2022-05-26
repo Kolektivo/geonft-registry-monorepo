@@ -1,0 +1,75 @@
+@import "styles/styles.scss";
+
+.page.home {
+  .section {
+
+    &.top {
+      width: 56%;
+      margin-bottom: 200px;
+
+      .title {
+        white-space: normal;
+        color: $Shade06;
+        padding-top: 100px;
+        padding-bottom: 1.6px;
+        max-width: 645px;
+      }
+
+      > .subtitle {
+        font-family: "Inter";
+        font-weight: 700;
+        font-size: 24px;
+        line-height: 33px;
+        max-width: 560px;
+        color: $Neutral03;
+        margin-bottom: 200px;
+        white-space: normal;
+      }
+
+      .buttons {
+        display: grid;
+        grid-auto-flow: column;
+        justify-content: space-between;
+        cursor: pointer;
+        width: 710px;
+        grid-gap: 24px;
+        .buttonContainer {
+          display: flex;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1072px) {
+  .page.home {
+    .section {
+      &.top,
+      &.launches {
+        > .title {
+          white-space: normal;
+          text-align: center;
+          width: auto; // so text-align:center works
+          max-width: unset;
+        }
+      }
+
+      &.top {
+        margin-bottom: 100px;
+        width: 100%;
+
+        > .subtitle {
+          margin-bottom: 48px;
+          text-align: center;
+          max-width: unset;
+        }
+
+      }
+
+    }
+  }
+}
+
+

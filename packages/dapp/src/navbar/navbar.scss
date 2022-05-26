@@ -1,0 +1,210 @@
+@import "styles/styles.scss";
+
+$menu-open-duration: 0.1s;
+
+.navbar-container {
+  position: fixed;
+  z-index: 998;
+  top: 0;
+  left: 0;
+  width: -webkit-fill-available;
+  width: -moz-available;
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  grid-template-columns: $BodyPaddingLeftRight auto auto auto;
+  grid-template-areas: "logo products networkFeedback connect" "subPages subPages subPages subPages";
+  background-color: $BG01;
+
+  .mobile-only {
+    display: none;
+  }
+
+  .logo {
+    grid-area: logo;
+    padding-left: 20px;
+
+    img {
+      height: 32px;
+    }
+  }
+
+  .products {
+    grid-area: products;
+
+    .container {
+      list-style-type: none;
+      display: grid;
+      grid-template-columns: auto auto auto auto;
+      justify-content: space-between;
+
+      > .item {
+        font-family: Aeonik;
+        font-size: 18px;
+        line-height: 24px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        text-align: center;
+        border-bottom: 3px solid $BG01;
+        cursor: pointer;
+        color: $Neutral04;
+        padding: 12px 12px 12px 8px;
+        align-items: center;
+        justify-items: start;
+        column-gap: 12px;
+
+        .icon {
+          display: inline-grid; // to get vertical alignment
+          img {
+            width: 32px;
+            height: 30px;
+            &.color {
+              display: none;
+            }
+          }
+        }
+
+        &.active,
+        &:active {
+          border-bottom-color: $Secondary01;
+
+          .icon {
+            img {
+              &.color {
+                display: inline-block;
+              }
+              &.mono {
+                display: none;
+              }
+            }
+          }
+        }
+
+        &:hover {
+          background-color: $BG02;
+
+          .icon {
+            img {
+              &.color {
+                display: inline-block;
+              }
+              &.mono {
+                display: none;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .productSubpages {
+    transition: height 0.25s ease-in;
+    overflow-y: hidden;
+    grid-area: subPages;
+    background-color: $BG02;
+    height: 40px;
+
+    .container {
+      list-style-type: none;
+      padding: 0 20px;
+      margin: 0;
+      padding-left: $BodyPaddingLeftRight;
+      display: grid;
+      grid-template-columns: auto auto auto auto auto;
+      justify-content: start;
+
+      column-gap: 20px;
+      text-align: left;
+      > .item {
+        cursor: pointer;
+        padding: 10px 0;
+
+        color: $Neutral02;
+
+        &:hover {
+          color: $Neutral04;
+          text-decoration: none;
+        }
+        &.active {
+          color: $Secondary01;
+        }
+      }
+    }
+  }
+
+  .networkFeedback {
+    grid-area: networkFeedback;
+    font-family: Inter;
+    text-align: right;
+    .testnet {
+      color: $Shade01;
+    }
+    a {
+      color: $Secondary01;
+    }
+  }
+
+  /**
+     * header connectButton
+     */
+  .headerConnectButton {
+    grid-area: connect;
+    padding-right: 20px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: right;
+  }
+}
+
+@media screen and (max-width: 1072px) {
+  .navbar-container {  
+    grid-template-columns: calc(#{$BodyPaddingLeftRightMobile} + 50px) 1fr auto;
+    grid-template-areas: "logo products connect" "subPages subPages subPages";
+
+    .products {
+      .container {
+        justify-content: center;
+        column-gap: 2px;
+        .item {
+          grid-template-columns: auto;
+
+          .text {
+            display: none;
+          }
+        }
+      }
+    }
+
+    .productSubpages {
+      .container {
+        padding-left: 0;
+        justify-content: center;
+      }
+    }
+    .networkFeedback {
+      display: none;
+    }
+  }
+}
+
+@media screen and (max-width: 450px) {
+  .navbar-container {
+    grid-template-columns: auto 1fr 0 40px;
+    grid-template-areas: "logo connect sub-pages hamburger-menu";
+    justify-content: space-between;
+
+    .mobile-only {
+      display: block;
+    }
+    .hamburger-menu-button {
+      z-index: 999;
+      grid-area: hamburger-menu;
+    }
+
+    &>.products,
+    &>.productSubpages {
+      display: none;
+    }
+  }
+}

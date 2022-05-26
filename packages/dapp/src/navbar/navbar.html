@@ -1,0 +1,21 @@
+<template>
+  <nav class="navbar-container">
+    <div class="logo">
+
+    </div>
+
+    <div class="products">
+      <div class="container">
+
+      </div>
+    </div>
+
+    <div class="productSubpages">
+      <div class="container">
+        <div click.delegate="navigate('/')" class="item ${(router.currentInstruction.config.name === 'home') ? 'active' : ''}">Home</div>
+        <div click.delegate="navigate('/map')" class="item ${(router.currentInstruction.config.name === 'map') ? 'active' : ''}">Map</div>
+      </div>
+    </div>
+
+  </nav>
+</template>
