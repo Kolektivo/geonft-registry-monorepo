@@ -15,9 +15,11 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
 
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint8) private wqIndices; // mapping of tokenId to water quality index
-    mapping(uint256 => uint8) private slmIndices; // mapping of tokenId to sustainable land mgmt index
-    mapping(uint256 => uint8) private bioIndices; // mapping of tokenId to biodiversity index
+    mapping(uint256 => uint8) private indices; // mapping of tokenId to index
+    mapping(uint256 => string) private indicesType; // mapping of tokenId to index type
+
+    // A reference to the Spatial Data Registry contract for security checks
+    address public sdRegistry;
 
     // solhint-disable-next-line no-empty-blocks, func-visibility
     constructor() ERC721("GEONFT Minter", "GEONFT") {}
@@ -38,10 +40,9 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         // set geoJson
         geoJsons[tokenId] = geoJson;
 
-        // default index values to 0
-        wqIndices[tokenId] = 0;
-        slmIndices[tokenId] = 0;
-        bioIndices[tokenId] = 0;
+        // default index value to 0 type to area_m2
+        indices[tokenId] = 0;
+        indicesType[tokenId] = "area_m2";
 
         _setTokenURI(tokenId, uri);
     }
@@ -95,6 +96,45 @@ contract GEONFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
             _geoJsons[i] = geoJsons[_tokenIds[i]];
         }
         return (_tokenIds, _uris, _geoJsons);
+    }
+
+    function setTokenURI(uint256 tokenId, string memory uri)
+        external
+        onlyOwner
+    {
+        _setTokenURI(tokenId, uri);
+    }
+
+    function setGeoJson(uint256 tokenId, string memory geoJson)
+        external
+        onlyOwner
+    {
+        geoJsons[tokenId] = geoJson;
+    }
+
+    function setIndice(uint256 tokenId, uint8 indice)
+        external
+        onlyOwner
+    {
+        indices[tokenId] = indice;
+    }
+
+    function setIndiceType(uint256 tokenId, string memory indiceType)
+        external
+        onlyOwner
+    {
+        indicesType[tokenId] = indiceType;
+    }
+
+    /**
+     * @notice called by the owner to make sure the checks pass correctly
+     * @param _sdRegistry the address of the registry contract
+     */
+    function setSDRegistry(address _sdRegistry) 
+        external 
+        onlyOwner 
+    {
+        sdRegistry = _sdRegistry;
     }
 
     // The following functions are overrides required by Solidity.
