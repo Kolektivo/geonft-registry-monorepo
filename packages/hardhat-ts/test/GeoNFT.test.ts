@@ -1,14 +1,14 @@
 import { ethers } from "hardhat";
 import chai from "chai";
 // eslint-disable-next-line camelcase, node/no-missing-import, node/no-unpublished-import
-import { GEONFT__factory, GEONFT } from "../typechain";
+import { GeoNFT__factory, GeoNFT } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 const { expect } = chai;
 
-let geonft: GEONFT;
+let geonft: GeoNFT;
 // eslint-disable-next-line camelcase
-let geonftFactory: GEONFT__factory;
+let geonftFactory: GeoNFT__factory;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
@@ -77,11 +77,11 @@ describe("geonft", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
     geonftFactory = (await ethers.getContractFactory(
-      "GEONFT",
+      "GeoNFT",
       deployer
-    )) as GEONFT__factory; // eslint-disable-line camelcase
+    )) as GeoNFT__factory; // eslint-disable-line camelcase
 
-    geonft = (await geonftFactory.deploy()) as GEONFT;
+    geonft = (await geonftFactory.deploy()) as GeoNFT;
   });
 
   describe("deployment", async () => {

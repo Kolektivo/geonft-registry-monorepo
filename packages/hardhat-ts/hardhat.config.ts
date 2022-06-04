@@ -22,12 +22,13 @@ const accounts: HttpNetworkHDAccountsConfig = {
     "test test test test test test test test test test test junk",
   path: CELO_DERIVATION_PATH,
   initialIndex: 0,
-  count: 10
+  count: 10,
+  passphrase: ""
 };
 
 const config: HardhatUserConfig = {
   solidity: {
-    compilers: [{ version: "0.8.11", settings: {} }]
+    compilers: [{ version: "0.8.13", settings: {} }]
   },
   paths: {
     sources: "contracts"
