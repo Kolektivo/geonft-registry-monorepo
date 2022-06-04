@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
-// import { GEONFTInterface } from '../typechain/GEONFT.ts';
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { GeoNFT } from "./GeoNFT.sol";
 
 contract SDRegistry is ReentrancyGuard, Ownable {
     // The GEONFT ERC721 token contract
-    // GEONFTInterface public geoNFT;
+    GeoNFT public geoNFT;
 
     // TODO: remove this list when quadtree is implemented
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
@@ -16,9 +16,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @notice Set up the Spatial Data Registry and prepopulate initial values
      */
     constructor(
-        // GEONFTInterface _geoNFT
+        GeoNFT _geoNFT
     ) {
-        // geoNFT = _geoNFT;
+        geoNFT = _geoNFT;
     }
 
     event GeoNFTRegistered(uint256 tokenId, string geoJson, uint256 _area);

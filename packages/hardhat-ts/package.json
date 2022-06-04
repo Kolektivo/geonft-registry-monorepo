@@ -11,7 +11,7 @@
     "test": "yarn hardhat test",
     "coverage": "yarn hardhat coverage",
     "accounts": "yarn hardhat accounts",
-    "lint": "eslint . --ext .ts && npx hardhat check"
+    "lint": "eslint . --ext .ts && yarn hardhat check"
   },
   "license": "MIT",
   "devDependencies": {

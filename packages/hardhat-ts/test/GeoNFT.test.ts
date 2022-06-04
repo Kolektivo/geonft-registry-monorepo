@@ -30,10 +30,10 @@ const GEOJSON = {
             [-428.8905939459801, 12.147198136656193],
             [-428.89051884412766, 12.147280734524921],
             [-428.89055103063583, 12.147379065287602],
-            [-428.8906744122505, 12.147418397582491]
-          ]
-        ]
-      }
+            [-428.8906744122505, 12.147418397582491],
+          ],
+        ],
+      },
     },
     {
       type: "Feature",
@@ -48,10 +48,10 @@ const GEOJSON = {
             [-428.8903096318245, 12.147300400680368],
             [-428.8903257250786, 12.147409220047532],
             [-428.8904584944248, 12.147449863414236],
-            [-428.8905443251133, 12.147381687440772]
-          ]
-        ]
-      }
+            [-428.8905443251133, 12.147381687440772],
+          ],
+        ],
+      },
     },
     {
       type: "Feature",
@@ -65,12 +65,12 @@ const GEOJSON = {
             [-428.8900186121464, 12.147116849839737],
             [-428.8899327814579, 12.147217802817746],
             [-428.8899743556976, 12.147334488679682],
-            [-428.8901272416115, 12.147367265597998]
-          ]
-        ]
-      }
-    }
-  ]
+            [-428.8901272416115, 12.147367265597998],
+          ],
+        ],
+      },
+    },
+  ],
 };
 
 describe("geonft", () => {
@@ -89,7 +89,7 @@ describe("geonft", () => {
       expect(await geonft.owner()).to.equal(deployer.address);
     });
 
-    it("has expected name and symbol", async function() {
+    it("has expected name and symbol", async function () {
       expect(await geonft.name()).to.equal("GEONFT Minter");
       expect(await geonft.symbol()).to.equal("GEONFT");
     });
@@ -250,7 +250,7 @@ describe("geonft", () => {
   });
 
   describe("supports interfaces", async () => {
-    it("supports ERC721", async function() {
+    it("supports ERC721", async function () {
       expect(await geonft.supportsInterface("0x80ac58cd")).to.equal(true);
     });
   });
