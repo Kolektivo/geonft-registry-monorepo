@@ -226,7 +226,7 @@ describe("geonft", () => {
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
       expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeDefault);
-      
+
       await geonft.setIndexType(tokenId, indexTypeUpdate);
       expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeUpdate);
     });
@@ -251,11 +251,7 @@ describe("geonft", () => {
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(
-            deployer.address,
-            token1URI,
-            GEOJSON.toString()
-          )
+          .safeMint(deployer.address, token1URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId.add(1));
@@ -263,11 +259,7 @@ describe("geonft", () => {
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(
-            deployer.address,
-            token2URI,
-            GEOJSON.toString()
-          )
+          .safeMint(deployer.address, token2URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId.add(2));
@@ -291,11 +283,7 @@ describe("geonft", () => {
       await expect(
         geonft
           .connect(other)
-          .safeMint(
-            other.address,
-            token3URI,
-            GEOJSON.toString()
-          )
+          .safeMint(other.address, token3URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId.add(3));

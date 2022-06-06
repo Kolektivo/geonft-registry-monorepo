@@ -13,8 +13,7 @@ contract GeoNFT is
     ERC721Enumerable,
     ERC721URIStorage,
     ERC721Burnable,
-    Ownable
-{
+    Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -37,14 +36,14 @@ contract GeoNFT is
     function safeMint(
         address to,
         string memory uri,
-        string memory geoJson
+        string memory _geoJson
     ) public {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
 
         // set geoJson
-        geoJsons[tokenId] = geoJson;
+        geoJsons[tokenId] = _geoJson;
 
         // default index value to 0 type to area_m2
         indexValues[tokenId] = 0;
@@ -111,11 +110,11 @@ contract GeoNFT is
         _setTokenURI(tokenId, uri);
     }
 
-    function setGeoJson(uint256 tokenId, string memory geoJson)
+    function setGeoJson(uint256 tokenId, string memory _geoJson)
         external
         onlyOwner
     {
-        geoJsons[tokenId] = geoJson;
+        geoJsons[tokenId] = _geoJson;
     }
 
     function setIndexValue(uint256 tokenId, uint8 indice) external onlyOwner {

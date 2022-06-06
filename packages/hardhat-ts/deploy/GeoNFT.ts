@@ -1,7 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 
-const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const geoNFTDeployFunc: DeployFunction = async (
+  hre: HardhatRuntimeEnvironment
+) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
 
@@ -15,4 +17,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   console.log("deployed GeoNFT");
 };
-export default func;
+export default geoNFTDeployFunc;

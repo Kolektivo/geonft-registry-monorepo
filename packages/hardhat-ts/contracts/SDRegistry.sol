@@ -15,8 +15,10 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
      */
+    
     constructor(
         GeoNFT _geoNFT
+    // solhint-disable-next-line func-visibility
     ) {
         geoNFT = _geoNFT;
     }
