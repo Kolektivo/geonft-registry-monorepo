@@ -8,15 +8,21 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract GeoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, Ownable {
+contract GeoNFT is
+    ERC721,
+    ERC721Enumerable,
+    ERC721URIStorage,
+    ERC721Burnable,
+    Ownable
+{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
 
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint8) private indices; // mapping of tokenId to index
-    mapping(uint256 => string) private indicesType; // mapping of tokenId to index type
+    mapping(uint256 => uint8) private indexValues; // mapping of tokenId to index
+    mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
 
     // A reference to the Spatial Data Registry contract for security checks
     address public sdRegistry;
@@ -41,8 +47,8 @@ contract GeoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         geoJsons[tokenId] = geoJson;
 
         // default index value to 0 type to area_m2
-        indices[tokenId] = 0;
-        indicesType[tokenId] = "area_m2";
+        indexValues[tokenId] = 0;
+        indexTypes[tokenId] = "area_m2";
 
         _setTokenURI(tokenId, uri);
     }
@@ -112,28 +118,22 @@ contract GeoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         geoJsons[tokenId] = geoJson;
     }
 
-    function setIndice(uint256 tokenId, uint8 indice)
-        external
-        onlyOwner
-    {
-        indices[tokenId] = indice;
+    function setIndexValue(uint256 tokenId, uint8 indice) external onlyOwner {
+        indexValues[tokenId] = indice;
     }
 
-    function setIndiceType(uint256 tokenId, string memory indiceType)
+    function setIndexType(uint256 tokenId, string memory indiceType)
         external
         onlyOwner
     {
-        indicesType[tokenId] = indiceType;
+        indexTypes[tokenId] = indiceType;
     }
 
     /**
      * @notice called by the owner to make sure the checks pass correctly
      * @param _sdRegistry the address of the registry contract
      */
-    function setSDRegistry(address _sdRegistry) 
-        external 
-        onlyOwner 
-    {
+    function setSDRegistry(address _sdRegistry) external onlyOwner {
         sdRegistry = _sdRegistry;
     }
 
@@ -161,6 +161,33 @@ contract GeoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Burnable, O
         returns (string memory)
     {
         return super.tokenURI(tokenId);
+    }
+
+    function geoJson(uint256 tokenId)
+        public
+        view
+        returns (string memory)
+    {
+        string memory _geoJson = geoJsons[tokenId];
+        return _geoJson;
+    }
+
+    function indexValue(uint256 tokenId)
+        public
+        view
+        returns (uint8)
+    {
+        uint8 _indexValue = indexValues[tokenId];
+        return _indexValue;
+    }
+
+    function indexType(uint256 tokenId)
+        public
+        view
+        returns (string memory)
+    {
+        string memory _indexType = indexTypes[tokenId];
+        return _indexType;
     }
 
     function supportsInterface(bytes4 interfaceId)

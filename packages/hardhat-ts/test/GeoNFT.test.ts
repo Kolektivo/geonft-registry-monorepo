@@ -73,6 +73,30 @@ const GEOJSON = {
   ],
 };
 
+const GEOJSON2 = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-428.8906744122505, 12.147418397582491],
+            [-428.8907468318939, 12.147347599447487],
+            [-428.8907213509083, 12.14723615790054],
+            [-428.8905939459801, 12.147198136656193],
+            [-428.89051884412766, 12.147280734524921],
+            [-428.89055103063583, 12.147379065287602],
+            [-428.8906744122505, 12.147418397582491],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
 describe("geonft", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
@@ -103,7 +127,7 @@ describe("geonft", () => {
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(other.address, tokenId.toString(), GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -124,7 +148,7 @@ describe("geonft", () => {
       await expect(
         geonft
           .connect(other)
-          .safeMint(other.address, tokenId.toString(), GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -135,14 +159,91 @@ describe("geonft", () => {
     });
   });
 
-  describe("get tokens for address", async () => {
-    it("contract owner mints three tokens, burns the second one", async () => {
+  describe("update on-chain data", async () => {
+    it("update Token URI", async () => {
       const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const tokenURIUpdate = "0 update";
 
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(deployer.address, tokenId.toString(), GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geonft, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      await geonft.setTokenURI(tokenId, tokenURIUpdate);
+      expect(await geonft.tokenURI(tokenId)).to.be.equal(tokenURIUpdate);
+    });
+
+    it("update GeoJSON", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+
+      await expect(
+        geonft
+          .connect(deployer)
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geonft, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      await geonft.setGeoJson(tokenId, GEOJSON2.toString());
+      expect(await geonft.geoJson(tokenId)).to.be.equal(GEOJSON2.toString());
+    });
+
+    it("update index value", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const indexValueDefault = 0;
+      const indexValueUpdate = 10;
+
+      await expect(
+        geonft
+          .connect(deployer)
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geonft, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+      expect(await geonft.indexValue(tokenId)).to.be.equal(indexValueDefault);
+
+      await geonft.setIndexValue(tokenId, indexValueUpdate);
+      expect(await geonft.indexValue(tokenId)).to.be.equal(indexValueUpdate);
+    });
+
+    it("update index type", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const indexTypeDefault = "area_m2";
+      const indexTypeUpdate = "ecologicalindex_percent";
+
+      await expect(
+        geonft
+          .connect(deployer)
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geonft, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+      expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeDefault);
+      
+      await geonft.setIndexType(tokenId, indexTypeUpdate);
+      expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeUpdate);
+    });
+  });
+
+  describe("get tokens for address", async () => {
+    it("contract owner mints three tokens, burns the second one", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const token0URI = "0";
+      const token1URI = "1";
+      const token2URI = "2";
+      const token3URI = "3";
+
+      await expect(
+        geonft
+          .connect(deployer)
+          .safeMint(deployer.address, token0URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId);
@@ -152,7 +253,7 @@ describe("geonft", () => {
           .connect(deployer)
           .safeMint(
             deployer.address,
-            tokenId.add(1).toString(),
+            token1URI,
             GEOJSON.toString()
           )
       )
@@ -164,7 +265,7 @@ describe("geonft", () => {
           .connect(deployer)
           .safeMint(
             deployer.address,
-            tokenId.add(2).toString(),
+            token2URI,
             GEOJSON.toString()
           )
       )
@@ -173,6 +274,7 @@ describe("geonft", () => {
 
       expect(await geonft.balanceOf(deployer.address)).to.equal(3);
 
+      // burn token 1
       await expect(geonft.connect(deployer).burn(1))
         .to.emit(geonft, "Transfer")
         .withArgs(deployer.address, ZERO_ADDRESS, 1);
@@ -183,15 +285,15 @@ describe("geonft", () => {
       expect(tokenIds[0]).to.equal(0);
       expect(tokenIds[1]).to.equal(2);
 
-      expect(uris[0]).to.equal("0");
-      expect(uris[1]).to.equal("2");
+      expect(uris[0]).to.equal(token0URI);
+      expect(uris[1]).to.equal(token2URI);
 
       await expect(
         geonft
           .connect(other)
           .safeMint(
             other.address,
-            tokenId.add(3).toString(),
+            token3URI,
             GEOJSON.toString()
           )
       )
@@ -206,11 +308,12 @@ describe("geonft", () => {
   describe("burning", async () => {
     it("holders can burn their tokens", async () => {
       const tokenId = ethers.BigNumber.from(0);
+      const token0URI = "0";
 
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(other.address, tokenId.toString(), GEOJSON.toString())
+          .safeMint(other.address, token0URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -231,11 +334,12 @@ describe("geonft", () => {
 
     it("cannot burn if not token owner", async () => {
       const tokenId = ethers.BigNumber.from(0);
+      const token0URI = "0";
 
       await expect(
         geonft
           .connect(deployer)
-          .safeMint(other.address, tokenId.toString(), GEOJSON.toString())
+          .safeMint(other.address, token0URI, GEOJSON.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
