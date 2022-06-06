@@ -108,7 +108,7 @@ describe("registry", () => {
   });
 
   describe("register geonft", async () => {
-    it("contract owner can mint tokens to other", async () => {
+    it("contract owner mints a GeoNFT, adds to registry, then updates area", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
       const newArea = 10;
