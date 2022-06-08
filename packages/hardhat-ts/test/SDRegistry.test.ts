@@ -84,6 +84,30 @@ const GEOJSON = {
   ],
 };
 
+const GEOJSON2 = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-428.8906744122505, 12.147418397582491],
+            [-428.8907468318939, 12.147347599447487],
+            [-428.8907213509083, 12.14723615790054],
+            [-428.8905939459801, 12.147198136656193],
+            [-428.89051884412766, 12.147280734524921],
+            [-428.89055103063583, 12.147379065287602],
+            [-428.8906744122505, 12.147418397582491],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
 describe("registry", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
@@ -176,6 +200,44 @@ describe("registry", () => {
       // get all tokens in the registry
       const tokensAfterUnregister = await sdRegistry.getAllGeoNFTs();
       expect(tokensAfterUnregister.length).to.equal(0);
+    });
+  });
+
+  describe("update geonft topology", async () => {
+    it("contract owner mints a GeoNFT, adds to registry, then updates the topology", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const updatedArea = 20;
+
+      // mint GeoNFT
+      await expect(
+        geoNFT
+          .connect(deployer)
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      // register minted GeoNFT with Spatial Data Registry
+      await sdRegistry
+        .connect(deployer)
+        .registerGeoNFT(tokenId, GEOJSON.toString());
+
+      const updateTopologyTX: ContractTransaction = await sdRegistry
+        .connect(deployer)
+        .updateGeoNFTTopology(tokenId, GEOJSON2.toString());
+      const updateTopologyReceipt: ContractReceipt =
+        await updateTopologyTX.wait();
+
+      // get calculated area from spatial data registry
+      const calculatedArea = updateTopologyReceipt.events![0].args![2];
+      expect(calculatedArea).to.equal(updatedArea);
+
+      // set area on minted GeoNFT
+      await geoNFT.setIndexValue(tokenId, calculatedArea);
+
+      // verify area on minted GeoNFT
+      expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
     });
   });
 
