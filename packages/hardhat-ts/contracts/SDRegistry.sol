@@ -74,14 +74,18 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return _area;
     }
 
+    // TODO 
+    // function updateGeoNFTTopography
+
     // Return all the GeoNFTs in the registry
-    function getAllTokens()
+    function getAllGeoNFTs()
         public
         view
         returns (
             uint256[] memory
         )
     {
+        // TODO: use quadtree to get all tokens
         uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
         uint256 i;
 
@@ -90,5 +94,54 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
         return (_tokenIds);
     }
-    
+
+    // Query registry by latitude and longitude
+    function queryGeoNFTsByLatLng(
+        // solhint-disable-next-line no-unused-vars        
+        int256 latitude,
+        // solhint-disable-next-line no-unused-vars        
+        int256 longitude
+    )
+        public
+        view
+        returns (
+            uint256[] memory
+        )
+    {
+        // TODO: use quadtree to search by lat/lng
+        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
+        uint256 i;
+
+        for (i = 0; i < geoJsonMapSize; i++) {
+            _tokenIds[i] = i;
+        }
+        return (_tokenIds);
+    }
+
+    // Query registry by bounding box
+    function queryGeoNFTsByBoundingBox(
+        // solhint-disable-next-line no-unused-vars
+        int256 minLatitude,
+        // solhint-disable-next-line no-unused-vars        
+        int256 minLongitude,
+        // solhint-disable-next-line no-unused-vars        
+        int256 maxLatitude,
+        // solhint-disable-next-line no-unused-vars        
+        int256 maxLongitude
+    )
+        public
+        view
+        returns (
+            uint256[] memory
+        )
+    {
+        // TODO: use quadtree to search by bounding box
+        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
+        uint256 i;
+
+        for (i = 0; i < geoJsonMapSize; i++) {
+            _tokenIds[i] = i;
+        }
+        return (_tokenIds);
+    }
 }
