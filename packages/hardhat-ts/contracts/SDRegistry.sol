@@ -11,6 +11,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     // TODO: remove this list when quadtree is implemented
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
+    uint private geoJsonMapSize;
 
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
@@ -53,7 +54,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         onlyOwner 
     {
         // TODO: remove tokenId from quadtree instead of mapping
-        geoJsons[tokenId] = "";
+        delete geoJsons[tokenId];
+        geoJsonMapSize--;
 
         emit GeoNFTUnregistered(tokenId);
     }
@@ -64,11 +66,29 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     {
         // TODO: add tokenId to quadtree instead of mapping
         geoJsons[tokenId] = geoJson;
+        geoJsonMapSize++;
 
         // TODO: calculate area
         uint256 _area = 10;
 
         return _area;
+    }
+
+    // Return all the GeoNFTs in the registry
+    function getAllTokens()
+        public
+        view
+        returns (
+            uint256[] memory
+        )
+    {
+        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
+        uint256 i;
+
+        for (i = 0; i < geoJsonMapSize; i++) {
+            _tokenIds[i] = i;
+        }
+        return (_tokenIds);
     }
     
 }

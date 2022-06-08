@@ -140,4 +140,42 @@ describe("registry", () => {
       expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
     });
   });
+
+  describe("unregister geonft", async () => {
+    it("contract owner mints a GeoNFT, adds to registry, then removes from registry", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+
+      // mint GeoNFT
+      await expect(
+        geoNFT
+          .connect(deployer)
+          .safeMint(other.address, tokenURI, GEOJSON.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX: ContractTransaction = await sdRegistry
+        .connect(deployer)
+        .registerGeoNFT(tokenId, GEOJSON.toString());
+      const registerReceipt: ContractReceipt = await registerTX.wait();
+      expect(registerReceipt.status).to.equal(1);
+
+      // get all tokens in the registry
+      const tokens = await sdRegistry.getAllTokens();
+      expect(tokens.length).to.equal(1);
+
+      // unregister minted GeoNFT with Spatial Data Registry
+      const unregisterTX: ContractTransaction = await sdRegistry
+        .connect(deployer)
+        .unregisterGeoNFT(tokenId);
+      const unregisterReceipt: ContractReceipt = await unregisterTX.wait();
+      expect(unregisterReceipt.status).to.equal(1);
+
+      // get all tokens in the registry
+      const tokensAfterUnregister = await sdRegistry.getAllTokens();
+      expect(tokensAfterUnregister.length).to.equal(0);
+    });
+  });
 });
