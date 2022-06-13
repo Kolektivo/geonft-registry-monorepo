@@ -149,7 +149,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry
         .connect(deployer)
-        .registerGeoNFT(tokenId, GEOJSON.toString());
+        .registerGeoNFT(tokenId);
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -182,7 +182,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry
         .connect(deployer)
-        .registerGeoNFT(tokenId, GEOJSON.toString());
+        .registerGeoNFT(tokenId);
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -219,13 +219,14 @@ describe("registry", () => {
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId, GEOJSON.toString());
+      await sdRegistry.connect(deployer).registerGeoNFT(tokenId);
+
+      // update geoJson on minted GeoNFT
+      await geoNFT.setGeoJson(tokenId, GEOJSON2.toString());
 
       const updateTopologyTX: ContractTransaction = await sdRegistry
         .connect(deployer)
-        .updateGeoNFTTopology(tokenId, GEOJSON2.toString());
+        .updateGeoNFTTopology(tokenId);
       const updateTopologyReceipt: ContractReceipt =
         await updateTopologyTX.wait();
 
@@ -260,7 +261,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry
         .connect(deployer)
-        .registerGeoNFT(tokenId, GEOJSON.toString());
+        .registerGeoNFT(tokenId);
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -298,7 +299,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry
         .connect(deployer)
-        .registerGeoNFT(tokenId, GEOJSON.toString());
+        .registerGeoNFT(tokenId);
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 

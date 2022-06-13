@@ -31,14 +31,16 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     /**
      * @notice Register a GeoNFT in the Spatial Data Registry
      * @param tokenId the index of the GeoNFT to register
-     * @param geoJson the GeoJSON topology of the GeoNFT, simple polygon or point
      * @return area of the GeoNFT in meters squared
      */
-    function registerGeoNFT(uint256 tokenId, string memory geoJson) 
+    function registerGeoNFT(uint256 tokenId) 
         external 
         onlyOwner
         returns (uint256 area)
     {
+        // retrieve the geoJson from the GeoNFT contract
+        string memory geoJson = geoNFT.geoJson(tokenId);
+
         // add GeoNFT to the registry
         uint256 _area = _register(tokenId, geoJson);
 
@@ -78,13 +80,15 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     /**
      * @notice Update the topology of the GeoNFT
      * @param tokenId the index of the GeoNFT to update
-     * @param geoJson the GeoJSON topology of the GeoNFT, simple polygon or point
     */
-    function updateGeoNFTTopology(uint256 tokenId, string memory geoJson) 
+    function updateGeoNFTTopology(uint256 tokenId) 
         external 
         onlyOwner
         returns (uint256 area)        
     {
+        // retrieve the geoJson from the GeoNFT contract
+        string memory geoJson = geoNFT.geoJson(tokenId);
+
         // TODO: update topology in the quadtree
         geoJsons[tokenId] = geoJson;
 
