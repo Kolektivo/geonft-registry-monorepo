@@ -23,9 +23,6 @@ contract GeoNFT is
     mapping(uint256 => uint8) private indexValues; // mapping of tokenId to index
     mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
 
-    // A reference to the Spatial Data Registry contract for security checks
-    address public sdRegistry;
-
     // solhint-disable-next-line no-empty-blocks, func-visibility
     constructor() ERC721("GEONFT Minter", "GEONFT") {}
 
@@ -126,14 +123,6 @@ contract GeoNFT is
         onlyOwner
     {
         indexTypes[tokenId] = indiceType;
-    }
-
-    /**
-     * @notice called by the owner to make sure the checks pass correctly
-     * @param _sdRegistry the address of the registry contract
-     */
-    function setSDRegistry(address _sdRegistry) external onlyOwner {
-        sdRegistry = _sdRegistry;
     }
 
     // The following functions are overrides required by Solidity.
