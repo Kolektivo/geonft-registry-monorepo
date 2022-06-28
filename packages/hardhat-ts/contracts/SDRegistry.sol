@@ -166,4 +166,16 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
         return (_tokenIds);
     }
+
+    // Checks to make sure first and last coordinates are the same.
+    function isPolygon (int256[2][] memory _coordinates) public pure returns (bool) {
+        uint256 length = _coordinates.length;
+        if ((length > 2) &&
+            (_coordinates[0][0] == _coordinates[length - 1][0]) &&
+            (_coordinates[0][1] == _coordinates[length - 1][1])) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

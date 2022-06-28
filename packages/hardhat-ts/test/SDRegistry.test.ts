@@ -10,7 +10,7 @@ import {
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { ContractReceipt, ContractTransaction } from "ethers";
+import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 
 const { expect } = chai;
 
@@ -315,6 +315,50 @@ describe("registry", () => {
         maxLongitude
       );
       expect(tokensQuery.length).to.equal(1);
+    });
+  });
+
+  describe("calculate area", async () => {
+    it("test isPolygon true", async () => {
+      const polygon = [
+        [-428.890674, 12.147418],
+        [-428.890746, 12.147347],
+        [-428.890721, 12.147236],
+        [-428.890593, 12.147198],
+        [-428.890518, 12.14728],
+        [-428.890551, 12.147379],
+        [-428.890674, 12.147418],
+      ];
+
+      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
+        ethers.BigNumber.from(x[0] * 10 ** 6),
+        ethers.BigNumber.from(x[1] * 10 ** 6),
+      ]);
+      const isPolygon = await sdRegistry
+        .connect(deployer)
+        .isPolygon(polygonInt);
+      expect(isPolygon).to.equal(true);
+    });
+
+    it("test isPolygon false", async () => {
+      const polygon = [
+        [-428.890674, 12.147418],
+        [-428.890746, 12.147347],
+        [-428.890721, 12.147236],
+        [-428.890593, 12.147198],
+        [-428.890518, 12.14728],
+        [-428.890551, 12.147379],
+        [-428.890674, 12.147417], // should match first point
+      ];
+
+      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
+        ethers.BigNumber.from(x[0] * 10 ** 6),
+        ethers.BigNumber.from(x[1] * 10 ** 6),
+      ]);
+      const isPolygon = await sdRegistry
+        .connect(deployer)
+        .isPolygon(polygonInt);
+      expect(isPolygon).to.equal(false);
     });
   });
 });
