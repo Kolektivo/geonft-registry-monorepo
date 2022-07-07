@@ -360,5 +360,27 @@ describe("registry", () => {
         .isPolygon(polygonInt);
       expect(isPolygon).to.equal(false);
     });
+
+    it("area", async () => {
+      const polygon = [
+        [-428.890674, 12.147418],
+        [-428.890746, 12.147347],
+        [-428.890721, 12.147236],
+        [-428.890593, 12.147198],
+        [-428.890518, 12.14728],
+        [-428.890551, 12.147379],
+        [-428.890674, 12.147418],
+      ];
+
+      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
+        ethers.BigNumber.from(x[0] * 10 ** 6), //428.890674 > 428890674
+        ethers.BigNumber.from(x[1] * 10 ** 6),
+      ]);
+      const area = await sdRegistry
+        .connect(deployer)
+        .area(polygonInt);
+      expect(area).to.equal(34440);
+    });
+
   });
 });

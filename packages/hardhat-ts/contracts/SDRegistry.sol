@@ -178,4 +178,24 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             return false;
         }
     }
+
+    // calculate the area of an arbitrary polygon in a plane
+    // https://www.mathopenref.com/coordpolygonarea.html
+    // Only accepts simple polygons, not multigeometry polygons
+    function area (int256[2][] memory _coordinates ) public pure returns (uint256 area_) {
+        require(isPolygon(_coordinates) == true);
+
+        uint256 length = _coordinates.length;
+
+        int256 counter = 0;
+        for (uint256 i = 0; i < length - 1; i++) {
+
+            int256 clockwiseCounter = _coordinates[i][0] * _coordinates[i + 1][1];
+            int256 anticlockwiseCounter = _coordinates[i][1] * _coordinates[i + 1][0];
+
+            counter += clockwiseCounter - anticlockwiseCounter;
+        }
+
+        return uint256(counter / 2);
+    }
 }
