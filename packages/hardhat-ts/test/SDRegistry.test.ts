@@ -373,14 +373,11 @@ describe("registry", () => {
       ];
 
       const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        ethers.BigNumber.from(x[0] * 10 ** 6), //428.890674 > 428890674
+        ethers.BigNumber.from(x[0] * 10 ** 6), // 428.890674 > 428890674
         ethers.BigNumber.from(x[1] * 10 ** 6),
       ]);
-      const area = await sdRegistry
-        .connect(deployer)
-        .area(polygonInt);
+      const area = await sdRegistry.connect(deployer).area(polygonInt);
       expect(area).to.equal(34440);
     });
-
   });
 });
