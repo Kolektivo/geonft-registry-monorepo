@@ -6,13 +6,13 @@ import "hardhat/console.sol";
 
 contract GeohashRegistry {
     // length of the geohash string
-    uint256 GEOHASH_LENGTH = 8;
+    uint256 public constant GEOHASH_LENGTH = 8;
 
     struct Node {
         uint256[] data;
     }
 
-    mapping(string => Node) nodes;
+    mapping(string => Node) private nodes;
 
     /**
      * @notice Get a data by geohash
@@ -34,6 +34,15 @@ contract GeohashRegistry {
 
         // lookup existing node
         Node storage node = nodes[_geohash];
+
+        // check if data is in node
+        bool isInNode = dataExists(node, _data);
+
+        // if data already in node, return
+        if (isInNode) {
+            console.log("Data already in the node");
+            return;
+        }
 
         // if node does not exist, create it
         if (node.data.length == 0) {
@@ -75,11 +84,20 @@ contract GeohashRegistry {
         // lookup existing node
         Node storage node = nodes[_geohash];
 
+        // check if data is in node
+        bool isInNode = dataExists(node, _data);
+
+        // if data wasn't in node, return
+        if (!isInNode) {
+            console.log("Data not in node");
+            return;
+        }
+
         // if node contains only one value, delete node
         if (node.data.length == 1) {
             delete nodes[_geohash];
         } else {
-            // if node contains more than one value, remove data
+            // if node contains more than one value, rebuild data array
             uint256[] memory newData = new uint256[](node.data.length - 1);
             uint256 counter = 0;
             for (uint256 i = 0; i < node.data.length - 1; i++) {
@@ -92,4 +110,19 @@ contract GeohashRegistry {
             nodes[_geohash] = node;
         }
     }
+
+    /**
+     * @notice Check if data in node
+     * @param _node node
+     * @param _data the uint data
+     */
+    function dataExists(Node memory _node, uint256 _data) internal pure returns (bool) {
+        for (uint256 i = 0; i < _node.data.length; i++) {
+            if (_node.data[i] == _data) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
 }
