@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "hardhat/console.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { GeoNFT } from "./GeoNFT.sol";
@@ -276,7 +275,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
                 total += subTotal;
             }
 
-            total = total * EARTH_RADIUS**2 / (2 * RAD_EXP * SIN_EXP);
+            total = total * EARTH_RADIUS**2 / (2 * RAD_EXP * SIN_EXP * PI_EXP * COORD_EXP);
         }
         return total;
     }
@@ -284,7 +283,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     // Return nano radians (radians * 10^9) of a certain degree angle (coordinate)
     function nanoRad(int256 n) private view returns (int256) {
         int256 PI = 3141592653;
-        return (n * PI * RAD_EXP) / (180 * PI_EXP * COORD_EXP);
+        return (n * PI * RAD_EXP) / (180);
     }
 
     /**
@@ -299,11 +298,11 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     finally get the sine value, we need to divide the sin() function by 32676;
     */
     function nanoSin(int256 angle) private view returns (int256) {
-        int256 angleUnits = 16384;
+        int256 angleUnits = 1073741824;
+        int256 maxAngle = 2147483647;
         int256 tAngle = (angle * angleUnits) / (360 * COORD_EXP);
-        return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / 32676;
+        return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
     }
-
     // Returns absolute value of input
     function abs(int256 value) private pure returns (int256) {
         return value >= 0
