@@ -6,7 +6,6 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { GeoNFT } from "./GeoNFT.sol";
 import { Trigonometry } from "../lib/Trigonometry.sol";
 
-
 contract SDRegistry is ReentrancyGuard, Ownable {
     // The GEONFT ERC721 token contract
     GeoNFT public geoNFT;
@@ -17,12 +16,12 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
     uint private geoJsonMapSize;
     // Exponents to void decimals
-    int256 private RAD_EXP = 1e9;
-    int256 private SIN_EXP = 1e9;
-    int256 private PI_EXP = 1e9;
-    int256 private COORD_EXP = 1e9;
-    int256 private EARTH_RADIUS = 6371008; // m
-
+    int256 private constant RAD_EXP = 1e9;
+    int256 private constant SIN_EXP = 1e9;
+    int256 private constant PI_EXP = 1e9;
+    int256 private constant COORD_EXP = 1e9;
+    int256 private constant PI = 3141592653;
+    int256 private constant EARTH_RADIUS = 6371008; // m
 
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
@@ -190,26 +189,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
     }
 
-    // calculate the area of an arbitrary polygon in a plane
-    // https://www.mathopenref.com/coordpolygonarea.html
-    // Only accepts simple polygons, not multigeometry polygons
-    function area (int256[2][] memory _coordinates ) public pure returns (uint256 area_) {
-        require(isPolygon(_coordinates) == true);
-
-        uint256 length = _coordinates.length;
-
-        int256 counter = 0;
-        for (uint256 i = 0; i < length - 1; i++) {
-
-            int256 clockwiseCounter = _coordinates[i][0] * _coordinates[i + 1][1];
-            int256 anticlockwiseCounter = _coordinates[i][1] * _coordinates[i + 1][0];
-
-            counter += clockwiseCounter - anticlockwiseCounter;
-        }
-
-        return uint256(counter / 2);
-    }
-
     function multiPolygonArea(int256[][][][] memory coords) public view returns (int256) {
         int256 total = 0;
 
@@ -282,7 +261,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     // Return nano radians (radians * 10^9) of a certain degree angle (coordinate)
     function nanoRad(int256 n) private view returns (int256) {
-        int256 PI = 3141592653;
         return (n * PI * RAD_EXP) / (180);
     }
 
@@ -301,6 +279,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
         int256 tAngle = (angle * angleUnits) / (360 * COORD_EXP);
+        // solhint-disable-next-line mark-callable-contracts
         return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
     }
     // Returns absolute value of input

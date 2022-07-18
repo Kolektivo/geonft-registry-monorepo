@@ -288,25 +288,6 @@ describe("registry", () => {
       expect(isPolygon).to.equal(false);
     });
 
-    it("area", async () => {
-      const polygon = [
-        [-68.890674, 12.147418],
-        [-68.890746, 12.147347],
-        [-68.890721, 12.147236],
-        [-68.890593, 12.147198],
-        [-68.890518, 12.14728],
-        [-68.890551, 12.147379],
-        [-68.890674, 12.147418],
-      ];
-
-      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        ethers.BigNumber.from(x[0] * 10 ** 6), // 68.890674 > 68.890674
-        ethers.BigNumber.from(x[1] * 10 ** 6),
-      ]);
-      const area = await sdRegistry.connect(deployer).area(polygonInt);
-      expect(area).to.equal(34440);
-    });
-
     it("elliptical area of polygon", async () => {
       // Solidity version of GeoJSON with integer coordinates
       const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
@@ -351,6 +332,29 @@ describe("registry", () => {
           : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
 
       expect(area).to.equal(27172); // In square meters (m2)
+    });
+
+    it("elliptical area of small food forest", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON2);
+
+      const feature = geojsonSol.features[0]; // Small area - it gives 0
+
+      if (!isPolygon(feature.geometry)) {
+        throw new Error(`
+          Geometry type '${feature.geometry.type}' invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinates = feature.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+      const area =
+        feature.geometry.type === "Polygon"
+          ? await contract.polygonArea(coordinates as BigNumber[][][])
+          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+
+      expect(area).to.equal(417); // In square meters (m2)
     });
 
     it("elliptical area sum of GeoJSON", async () => {
