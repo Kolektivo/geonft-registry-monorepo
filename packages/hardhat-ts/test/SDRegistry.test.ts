@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
 import {
   // eslint-disable-next-line camelcase
@@ -9,8 +10,11 @@ import {
   SDRegistry,
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
+// eslint-disable-next-line node/no-missing-import
+import { transformSolidityGeoJSON, isPolygon } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
+// eslint-disable-next-line node/no-missing-import
+import { GEOJSON, GEOJSON2, GEOJSON3 } from "./SDRegistry.mock";
 
 const { expect } = chai;
 
@@ -19,94 +23,13 @@ let geoNFT: GeoNFT;
 // eslint-disable-next-line camelcase
 let geoNFTFactory: GeoNFT__factory;
 // eslint-disable-next-line camelcase
+let trigonometryFactory: any;
+// eslint-disable-next-line camelcase
 let sdRegistryFactory: SDRegistry__factory;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
-const GEOJSON = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8906744122505, 12.147418397582491],
-            [-68.8907468318939, 12.147347599447487],
-            [-68.8907213509083, 12.14723615790054],
-            [-68.8905939459801, 12.147198136656193],
-            [-68.89051884412766, 12.147280734524921],
-            [-68.89055103063583, 12.147379065287602],
-            [-68.8906744122505, 12.147418397582491],
-          ],
-        ],
-      },
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8905443251133, 12.147381687440772],
-            [-68.89051616191864, 12.147279423447841],
-            [-68.89041021466255, 12.147224358204612],
-            [-68.8903096318245, 12.147300400680368],
-            [-68.8903257250786, 12.147409220047532],
-            [-68.8904584944248, 12.147449863414236],
-            [-68.8905443251133, 12.147381687440772],
-          ],
-        ],
-      },
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8901272416115, 12.147367265597998],
-            [-68.89017820358276, 12.147195514501217],
-            [-68.8900186121464, 12.147116849839737],
-            [-68.8899327814579, 12.147217802817746],
-            [-68.8899743556976, 12.147334488679682],
-            [-68.8901272416115, 12.147367265597998],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
-const GEOJSON2 = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8906744122505, 12.147418397582491],
-            [-68.8907468318939, 12.147347599447487],
-            [-68.8907213509083, 12.14723615790054],
-            [-68.8905939459801, 12.147198136656193],
-            [-68.89051884412766, 12.147280734524921],
-            [-68.89055103063583, 12.147379065287602],
-            [-68.8906744122505, 12.147418397582491],
-          ],
-        ],
-      },
-    },
-  ],
-};
 
 describe("registry", () => {
   beforeEach(async () => {
@@ -117,10 +40,14 @@ describe("registry", () => {
     )) as GeoNFT__factory; // eslint-disable-line camelcase
     geoNFT = (await geoNFTFactory.deploy()) as GeoNFT;
 
-    sdRegistryFactory = (await ethers.getContractFactory(
-      "SDRegistry",
-      deployer
-    )) as SDRegistry__factory; // eslint-disable-line camelcase
+    trigonometryFactory = await ethers.getContractFactory("Trigonometry");
+    const trigonometryObj = await trigonometryFactory.deploy();
+
+    sdRegistryFactory = (await ethers.getContractFactory("SDRegistry", {
+      libraries: {
+        Trigonometry: trigonometryObj.address,
+      },
+    })) as SDRegistry__factory; // eslint-disable-line camelcase
     sdRegistry = (await sdRegistryFactory.deploy(geoNFT.address)) as SDRegistry;
   });
 
@@ -361,23 +288,99 @@ describe("registry", () => {
       expect(isPolygon).to.equal(false);
     });
 
-    it("area", async () => {
-      const polygon = [
-        [-68.890674, 12.147418],
-        [-68.890746, 12.147347],
-        [-68.890721, 12.147236],
-        [-68.890593, 12.147198],
-        [-68.890518, 12.14728],
-        [-68.890551, 12.147379],
-        [-68.890674, 12.147418],
-      ];
+    it("elliptical area of polygon", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
 
-      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        ethers.BigNumber.from(x[0] * 10 ** 6), // 68.890674 > 68.890674
-        ethers.BigNumber.from(x[1] * 10 ** 6),
-      ]);
-      const area = await sdRegistry.connect(deployer).area(polygonInt);
-      expect(area).to.equal(34440);
+      const feature = geojsonSol.features[0]; // Curazao
+
+      if (!isPolygon(feature.geometry)) {
+        throw new Error(`
+          Geometry type '${feature.geometry.type}' invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinates = feature.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+      const area =
+        feature.geometry.type === "Polygon"
+          ? await contract.polygonArea(coordinates as BigNumber[][][])
+          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+
+      expect(area).to.equal(451167821); // In square meters (m2)
+    });
+
+    it("elliptical area of small polygon", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
+
+      const feature = geojsonSol.features[7]; // Small area - it gives 0
+
+      if (!isPolygon(feature.geometry)) {
+        throw new Error(`
+          Geometry type '${feature.geometry.type}' invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinates = feature.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+      const area =
+        feature.geometry.type === "Polygon"
+          ? await contract.polygonArea(coordinates as BigNumber[][][])
+          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+
+      expect(area).to.equal(27172); // In square meters (m2)
+    });
+
+    it("elliptical area of small food forest", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON2);
+
+      const feature = geojsonSol.features[0]; // Small area - it gives 0
+
+      if (!isPolygon(feature.geometry)) {
+        throw new Error(`
+          Geometry type '${feature.geometry.type}' invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinates = feature.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+      const area =
+        feature.geometry.type === "Polygon"
+          ? await contract.polygonArea(coordinates as BigNumber[][][])
+          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+
+      expect(area).to.equal(417); // In square meters (m2)
+    });
+
+    it("elliptical area sum of GeoJSON", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
+
+      // Array with the area of every feature
+      const featureAreas = await Promise.all(
+        geojsonSol.features.map((feature) => {
+          if (!isPolygon(feature.geometry)) {
+            throw new Error(`
+            Geometry type '${feature.geometry.type}' invalid.
+            Value must be 'Polygon' or 'MultiPolygon'.
+          `);
+          }
+
+          const coordinates = feature.geometry.coordinates;
+          const contract = sdRegistry.connect(deployer);
+          return feature.geometry.type === "Polygon"
+            ? contract.polygonArea(coordinates as BigNumber[][][])
+            : contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+        })
+      );
+
+      const totalArea = featureAreas.reduce((a, b) => a + b.toNumber(), 0);
+      expect(totalArea).to.equal(10276251371259); // In square meters (m2)
     });
   });
 });
