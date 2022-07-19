@@ -4,7 +4,7 @@ import { GeoJSON } from "geojson";
 /**
  * Mock data for SDRegistry test file
  */
-export const GEOJSON: GeoJSON = {
+export const GEOJSON1: GeoJSON = {
   type: "FeatureCollection",
   features: [
     {
