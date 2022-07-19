@@ -14,7 +14,7 @@ import {
 import { transformSolidityGeoJSON, isPolygon } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 // eslint-disable-next-line node/no-missing-import
-import { GEOJSON, GEOJSON2, GEOJSON3 } from "./SDRegistry.mock";
+import { GEOJSON1, GEOJSON2, GEOJSON3 } from "./SDRegistry.mock";
 
 const { expect } = chai;
 
@@ -68,7 +68,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -101,7 +101,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -140,7 +140,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -180,7 +180,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -218,7 +218,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
