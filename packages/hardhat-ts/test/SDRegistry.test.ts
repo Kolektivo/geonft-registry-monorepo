@@ -14,7 +14,7 @@ import {
 import { transformSolidityGeoJSON, isPolygon } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
-  GEOJSON,
+  GEOJSON1,
   GEOJSON2,
   GEOJSON2_CLOCKWISE,
   GEOJSON3_MULTIPOLYGON,
