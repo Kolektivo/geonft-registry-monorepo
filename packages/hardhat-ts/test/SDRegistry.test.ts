@@ -74,7 +74,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -107,7 +107,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -146,7 +146,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -186,7 +186,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -224,7 +224,7 @@ describe("registry", () => {
       await expect(
         geoNFT
           .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON.toString())
+          .safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
