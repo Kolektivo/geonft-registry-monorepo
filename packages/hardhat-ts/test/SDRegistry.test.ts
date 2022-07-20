@@ -13,8 +13,14 @@ import {
 // eslint-disable-next-line node/no-missing-import
 import { transformSolidityGeoJSON, isPolygon } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-// eslint-disable-next-line node/no-missing-import
-import { GEOJSON, GEOJSON2, GEOJSON3 } from "./SDRegistry.mock";
+import {
+  GEOJSON,
+  GEOJSON2,
+  GEOJSON2_CLOCKWISE,
+  GEOJSON3_MULTIPOLYGON,
+  GEOJSON3_POLYGON,
+  // eslint-disable-next-line node/no-missing-import
+} from "./SDRegistry.mock";
 
 const { expect } = chai;
 
@@ -290,7 +296,7 @@ describe("registry", () => {
 
     it("elliptical area of polygon", async () => {
       // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
 
       const feature = geojsonSol.features[0]; // Curazao
 
@@ -313,9 +319,9 @@ describe("registry", () => {
 
     it("elliptical area of small polygon", async () => {
       // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
 
-      const feature = geojsonSol.features[7]; // Small area - it gives 0
+      const feature = geojsonSol.features[7];
 
       if (!isPolygon(feature.geometry)) {
         throw new Error(`
@@ -338,7 +344,7 @@ describe("registry", () => {
       // Solidity version of GeoJSON with integer coordinates
       const geojsonSol = transformSolidityGeoJSON(GEOJSON2);
 
-      const feature = geojsonSol.features[0]; // Small area - it gives 0
+      const feature = geojsonSol.features[0];
 
       if (!isPolygon(feature.geometry)) {
         throw new Error(`
@@ -357,9 +363,103 @@ describe("registry", () => {
       expect(area).to.equal(417); // In square meters (m2)
     });
 
+    it("elliptical area of multipart polygon", async () => {
+      // Solidity version of GeoJSON with integer coordinates
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
+
+      const feature = geojsonSol.features[5]; // Splitted geometry
+
+      if (!isPolygon(feature.geometry)) {
+        throw new Error(`
+          Geometry type '${feature.geometry.type}' invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinates = feature.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+      const area =
+        feature.geometry.type === "Polygon"
+          ? await contract.polygonArea(coordinates as BigNumber[][][])
+          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+
+      expect(area).to.equal(5376806769288); // In square meters (m2)
+    });
+
+    it("area is equal on polygon and multipolygon format", async () => {
+      const geojsonSolSinglePolygon =
+        transformSolidityGeoJSON(GEOJSON3_POLYGON);
+      const geojsonSolMultipolygon = transformSolidityGeoJSON(
+        GEOJSON3_MULTIPOLYGON
+      );
+
+      const featureIndex = 0;
+      const featureSingle = geojsonSolSinglePolygon.features[featureIndex];
+      const featureMulti = geojsonSolMultipolygon.features[featureIndex];
+
+      if (
+        !isPolygon(featureSingle.geometry) ||
+        !isPolygon(featureMulti.geometry)
+      ) {
+        throw new Error(`
+          Geometry type invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinatesSingle = featureSingle.geometry.coordinates;
+      const coordinatesMulti = featureMulti.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+
+      const areas = await Promise.all([
+        contract.polygonArea(coordinatesSingle as BigNumber[][][]),
+        contract.multiPolygonArea(coordinatesMulti as BigNumber[][][][]),
+      ]);
+
+      const [areaSingle, areaMulti] = areas;
+      expect(areaSingle).to.equal(areaMulti).to.equal(451167821); // In square meters (m2)
+    });
+
+    it("area is equal on clockwise and counter-clockwise direction", async () => {
+      // CCW -> Counter clockwise (default)
+      // CW  -> Clockwise
+      const geojsonSolCCW = transformSolidityGeoJSON(GEOJSON2);
+      const geojsonSolCW = transformSolidityGeoJSON(GEOJSON2_CLOCKWISE);
+
+      const featureIndex = 0;
+      const featureCCW = geojsonSolCCW.features[featureIndex];
+      const featureCW = geojsonSolCW.features[featureIndex];
+
+      if (!isPolygon(featureCCW.geometry) || !isPolygon(featureCW.geometry)) {
+        throw new Error(`
+          Geometry type invalid.
+          Value must be 'Polygon' or 'MultiPolygon'.
+        `);
+      }
+
+      const coordinatesCCW = featureCCW.geometry.coordinates;
+      const coordinatesCW = featureCW.geometry.coordinates;
+      const contract = sdRegistry.connect(deployer);
+
+      const areaCCWPromise =
+        featureCCW.geometry.type === "Polygon"
+          ? contract.polygonArea(coordinatesCCW as BigNumber[][][])
+          : contract.multiPolygonArea(coordinatesCCW as BigNumber[][][][]);
+
+      const areaCWPromise =
+        featureCW.geometry.type === "Polygon"
+          ? contract.polygonArea(coordinatesCW as BigNumber[][][])
+          : contract.multiPolygonArea(coordinatesCW as BigNumber[][][][]);
+
+      const areas = await Promise.all([areaCCWPromise, areaCWPromise]);
+      const [areaCCW, areaCW] = areas;
+
+      expect(areaCCW).to.equal(areaCW).to.equal(417); // In square meters (m2)
+    });
+
     it("elliptical area sum of GeoJSON", async () => {
       // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3);
+      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
 
       // Array with the area of every feature
       const featureAreas = await Promise.all(
