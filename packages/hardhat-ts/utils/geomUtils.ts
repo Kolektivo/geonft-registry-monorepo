@@ -148,7 +148,7 @@ const transformCoordinatesRecursively = (value: RCoordinates): RCoordinates => {
 
 export const solidityCoordinate = (coord: number): BigNumber => {
   const DECIMAL_EXPONENT = 10 ** 9;
-  return ethers.BigNumber.from(Math.round(coord * DECIMAL_EXPONENT));
+  return ethers.BigNumber.from(Math.floor(coord * DECIMAL_EXPONENT));
 };
 
 export const centroid = (geometry: Polygon | MultiPolygon): Position => {

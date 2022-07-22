@@ -318,7 +318,7 @@ describe("registry", () => {
           ? await contract.polygonArea(coordinates as BigNumber[][][])
           : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
 
-      expect(area).to.equal(451167821); // In square meters (m2)
+      expect(area).to.equal(451167820); // In square meters (m2)
     });
 
     it("elliptical area of small polygon", async () => {
@@ -387,7 +387,7 @@ describe("registry", () => {
           ? await contract.polygonArea(coordinates as BigNumber[][][])
           : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
 
-      expect(area).to.equal(5376806769288); // In square meters (m2)
+      expect(area).to.equal(5376806769293); // In square meters (m2)
     });
 
     it("area is equal on polygon and multipolygon format", async () => {
@@ -421,7 +421,7 @@ describe("registry", () => {
       ]);
 
       const [areaSingle, areaMulti] = areas;
-      expect(areaSingle).to.equal(areaMulti).to.equal(451167821); // In square meters (m2)
+      expect(areaSingle).to.equal(areaMulti).to.equal(451167820); // In square meters (m2)
     });
 
     it("area is equal on clockwise and counter-clockwise direction", async () => {
@@ -484,7 +484,7 @@ describe("registry", () => {
       );
 
       const totalArea = featureAreas.reduce((a, b) => a + b.toNumber(), 0);
-      expect(totalArea).to.equal(10276251371259); // In square meters (m2)
+      expect(totalArea).to.equal(10276251371240); // In square meters (m2)
     });
   });
 });
