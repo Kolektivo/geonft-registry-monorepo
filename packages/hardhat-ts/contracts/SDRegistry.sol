@@ -15,11 +15,11 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     // TODO: remove this list when quadtree is implemented
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
     uint private geoJsonMapSize;
-    // Exponents to void decimals
-    int256 private constant RAD_EXP = 1e9;
-    int256 private constant SIN_EXP = 1e9;
-    int256 private constant PI_EXP = 1e9;
-    int256 private constant COORD_EXP = 1e9;
+    // Exponents to avoid decimals
+    int256 private constant RAD_EXP = 1e9; // Radians exponent
+    int256 private constant SIN_EXP = 1e9; // Sine exponent
+    int256 private constant PI_EXP = 1e9; // Pi exponent
+    int256 private constant COORD_EXP = 1e9; // Coordinates exponent
     int256 private constant PI = 3141592653;
     int256 private constant EARTH_RADIUS = 6371008; // m
 
@@ -189,7 +189,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
     }
 
-    function multiPolygonArea(int256[][][][] memory coords) public view returns (int256) {
+    function multiPolygonArea(int256[][][][] memory coords) public pure returns (int256) {
         int256 total = 0;
 
         for (uint256 i = 0; i < coords.length; i++) {
@@ -199,7 +199,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return total;
     }
 
-    function polygonArea (int256[][][] memory coords) public view returns (int256) {
+    function polygonArea (int256[][][] memory coords) public pure returns (int256) {
         int256 total = 0;
 
         if (coords.length > 0) {
@@ -214,7 +214,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     // Obtained from Turf.js area function 
     // (https://github.com/Turfjs/turf/blob/master/packages/turf-area/index.ts)
-    function ringArea(int256[][] memory coords) public view returns (int256) {
+    function ringArea(int256[][] memory coords) public pure returns (int256) {
         uint256 coordsLength = coords.length;
         int256[] memory p1;
         int256[] memory p2;
@@ -260,7 +260,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     }
 
     // Return nano radians (radians * 10^9) of a certain degree angle (coordinate)
-    function nanoRad(int256 n) private view returns (int256) {
+    function nanoRad(int256 n) private pure returns (int256) {
         return (n * PI * RAD_EXP) / (180);
     }
 
@@ -275,7 +275,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     The returning value exists on a range [-32676, 32676] (signed 16-bit). Therefore, to 
     finally get the sine value, we need to divide the sin() function by 32676;
     */
-    function nanoSin(int256 angle) private view returns (int256) {
+    function nanoSin(int256 angle) private pure returns (int256) {
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
         int256 tAngle = (angle * angleUnits) / (360 * COORD_EXP);
