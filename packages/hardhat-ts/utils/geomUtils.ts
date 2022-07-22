@@ -143,10 +143,10 @@ type RCoordinates = number | BigNumber | RCoordinates[]; // Recursive coordinate
 const transformCoordinatesRecursively = (value: RCoordinates): RCoordinates => {
   return Array.isArray(value)
     ? value.map(transformCoordinatesRecursively)
-    : transformCoordinate(value as number);
+    : solidityCoordinate(value as number);
 };
 
-const transformCoordinate = (coord: number): BigNumber => {
+export const solidityCoordinate = (coord: number): BigNumber => {
   const DECIMAL_EXPONENT = 10 ** 9;
   return ethers.BigNumber.from(Math.round(coord * DECIMAL_EXPONENT));
 };

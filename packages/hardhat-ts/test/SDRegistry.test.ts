@@ -10,8 +10,12 @@ import {
   SDRegistry,
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
-// eslint-disable-next-line node/no-missing-import
-import { transformSolidityGeoJSON, isPolygon } from "../utils/geomUtils";
+import {
+  transformSolidityGeoJSON,
+  solidityCoordinate,
+  isPolygon,
+  // eslint-disable-next-line node/no-missing-import
+} from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
   GEOJSON1,
@@ -264,8 +268,8 @@ describe("registry", () => {
       ];
 
       const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        ethers.BigNumber.from(x[0] * 10 ** 6),
-        ethers.BigNumber.from(x[1] * 10 ** 6),
+        solidityCoordinate(x[0]),
+        solidityCoordinate(x[1]),
       ]);
       const isPolygon = await sdRegistry
         .connect(deployer)
@@ -285,8 +289,8 @@ describe("registry", () => {
       ];
 
       const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        ethers.BigNumber.from(x[0] * 10 ** 6),
-        ethers.BigNumber.from(x[1] * 10 ** 6),
+        solidityCoordinate(x[0]),
+        solidityCoordinate(x[1]),
       ]);
       const isPolygon = await sdRegistry
         .connect(deployer)
