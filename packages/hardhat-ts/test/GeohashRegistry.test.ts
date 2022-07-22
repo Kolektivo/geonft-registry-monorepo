@@ -215,11 +215,7 @@ describe("geohash registry", () => {
 
       const latSol = solidityCoordinate(lat); // Solidity latitude version
       const lonSol = solidityCoordinate(lon); // Solidity longitude version
-      const geohash = await geohashRegistry.encodeGeohash(
-        latSol,
-        lonSol,
-        precision
-      );
+      const geohash = await geohashRegistry.encode(latSol, lonSol, precision);
 
       expect(geohash).to.equal("d");
     });
@@ -231,11 +227,7 @@ describe("geohash registry", () => {
 
       const latSol = solidityCoordinate(lat); // Solidity latitude version
       const lonSol = solidityCoordinate(lon); // Solidity longitude version
-      const geohash = await geohashRegistry.encodeGeohash(
-        latSol,
-        lonSol,
-        precision
-      );
+      const geohash = await geohashRegistry.encode(latSol, lonSol, precision);
 
       expect(geohash).to.equal("d6nv");
     });
@@ -247,11 +239,7 @@ describe("geohash registry", () => {
 
       const latSol = solidityCoordinate(lat); // Solidity latitude version
       const lonSol = solidityCoordinate(lon); // Solidity longitude version
-      const geohash = await geohashRegistry.encodeGeohash(
-        latSol,
-        lonSol,
-        precision
-      );
+      const geohash = await geohashRegistry.encode(latSol, lonSol, precision);
 
       expect(geohash).to.equal("d6nvms");
     });
@@ -263,11 +251,7 @@ describe("geohash registry", () => {
 
       const latSol = solidityCoordinate(lat); // Solidity latitude version
       const lonSol = solidityCoordinate(lon); // Solidity longitude version
-      const geohash = await geohashRegistry.encodeGeohash(
-        latSol,
-        lonSol,
-        precision
-      );
+      const geohash = await geohashRegistry.encode(latSol, lonSol, precision);
 
       expect(geohash).to.equal("d6nvms58");
     });
@@ -279,13 +263,24 @@ describe("geohash registry", () => {
 
       const latSol = solidityCoordinate(lat); // Solidity latitude version
       const lonSol = solidityCoordinate(lon); // Solidity longitude version
-      const geohash = await geohashRegistry.encodeGeohash(
-        latSol,
-        lonSol,
-        precision
-      );
+      const geohash = await geohashRegistry.encode(latSol, lonSol, precision);
 
       expect(geohash).to.equal("d6nvms58e");
+    });
+  });
+
+  describe("Geohash decoding", async () => {
+    it("Decodes geohash with precision 8", async () => {
+      const geohash = "d6nvms58";
+      const latExpected = 12194910048; // Solidity latitude version with a little error deviation
+      const lonExpected = -69011135100; // Solidity longitude version with a little error devaition
+
+      const coordinatesBigNumber = await geohashRegistry.decode(geohash);
+      // Transform from BigNumber hex value to number
+      const [lat, lon] = coordinatesBigNumber.map((coord) => coord.toNumber());
+
+      expect(lat).to.equal(latExpected);
+      expect(lon).to.equal(lonExpected);
     });
   });
 });

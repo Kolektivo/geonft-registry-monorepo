@@ -147,7 +147,7 @@ contract GeohashRegistry {
      * @param _lon longitude
      * @param _precision geohash length precision
      */
-    function encodeGeohash(int64 _lat, int64 _lon, uint8 _precision) public pure returns (string memory) {
+    function encode(int64 _lat, int64 _lon, uint8 _precision) public pure returns (string memory) {
         bytes memory hashBytes = new bytes(_precision);
         int8 bits = 0;
         int8 bitsTotal = 0;
@@ -195,6 +195,53 @@ contract GeohashRegistry {
         }
 
         return string(hashBytes);
+    }
+
+    function decode(string memory geohash) public view returns (int64[2] memory) {
+        int64[4] memory bbox = decodeBbox(geohash);
+        int64 lat = (bbox[0] + bbox[2]) / 2;
+        int64 lon = (bbox[1] + bbox[3]) / 2;
+        
+        return [lat, lon];
+    }
+
+    function decodeBbox(string memory geohash) private view returns (int64[4] memory) {
+        bool isLon = true;
+        int64 maxLat = MAX_LAT;
+        int64 minLat = MIN_LAT;
+        int64 maxLon = MAX_LON;
+        int64 minLon = MIN_LON;
+        int64 mid;
+        uint8 hashValue;
+
+        for (uint8 i = 0; i < bytes(geohash).length; i++) {
+            string memory code = string(abi.encodePacked(bytes(geohash)[i]));
+            hashValue = codesDict[code];
+
+            for (uint8 bits = 5; bits > 0; bits--) {
+                uint8 bit = (hashValue >> (bits - 1)) & 1;
+
+                if (isLon) {
+                    mid = (maxLon + minLon) / 2;
+
+                    if (bit == 1) {
+                        minLon = mid;
+                    } else {
+                        maxLon = mid;
+                    }
+                } else {
+                    mid = (maxLat + minLat) / 2;
+
+                    if (bit == 1) {
+                        minLat = mid;
+                    } else {
+                        maxLat = mid;
+                    }
+                }
+                isLon = !isLon;
+            }
+        }
+        return [minLat, minLon, maxLat, maxLon];
     }
     
 }
