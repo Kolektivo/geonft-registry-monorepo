@@ -54,5 +54,8 @@
     "ts-node": "^10.7.0",
     "typechain": "^8.0.0",
     "typescript": "^4.6.4"
+  },
+  "dependencies": {
+    "@turf/centroid": "^6.5.0"
   }
 }

@@ -2,12 +2,16 @@
 /* eslint-disable node/no-unsupported-features/es-syntax */
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
+import turfCentroid from "@turf/centroid";
 import {
   GeoJSON,
   Feature,
   Geometry,
+  Polygon,
+  MultiPolygon,
   GeoJsonProperties,
   GeoJsonObject,
+  Position,
 } from "geojson";
 
 // Solidity version of GeoJSON types
@@ -79,7 +83,7 @@ export const isPolygon = (geometry: Geometry | GeometrySol): boolean => {
 export const transformSolidityGeoJSON = (geojson: GeoJSON): GeoJSONSol => {
   if (geojson.type !== "FeatureCollection") {
     throw new Error(`
-      GeoJSON type '${geojson.type}' not supported. It must be FeatureCollection
+      Invalid GeoJSON type '${geojson.type}'. Value must be 'FeatureCollection'.
     `);
   }
 
@@ -145,4 +149,9 @@ const transformCoordinatesRecursively = (value: RCoordinates): RCoordinates => {
 const transformCoordinate = (coord: number): BigNumber => {
   const DECIMAL_EXPONENT = 10 ** 9;
   return ethers.BigNumber.from(Math.round(coord * DECIMAL_EXPONENT));
+};
+
+export const centroid = (geometry: Polygon | MultiPolygon): Position => {
+  const feature = turfCentroid(geometry);
+  return feature.geometry.coordinates;
 };
