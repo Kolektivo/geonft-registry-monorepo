@@ -7,12 +7,28 @@ import "hardhat/console.sol";
 contract GeohashRegistry {
     // length of the geohash string
     uint256 public constant GEOHASH_LENGTH = 8;
+    uint256 private constant COORD_EXP = 1e9; // Coordinates exponent to avoid decimals
+    int64 private constant MIN_LAT = -90*int64(int(COORD_EXP));
+    int64 private constant MAX_LAT = 90*int64(int(COORD_EXP));
+    int64 private constant MIN_LON = -180*int64(int(COORD_EXP));
+    int64 private constant MAX_LON = 180*int64(int(COORD_EXP));
+    string constant BASE32_CODES = "0123456789bcdefghjkmnpqrstuvwxyz"; // Codes for geohash encoding
+    bytes constant codesBytes = bytes(BASE32_CODES); // Codes in bytes format to iterate as array
 
     struct Node {
         uint256[] data;
     }
 
     mapping(string => Node) private nodes;
+    mapping (string => uint8) codesDict; // Character => it's position in the base32 codes string
+
+    constructor() {
+        // Populates codes map
+        for (uint8 i = 0; i < codesBytes.length; i++) {
+            string memory char = string(abi.encodePacked(codesBytes[i]));
+            codesDict[char] = i;
+        }
+    }
 
     /**
      * @notice Get a data by geohash
@@ -123,6 +139,62 @@ contract GeohashRegistry {
             }
         }
         return false;
+    }
+
+    /**
+     * @notice Encode point into geohash
+     * @param _lat latitude
+     * @param _lon longitude
+     * @param _precision geohash length precision
+     */
+    function encodeGeohash(int64 _lat, int64 _lon, uint8 _precision) public pure returns (string memory) {
+        bytes memory hashBytes = new bytes(_precision);
+        int8 bits = 0;
+        int8 bitsTotal = 0;
+        int8 hashValue = 0;
+        int64 maxLat = MAX_LAT;
+        int64 minLat = MIN_LAT;
+        int64 maxLon = MAX_LON;
+        int64 minLon = MIN_LON;
+        int64 mid;
+        uint8 counter;
+
+        while (counter < _precision) {
+            if (bitsTotal % 2 == 0) {
+                mid = (maxLon + minLon) / 2;
+
+                if (_lon > mid) {
+                    hashValue = (hashValue << 1) + 1;
+                    minLon = mid;
+                } else {
+                    hashValue = (hashValue << 1) + 0;
+                    maxLon = mid;
+                }
+            } else {
+                mid = (maxLat + minLat) / 2;
+
+                if (_lat > mid) {
+                    hashValue = (hashValue << 1) + 1;
+                    minLat = mid;
+                } else {
+                    hashValue = (hashValue << 1) + 0;
+                    maxLat = mid;
+                }
+            }
+
+            bits++;
+            bitsTotal++;
+
+            if (bits == 5) {
+                bytes1 charByte = codesBytes[uint8(hashValue)];
+                hashBytes[counter] = charByte;
+                bits = 0;
+                hashValue = 0;
+                counter++;
+            }
+        }
+
+        return string(hashBytes);
     }
     
 }

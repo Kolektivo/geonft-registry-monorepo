@@ -7,6 +7,8 @@ import {
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+// eslint-disable-next-line node/no-missing-import
+import { solidityCoordinate } from "../utils/geomUtils";
 
 const { expect } = chai;
 
@@ -201,6 +203,89 @@ describe("geohash registry", () => {
         "d6nuzk8c"
       );
       expect(formerNode[1].length).to.equal(1);
+    });
+  });
+
+  describe("Geohash encoding", async () => {
+    // Reference: https://www.movable-type.co.uk/scripts/geohash.html
+    it("Encodes coordinates with precision 1", async () => {
+      const lat = 12.194946;
+      const lon = -69.011151;
+      const precision = 1;
+
+      const latSol = solidityCoordinate(lat); // Solidity latitude version
+      const lonSol = solidityCoordinate(lon); // Solidity longitude version
+      const geohash = await geohashRegistry.encodeGeohash(
+        latSol,
+        lonSol,
+        precision
+      );
+
+      expect(geohash).to.equal("d");
+    });
+
+    it("Encodes coordinates with precision 4", async () => {
+      const lat = 12.194946;
+      const lon = -69.011151;
+      const precision = 4;
+
+      const latSol = solidityCoordinate(lat); // Solidity latitude version
+      const lonSol = solidityCoordinate(lon); // Solidity longitude version
+      const geohash = await geohashRegistry.encodeGeohash(
+        latSol,
+        lonSol,
+        precision
+      );
+
+      expect(geohash).to.equal("d6nv");
+    });
+
+    it("Encodes coordinates with precision 6", async () => {
+      const lat = 12.194946;
+      const lon = -69.011151;
+      const precision = 6;
+
+      const latSol = solidityCoordinate(lat); // Solidity latitude version
+      const lonSol = solidityCoordinate(lon); // Solidity longitude version
+      const geohash = await geohashRegistry.encodeGeohash(
+        latSol,
+        lonSol,
+        precision
+      );
+
+      expect(geohash).to.equal("d6nvms");
+    });
+
+    it("Encodes coordinates with precision 8", async () => {
+      const lat = 12.194946;
+      const lon = -69.011151;
+      const precision = 8;
+
+      const latSol = solidityCoordinate(lat); // Solidity latitude version
+      const lonSol = solidityCoordinate(lon); // Solidity longitude version
+      const geohash = await geohashRegistry.encodeGeohash(
+        latSol,
+        lonSol,
+        precision
+      );
+
+      expect(geohash).to.equal("d6nvms58");
+    });
+
+    it("Encodes coordinates with precision 9", async () => {
+      const lat = 12.194946;
+      const lon = -69.011151;
+      const precision = 9;
+
+      const latSol = solidityCoordinate(lat); // Solidity latitude version
+      const lonSol = solidityCoordinate(lon); // Solidity longitude version
+      const geohash = await geohashRegistry.encodeGeohash(
+        latSol,
+        lonSol,
+        precision
+      );
+
+      expect(geohash).to.equal("d6nvms58e");
     });
   });
 });
