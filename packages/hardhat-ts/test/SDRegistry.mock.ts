@@ -1,10 +1,10 @@
 /* eslint-disable node/no-missing-import */
-import { GeoJSON } from "geojson";
+import { FeatureCollection, Polygon, MultiPolygon } from "geojson";
 
 /**
  * Mock data for SDRegistry test file
  */
-export const GEOJSON1: GeoJSON = {
+export const GEOJSON1: FeatureCollection<Polygon> = {
   type: "FeatureCollection",
   features: [
     {
@@ -63,7 +63,7 @@ export const GEOJSON1: GeoJSON = {
   ],
 };
 
-export const GEOJSON2: GeoJSON = {
+export const GEOJSON2: FeatureCollection<Polygon> = {
   type: "FeatureCollection",
   features: [
     {
@@ -89,7 +89,7 @@ export const GEOJSON2: GeoJSON = {
   ],
 };
 
-export const GEOJSON2_CLOCKWISE: GeoJSON = {
+export const GEOJSON2_CLOCKWISE: FeatureCollection<Polygon> = {
   type: "FeatureCollection",
   features: [
     {
@@ -115,7 +115,7 @@ export const GEOJSON2_CLOCKWISE: GeoJSON = {
   ],
 };
 
-export const GEOJSON3_MULTIPOLYGON: GeoJSON = {
+export const GEOJSON3_MULTIPOLYGON: FeatureCollection<MultiPolygon> = {
   type: "FeatureCollection",
   features: [
     {
@@ -611,7 +611,7 @@ export const GEOJSON3_MULTIPOLYGON: GeoJSON = {
   ],
 };
 
-export const GEOJSON3_POLYGON: GeoJSON = {
+export const GEOJSON3_POLYGON: FeatureCollection<Polygon> = {
   type: "FeatureCollection",
   features: [
     {
