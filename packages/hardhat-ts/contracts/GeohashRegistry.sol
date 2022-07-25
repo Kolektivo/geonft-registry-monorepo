@@ -142,10 +142,12 @@ contract GeohashRegistry {
     }
 
     /**
-     * @notice Encode point into geohash
+     * @notice Encode point into geohash (more of geohash: https://en.wikipedia.org/wiki/Geohash).
+     *     Obtained from the node geohash package (ngeohash): https://github.com/sunng87/node-geohash
      * @param _lat latitude
      * @param _lon longitude
      * @param _precision geohash length precision
+     * @return Geohash string with the same length as the _precision value (1-9)
      */
     function encode(int64 _lat, int64 _lon, uint8 _precision) public pure returns (string memory) {
         bytes memory hashBytes = new bytes(_precision);
@@ -197,15 +199,28 @@ contract GeohashRegistry {
         return string(hashBytes);
     }
 
-    function decode(string memory geohash) public view returns (int64[2] memory) {
-        int64[4] memory bbox = decodeBbox(geohash);
+    /**
+     * @notice Decode a geohash of any given length to a pair of coordinates
+     *     Obtained from the node geohash package (ngeohash): https://github.com/sunng87/node-geohash
+     * @param _geohash Geohash string up to 9 characters of precision
+     * @return Array of Big Number integer coordinates (lat, lon)
+     */
+    function decode(string memory _geohash) public view returns (int64[2] memory) {
+        int64[4] memory bbox = decodeBbox(_geohash);
         int64 lat = (bbox[0] + bbox[2]) / 2;
         int64 lon = (bbox[1] + bbox[3]) / 2;
         
         return [lat, lon];
     }
 
-    function decodeBbox(string memory geohash) private view returns (int64[4] memory) {
+    /**
+     * @notice Decode the bounding box of a given geohash
+     *     Obtained from the node geohash package (ngeohash): https://github.com/sunng87/node-geohash
+     * @param _geohash Geohash string up to 9 characters of precision
+     * @return Array of Big Number integer coordinates representing the 
+        bounding box (lower left point, upper right point)
+     */
+    function decodeBbox(string memory _geohash) private view returns (int64[4] memory) {
         bool isLon = true;
         int64 maxLat = MAX_LAT;
         int64 minLat = MIN_LAT;
@@ -214,8 +229,8 @@ contract GeohashRegistry {
         int64 mid;
         uint8 hashValue;
 
-        for (uint8 i = 0; i < bytes(geohash).length; i++) {
-            string memory code = string(abi.encodePacked(bytes(geohash)[i]));
+        for (uint8 i = 0; i < bytes(_geohash).length; i++) {
+            string memory code = string(abi.encodePacked(bytes(_geohash)[i]));
             hashValue = codesDict[code];
 
             for (uint8 bits = 5; bits > 0; bits--) {
