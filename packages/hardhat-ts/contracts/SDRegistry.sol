@@ -189,24 +189,34 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
     }
 
-    function multiPolygonArea(int256[][][][] memory coords) public pure returns (int256) {
+    /**
+     * @notice Calculate the area of a multi polygon coordinates
+     * @param _coordinates Big Number integer coordinates of a multi polygon
+     * @return Area measured in square meters
+    */
+    function multiPolygonArea(int256[][][][] memory _coordinates) public pure returns (int256) {
         int256 total = 0;
 
-        for (uint256 i = 0; i < coords.length; i++) {
-            total += polygonArea(coords[i]);
+        for (uint256 i = 0; i < _coordinates.length; i++) {
+            total += polygonArea(_coordinates[i]);
         }
 
         return total;
     }
 
-    function polygonArea (int256[][][] memory coords) public pure returns (int256) {
+    /**
+     * @notice Calculate the area of a single polygon coordinates
+     * @param _coordinates Big Number integer coordinates of a single polygon
+     * @return Area measured in square meters
+    */
+    function polygonArea (int256[][][] memory _coordinates) public pure returns (int256) {
         int256 total = 0;
 
-        if (coords.length > 0) {
-            total += abs(ringArea(coords[0]));
+        if (_coordinates.length > 0) {
+            total += abs(ringArea(_coordinates[0]));
 
-            for (uint256 i = 1; i < coords.length; i++) {
-                total -= abs(ringArea(coords[i]));
+            for (uint256 i = 1; i < _coordinates.length; i++) {
+                total -= abs(ringArea(_coordinates[i]));
             }
         }
         return total;
@@ -214,8 +224,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     // Obtained from Turf.js area function 
     // (https://github.com/Turfjs/turf/blob/master/packages/turf-area/index.ts)
-    function ringArea(int256[][] memory coords) public pure returns (int256) {
-        uint256 coordsLength = coords.length;
+    function ringArea(int256[][] memory _coordinates) private pure returns (int256) {
+        uint256 coordsLength = _coordinates.length;
         int256[] memory p1;
         int256[] memory p2;
         int256[] memory p3;
@@ -242,9 +252,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
                     middleIndex = i + 1;
                     upperIndex = i + 2;
                 }
-                p1 = coords[lowerIndex];
-                p2 = coords[middleIndex];
-                p3 = coords[upperIndex];
+                p1 = _coordinates[lowerIndex];
+                p2 = _coordinates[middleIndex];
+                p3 = _coordinates[upperIndex];
 
                 int256 v1 = nanoRad(p3[0]);
                 int256 v2 = nanoRad(p1[0]);
@@ -260,8 +270,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     }
 
     // Return nano radians (radians * 10^9) of a certain degree angle (coordinate)
-    function nanoRad(int256 n) private pure returns (int256) {
-        return (n * PI * RAD_EXP) / (180);
+    function nanoRad(int256 _angle) private pure returns (int256) {
+        return (_angle * PI * RAD_EXP) / (180);
     }
 
     /**
@@ -275,17 +285,18 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     The returning value exists on a range [-32676, 32676] (signed 16-bit). Therefore, to 
     finally get the sine value, we need to divide the sin() function by 32676;
     */
-    function nanoSin(int256 angle) private pure returns (int256) {
+    function nanoSin(int256 _angle) private pure returns (int256) {
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
-        int256 tAngle = (angle * angleUnits) / (360 * COORD_EXP);
+        int256 tAngle = (_angle * angleUnits) / (360 * COORD_EXP);
         // solhint-disable-next-line mark-callable-contracts
         return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
     }
+
     // Returns absolute value of input
-    function abs(int256 value) private pure returns (int256) {
-        return value >= 0
-            ? value
-            : -value;
+    function abs(int256 _value) private pure returns (int256) {
+        return _value >= 0
+            ? _value
+            : -_value;
     }
 }
