@@ -20,7 +20,7 @@ contract GeohashRegistry {
     }
 
     mapping(string => Node) private nodes;
-    mapping (string => uint8) codesDict; // Character => it's position in the base32 codes string
+    mapping(string => uint8) codesDict; // Character => it's position in the base32 codes string
 
     constructor() {
         // Populates codes map
@@ -40,40 +40,51 @@ contract GeohashRegistry {
     }
 
     /**
-     * @notice Add uint data by geohash
+     * @notice Add uint data by geohash to its relative subtree
      * @param _geohash the geohash
      * @param _data the uint data
      */
-    function add(string memory _geohash, uint256 _data) public {
+    function add(string calldata _geohash, uint256 _data) public {
         // require the length of the _geohash is GEOHASH_LENGTH
         require(bytes(_geohash).length == GEOHASH_LENGTH);
 
-        // lookup existing node
-        Node storage node = nodes[_geohash];
+        bytes calldata geohashArray = bytes(_geohash);
+        // geohash substring used each level of the subtree
+        string memory subhash;
 
-        // check if data is in node
-        bool isInNode = dataExists(node, _data);
+        // iterates over all 8 levels of the geohash and insert/append data
+        // to each of those levels indexed by its subhash
+        for (uint8 i = 0; i < bytes(_geohash).length; i++) {
+            // create subhash according to the depth level by slicing original geohash
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7'
+            subhash = string(geohashArray[:i + 1]);
 
-        // if data already in node, return
-        if (isInNode) {
-            console.log("Data already in the node");
-            return;
-        }
+            // lookup existing node
+            Node storage node = nodes[subhash];
 
-        // if node does not exist, create it
-        if (node.data.length == 0) {
-            node.data = new uint256[](1);
-            node.data[0] = _data;
-            nodes[_geohash] = node;
-        } else {
-            // if node exists, add data to it
-            uint256[] memory newData = new uint256[](node.data.length + 1);
-            for (uint256 i = 0; i < node.data.length; i++) {
-                newData[i] = node.data[i];
+            // check if data is in node
+            bool isInNode = dataExists(node, _data);
+
+            // if data already in node, return
+            if (isInNode) {
+                console.log("Data already in the node");
+                continue;
             }
-            newData[node.data.length] = _data;
-            node.data = newData;
-            nodes[_geohash] = node;
+            // if node does not exist, create it
+            if (node.data.length == 0) {
+                node.data = new uint256[](1);
+                node.data[0] = _data;
+                nodes[subhash] = node;
+            } else {
+                // if node exists, add data to it
+                uint256[] memory newData = new uint256[](node.data.length + 1);
+                for (uint256 j = 0; j < node.data.length; j++) {
+                    newData[j] = node.data[j];
+                }
+                newData[node.data.length] = _data;
+                node.data = newData;
+                nodes[subhash] = node;
+            }
         }
     }
 
@@ -83,7 +94,7 @@ contract GeohashRegistry {
      * @param _newgeohash the new geohash
      * @param _data the uint data
      */
-    function update(string memory _formergeohash, string memory _newgeohash, uint256 _data) public {
+    function update(string memory _formergeohash, string calldata _newgeohash, uint256 _data) public {
         // remove data from former geohash
         remove(_formergeohash, _data);
 
@@ -207,8 +218,13 @@ contract GeohashRegistry {
      */
     function decode(string memory _geohash) public view returns (int64[2] memory) {
         int64[4] memory bbox = decodeBbox(_geohash);
-        int64 lat = (bbox[0] + bbox[2]) / 2;
-        int64 lon = (bbox[1] + bbox[3]) / 2;
+        int64 minLat = bbox[0];
+        int64 minLon = bbox[1];
+        int64 maxLat = bbox[2];
+        int64 maxLon = bbox[3];
+        // Get center value of bounding box
+        int64 lat = (minLat + maxLat) / 2; // Latitude middle point
+        int64 lon = (minLon + maxLon) / 2; // Longitude middle point
         
         return [lat, lon];
     }

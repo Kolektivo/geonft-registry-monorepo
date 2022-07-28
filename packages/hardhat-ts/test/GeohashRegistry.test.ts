@@ -30,185 +30,169 @@ describe("geohash registry", () => {
   });
 
   describe("add to geohash registry", async () => {
-    it("add two nfts to same geohash", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
+    const geohash1 = "d6nuzk8c";
+    const geohash2 = "d6nuzk8d";
+    const data1 = 42; // Simulates GeoNFT ID
+    const data2 = 676; // Simulates GeoNFT ID
+
+    it("add nft to geohash and check subtree is filled", async () => {
+      // When adding an nft, data is not only appended to it's geohash array, but also
+      // to all subhashes arrays. E.g. for 'd6nuzk8c -> 42, data is added to the subtree:
+      // 'd' -> [42]
+      // 'd6' -> [42]
+      // 'd6n' -> [42]
+      // 'd6nu' -> [42]
+      // 'd6nuz' -> [42]
+      // 'd6nuzk' -> [42]
+      // 'd6nuzk8' -> [42]
+      // 'd6nuzk8c' -> [42]
+
+      await geohashRegistry.add(geohash1, data1);
+
+      // Node array of all geohash subhashe's tree
+      const nodes = await Promise.all(
+        Array.from({ length: geohash1.length }).map((_, i) => {
+          const subhash = geohash1.slice(0, i + 1);
+          return geohashRegistry.get(subhash);
+        })
       );
+
+      // Get first value of each subhash array and check it's the expected value
+      nodes.forEach((node) => {
+        const dataArray = node[1]; // node = [geohash: string, dataArray: number[]]
+        expect(dataArray[0]).to.equal(data1);
+      });
+    });
+    it("add two nfts to same geohash", async () => {
+      await geohashRegistry.add(geohash1, data1);
 
       // add a node to the tree
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        676
-      );
+      await geohashRegistry.add(geohash1, data2);
 
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
 
       expect(node[1].length).to.equal(2);
-      expect(node[1][0]).to.equal(42);
-      expect(node[1][1]).to.equal(676);
+      expect(node[1][0]).to.equal(data1);
+      expect(node[1][1]).to.equal(data2);
     });
     it("add the same nft to same geohash", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
 
       // add a node to the tree
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
 
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
 
       expect(node[1].length).to.equal(1);
-      expect(node[1][0]).to.equal(42);
+      expect(node[1][0]).to.equal(data1);
     });
     it("update geohash", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
 
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
       expect(node[1].length).to.equal(1);
 
-      // update geohash from d6nuzk8c to d6nuzk8d for 42
+      // update geohash from geohash1 (d6nuzk8c) to geohash2 (d6nuzk8d) for data1 (42)
       await geohashRegistry.update(
         // former geohash
-        "d6nuzk8c",
+        geohash1,
         // new geohash
-        "d6nuzk8d",
+        geohash2,
         // data
-        42
+        data1
       );
 
-      const formerNode = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const formerNode = await geohashRegistry.get(geohash1);
       expect(formerNode[1].length).to.equal(0);
 
-      const newNode = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8d"
-      );
+      const newNode = await geohashRegistry.get(geohash2);
       expect(newNode[1].length).to.equal(1);
     });
     it("remove data from node with geohash", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
 
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
       expect(node[1].length).to.equal(1);
 
-      // remove 42 from geohash d6nuzk8c
-      await geohashRegistry.remove(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      // remove data1 (42) from geohash d6nuzk8c
+      await geohashRegistry.remove(geohash1, data1);
 
-      const formerNode = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const formerNode = await geohashRegistry.get(geohash1);
       expect(formerNode[1].length).to.equal(0);
     });
     it("remove data from geohash with two items", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
+      await geohashRegistry.add(geohash1, data2);
 
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        676
-      );
-
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
       expect(node[1].length).to.equal(2);
 
-      // remove 42 from geohash d6nuzk8c
-      await geohashRegistry.remove(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      // remove data1 from geohash d6nuzk8c
+      await geohashRegistry.remove(geohash1, data1);
 
-      const formerNode = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const formerNode = await geohashRegistry.get(geohash1);
       expect(formerNode[1].length).to.equal(1);
     });
     it("try to remove data from geohash that hasn't been added", async () => {
-      await geohashRegistry.add(
-        // geohash
-        "d6nuzk8c",
-        // data
-        42
-      );
+      await geohashRegistry.add(geohash1, data1);
 
-      const node = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const node = await geohashRegistry.get(geohash1);
       expect(node[1].length).to.equal(1);
 
-      // remove 676 from geohash d6nuzk8c
-      await geohashRegistry.remove(
-        // geohash
-        "d6nuzk8c",
-        // data
-        676
-      );
+      // remove data2 (676) from geohash d6nuzk8c
+      await geohashRegistry.remove(geohash1, data2);
 
-      const formerNode = await geohashRegistry.get(
-        // geohash
-        "d6nuzk8c"
-      );
+      const formerNode = await geohashRegistry.get(geohash1);
       expect(formerNode[1].length).to.equal(1);
     });
   });
 
-  describe("Geohash encoding", async () => {
+  describe("find data by subhash", async () => {
+    it("find data of multiple geohashes at different leves", async () => {
+      const geohash1 = "gc7j98fg";
+      const geohash2 = "gc7j98fj";
+      const geohash3 = "gc7j98k3";
+      const data1 = 22;
+      const data2 = 33;
+      const data3 = 44;
+
+      /**
+       * Level 6                   gc7j98
+       *                          /      \
+       * Level 7            gc7j98f       gc7j98k
+       *                   /      \             \
+       * Level 8    gc7j98fg     gc7j98fj       gc7j98k3
+       *             [22]          [33]           [44]
+       */
+      await Promise.all([
+        geohashRegistry.add(geohash1, data1),
+        geohashRegistry.add(geohash2, data2),
+        geohashRegistry.add(geohash3, data3),
+      ]);
+
+      const subhashLevel7 = geohash1.slice(0, 7);
+      const subhashLevel6 = geohash1.slice(0, 6);
+      const [resultLevel7BigNumber, resultLevel6BigNumber] = await Promise.all([
+        geohashRegistry.get(subhashLevel7),
+        geohashRegistry.get(subhashLevel6),
+      ]);
+
+      // Transform from Big Number values to integer values
+      const resultLevel7 = resultLevel7BigNumber[1].map((value) =>
+        value.toNumber()
+      );
+      const resultLevel6 = resultLevel6BigNumber[1].map((value) =>
+        value.toNumber()
+      );
+
+      // Geohash gc7j98f groups geohash1 and geohash2, so its data is -> [data1, data2]
+      expect(resultLevel7).deep.equal([data1, data2]);
+      // Geohash gc7j98 groups geohash1, geohash2 and geohash3, so its data is -> [data1, data2, data3]
+      expect(resultLevel6).deep.equal([data1, data2, data3]);
+    });
+  });
+
+  describe("geohash encoding", async () => {
     // Reference: https://www.movable-type.co.uk/scripts/geohash.html
     it("Encodes Curazao's coordinates with precision from 1 to 9", async () => {
       const expectedGeohash = "d6nvms58e"; // Precision 9
@@ -277,8 +261,8 @@ describe("geohash registry", () => {
     });
   });
 
-  describe("Geohash decoding", async () => {
-    it("Decodes geohash with precision 8", async () => {
+  describe("geohash decoding", async () => {
+    it("decodes geohash with precision 8", async () => {
       const geohash = "d6nvms58";
       // Solidity coordinates version with a little error deviation
       const coordinatesExpected = [12194910048, -69011135100];
