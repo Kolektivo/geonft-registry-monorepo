@@ -12,20 +12,21 @@ contract GeohashRegistry {
     int64 private constant MAX_LAT = 90*int64(int(COORD_EXP));
     int64 private constant MIN_LON = -180*int64(int(COORD_EXP));
     int64 private constant MAX_LON = 180*int64(int(COORD_EXP));
-    string constant BASE32_CODES = "0123456789bcdefghjkmnpqrstuvwxyz"; // Codes for geohash encoding
-    bytes constant codesBytes = bytes(BASE32_CODES); // Codes in bytes format to iterate as array
+    string private constant BASE32_CODES = "0123456789bcdefghjkmnpqrstuvwxyz"; // Codes for geohash encoding
+    bytes private constant CODES_BYTES = bytes(BASE32_CODES); // Codes in bytes format to iterate as array
 
     struct Node {
         uint256[] data;
     }
 
     mapping(string => Node) private nodes;
-    mapping(string => uint8) codesDict; // Character => it's position in the base32 codes string
+    mapping(string => uint8) private codesDict; // Character => it's position in the base32 codes string
 
+    // solhint-disable-next-line func-visibility
     constructor() {
         // Populates codes map
-        for (uint8 i = 0; i < codesBytes.length; i++) {
-            string memory char = string(abi.encodePacked(codesBytes[i]));
+        for (uint8 i = 0; i < CODES_BYTES.length; i++) {
+            string memory char = string(abi.encodePacked(CODES_BYTES[i]));
             codesDict[char] = i;
         }
     }
@@ -34,9 +35,9 @@ contract GeohashRegistry {
      * @notice Get a data by geohash
      * @param _geohash the geohash
      */
-    function get(string memory _geohash) public view returns (string memory, uint256[] memory) {
+    function get(string memory _geohash) public view returns (uint256[] memory) {
         Node storage node = nodes[_geohash];
-        return (_geohash, node.data);
+        return node.data;
     }
 
     /**
@@ -199,7 +200,7 @@ contract GeohashRegistry {
             bitsTotal++;
 
             if (bits == 5) {
-                bytes1 charByte = codesBytes[uint8(hashValue)];
+                bytes1 charByte = CODES_BYTES[uint8(hashValue)];
                 hashBytes[counter] = charByte;
                 bits = 0;
                 hashValue = 0;

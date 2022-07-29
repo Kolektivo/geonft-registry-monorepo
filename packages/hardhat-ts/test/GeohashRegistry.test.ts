@@ -59,8 +59,7 @@ describe("geohash registry", () => {
 
       // Get first value of each subhash array and check it's the expected value
       nodes.forEach((node) => {
-        const dataArray = node[1]; // node = [geohash: string, dataArray: number[]]
-        expect(dataArray[0]).to.equal(data1);
+        expect(node[0]).to.equal(data1);
       });
     });
     it("add two nfts to same geohash", async () => {
@@ -71,9 +70,9 @@ describe("geohash registry", () => {
 
       const node = await geohashRegistry.get(geohash1);
 
-      expect(node[1].length).to.equal(2);
-      expect(node[1][0]).to.equal(data1);
-      expect(node[1][1]).to.equal(data2);
+      expect(node.length).to.equal(2);
+      expect(node[0]).to.equal(data1);
+      expect(node[1]).to.equal(data2);
     });
     it("add the same nft to same geohash", async () => {
       await geohashRegistry.add(geohash1, data1);
@@ -83,14 +82,14 @@ describe("geohash registry", () => {
 
       const node = await geohashRegistry.get(geohash1);
 
-      expect(node[1].length).to.equal(1);
-      expect(node[1][0]).to.equal(data1);
+      expect(node.length).to.equal(1);
+      expect(node[0]).to.equal(data1);
     });
     it("update geohash", async () => {
       await geohashRegistry.add(geohash1, data1);
 
       const node = await geohashRegistry.get(geohash1);
-      expect(node[1].length).to.equal(1);
+      expect(node.length).to.equal(1);
 
       // update geohash from geohash1 (d6nuzk8c) to geohash2 (d6nuzk8d) for data1 (42)
       await geohashRegistry.update(
@@ -103,47 +102,47 @@ describe("geohash registry", () => {
       );
 
       const formerNode = await geohashRegistry.get(geohash1);
-      expect(formerNode[1].length).to.equal(0);
+      expect(formerNode.length).to.equal(0);
 
       const newNode = await geohashRegistry.get(geohash2);
-      expect(newNode[1].length).to.equal(1);
+      expect(newNode.length).to.equal(1);
     });
     it("remove data from node with geohash", async () => {
       await geohashRegistry.add(geohash1, data1);
 
       const node = await geohashRegistry.get(geohash1);
-      expect(node[1].length).to.equal(1);
+      expect(node.length).to.equal(1);
 
       // remove data1 (42) from geohash d6nuzk8c
       await geohashRegistry.remove(geohash1, data1);
 
       const formerNode = await geohashRegistry.get(geohash1);
-      expect(formerNode[1].length).to.equal(0);
+      expect(formerNode.length).to.equal(0);
     });
     it("remove data from geohash with two items", async () => {
       await geohashRegistry.add(geohash1, data1);
       await geohashRegistry.add(geohash1, data2);
 
       const node = await geohashRegistry.get(geohash1);
-      expect(node[1].length).to.equal(2);
+      expect(node.length).to.equal(2);
 
       // remove data1 from geohash d6nuzk8c
       await geohashRegistry.remove(geohash1, data1);
 
       const formerNode = await geohashRegistry.get(geohash1);
-      expect(formerNode[1].length).to.equal(1);
+      expect(formerNode.length).to.equal(1);
     });
     it("try to remove data from geohash that hasn't been added", async () => {
       await geohashRegistry.add(geohash1, data1);
 
       const node = await geohashRegistry.get(geohash1);
-      expect(node[1].length).to.equal(1);
+      expect(node.length).to.equal(1);
 
       // remove data2 (676) from geohash d6nuzk8c
       await geohashRegistry.remove(geohash1, data2);
 
       const formerNode = await geohashRegistry.get(geohash1);
-      expect(formerNode[1].length).to.equal(1);
+      expect(formerNode.length).to.equal(1);
     });
   });
 
@@ -178,10 +177,10 @@ describe("geohash registry", () => {
       ]);
 
       // Transform from Big Number values to integer values
-      const resultLevel7 = resultLevel7BigNumber[1].map((value) =>
+      const resultLevel7 = resultLevel7BigNumber.map((value) =>
         value.toNumber()
       );
-      const resultLevel6 = resultLevel6BigNumber[1].map((value) =>
+      const resultLevel6 = resultLevel6BigNumber.map((value) =>
         value.toNumber()
       );
 
