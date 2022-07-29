@@ -6,7 +6,7 @@ import "hardhat/console.sol";
 
 contract GeohashRegistry {
     // length of the geohash string
-    uint256 public constant GEOHASH_LENGTH = 8;
+    uint8 public constant GEOHASH_LENGTH = 8;
     uint256 private constant COORD_EXP = 1e9; // Coordinates exponent to avoid decimals
     int64 private constant MIN_LAT = -90*int64(int(COORD_EXP));
     int64 private constant MAX_LAT = 90*int64(int(COORD_EXP));
@@ -29,6 +29,18 @@ contract GeohashRegistry {
             string memory char = string(abi.encodePacked(CODES_BYTES[i]));
             codesDict[char] = i;
         }
+    }
+
+    /**
+     * @notice Encode point into geohash (more of geohash: https://en.wikipedia.org/wiki/Geohash).
+     *     Obtained from the node geohash package (ngeohash): https://github.com/sunng87/node-geohash
+     * @param _lat latitude
+     * @param _lon longitude
+     * @param _data GeoNFT ID
+     */
+    function register(int64 _lat, int64 _lon, uint256 _data) public {
+        string memory geohash = encode(_lat, _lon, GEOHASH_LENGTH);
+        this.add(geohash, _data);
     }
 
     /**
