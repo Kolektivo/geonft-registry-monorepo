@@ -3,12 +3,10 @@
 $menu-open-duration: 0.1s;
 
 .navbar-container {
-  position: fixed;
-  z-index: 998;
-  top: 0;
-  left: 0;
+  // position: fixed;
   width: -webkit-fill-available;
   width: -moz-available;
+  margin-bottom: 10px;
   display: grid;
   grid-auto-flow: column;
   align-items: center;
