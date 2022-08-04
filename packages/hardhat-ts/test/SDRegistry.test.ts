@@ -2,18 +2,15 @@ import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
 import {
-  // eslint-disable-next-line camelcase
-  GeoNFT__factory,
   GeoNFT,
-  // eslint-disable-next-line camelcase
-  SDRegistry__factory,
   SDRegistry,
+  AreaCalculation,
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
 import {
   transformSolidityGeoJSON,
   solidityCoordinate,
-  isPolygon,
+  isPolygonType,
   // eslint-disable-next-line node/no-missing-import
 } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
@@ -30,12 +27,7 @@ const { expect } = chai;
 
 let sdRegistry: SDRegistry;
 let geoNFT: GeoNFT;
-// eslint-disable-next-line camelcase
-let geoNFTFactory: GeoNFT__factory;
-// eslint-disable-next-line camelcase
-let trigonometryFactory: any;
-// eslint-disable-next-line camelcase
-let sdRegistryFactory: SDRegistry__factory;
+let areaCalculation: AreaCalculation;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
@@ -44,20 +36,27 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 describe("registry", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
-    geoNFTFactory = (await ethers.getContractFactory(
-      "GeoNFT",
-      deployer
-    )) as GeoNFT__factory; // eslint-disable-line camelcase
+
+    // Libraries
+    const trigonometryFactory = await ethers.getContractFactory("Trigonometry");
+    const trigonometry = await trigonometryFactory.deploy();
+
+    const areaFactory = await ethers.getContractFactory("AreaCalculation", {
+      libraries: {
+        Trigonometry: trigonometry.address,
+      },
+    });
+    areaCalculation = (await areaFactory.deploy()) as AreaCalculation;
+
+    // Contracts
+    const geoNFTFactory = await ethers.getContractFactory("GeoNFT", deployer);
     geoNFT = (await geoNFTFactory.deploy()) as GeoNFT;
 
-    trigonometryFactory = await ethers.getContractFactory("Trigonometry");
-    const trigonometryObj = await trigonometryFactory.deploy();
-
-    sdRegistryFactory = (await ethers.getContractFactory("SDRegistry", {
+    const sdRegistryFactory = await ethers.getContractFactory("SDRegistry", {
       libraries: {
-        Trigonometry: trigonometryObj.address,
+        AreaCalculation: areaCalculation.address,
       },
-    })) as SDRegistry__factory; // eslint-disable-line camelcase
+    });
     sdRegistry = (await sdRegistryFactory.deploy(geoNFT.address)) as SDRegistry;
   });
 
@@ -271,7 +270,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await sdRegistry
+      const isPolygon = await areaCalculation
         .connect(deployer)
         .isPolygon(polygonInt);
       expect(isPolygon).to.equal(true);
@@ -292,7 +291,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await sdRegistry
+      const isPolygon = await areaCalculation
         .connect(deployer)
         .isPolygon(polygonInt);
       expect(isPolygon).to.equal(false);
@@ -304,7 +303,7 @@ describe("registry", () => {
 
       const feature = geojsonSol.features[0]; // Curazao
 
-      if (!isPolygon(feature.geometry)) {
+      if (!isPolygonType(feature.geometry)) {
         throw new Error(`
           Geometry type '${feature.geometry.type}' invalid.
           Value must be 'Polygon' or 'MultiPolygon'.
@@ -312,7 +311,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -327,7 +326,7 @@ describe("registry", () => {
 
       const feature = geojsonSol.features[7];
 
-      if (!isPolygon(feature.geometry)) {
+      if (!isPolygonType(feature.geometry)) {
         throw new Error(`
           Geometry type '${feature.geometry.type}' invalid.
           Value must be 'Polygon' or 'MultiPolygon'.
@@ -335,7 +334,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -350,7 +349,7 @@ describe("registry", () => {
 
       const feature = geojsonSol.features[0];
 
-      if (!isPolygon(feature.geometry)) {
+      if (!isPolygonType(feature.geometry)) {
         throw new Error(`
           Geometry type '${feature.geometry.type}' invalid.
           Value must be 'Polygon' or 'MultiPolygon'.
@@ -358,7 +357,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -373,7 +372,7 @@ describe("registry", () => {
 
       const feature = geojsonSol.features[5]; // Splitted geometry
 
-      if (!isPolygon(feature.geometry)) {
+      if (!isPolygonType(feature.geometry)) {
         throw new Error(`
           Geometry type '${feature.geometry.type}' invalid.
           Value must be 'Polygon' or 'MultiPolygon'.
@@ -381,7 +380,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -402,8 +401,8 @@ describe("registry", () => {
       const featureMulti = geojsonSolMultipolygon.features[featureIndex];
 
       if (
-        !isPolygon(featureSingle.geometry) ||
-        !isPolygon(featureMulti.geometry)
+        !isPolygonType(featureSingle.geometry) ||
+        !isPolygonType(featureMulti.geometry)
       ) {
         throw new Error(`
           Geometry type invalid.
@@ -413,7 +412,7 @@ describe("registry", () => {
 
       const coordinatesSingle = featureSingle.geometry.coordinates;
       const coordinatesMulti = featureMulti.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
 
       const areas = await Promise.all([
         contract.polygonArea(coordinatesSingle as BigNumber[][][]),
@@ -434,7 +433,10 @@ describe("registry", () => {
       const featureCCW = geojsonSolCCW.features[featureIndex];
       const featureCW = geojsonSolCW.features[featureIndex];
 
-      if (!isPolygon(featureCCW.geometry) || !isPolygon(featureCW.geometry)) {
+      if (
+        !isPolygonType(featureCCW.geometry) ||
+        !isPolygonType(featureCW.geometry)
+      ) {
         throw new Error(`
           Geometry type invalid.
           Value must be 'Polygon' or 'MultiPolygon'.
@@ -443,7 +445,7 @@ describe("registry", () => {
 
       const coordinatesCCW = featureCCW.geometry.coordinates;
       const coordinatesCW = featureCW.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
+      const contract = areaCalculation.connect(deployer);
 
       const areaCCWPromise =
         featureCCW.geometry.type === "Polygon"
@@ -468,7 +470,7 @@ describe("registry", () => {
       // Array with the area of every feature
       const featureAreas = await Promise.all(
         geojsonSol.features.map((feature) => {
-          if (!isPolygon(feature.geometry)) {
+          if (!isPolygonType(feature.geometry)) {
             throw new Error(`
             Geometry type '${feature.geometry.type}' invalid.
             Value must be 'Polygon' or 'MultiPolygon'.
@@ -476,13 +478,14 @@ describe("registry", () => {
           }
 
           const coordinates = feature.geometry.coordinates;
-          const contract = sdRegistry.connect(deployer);
+          const contract = areaCalculation.connect(deployer);
           return feature.geometry.type === "Polygon"
             ? contract.polygonArea(coordinates as BigNumber[][][])
             : contract.multiPolygonArea(coordinates as BigNumber[][][][]);
         })
       );
 
+      // Sum the area of all the features
       const totalArea = featureAreas.reduce((a, b) => a + b.toNumber(), 0);
       expect(totalArea).to.equal(10276251371240); // In square meters (m2)
     });

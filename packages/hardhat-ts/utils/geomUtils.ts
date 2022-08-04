@@ -80,7 +80,7 @@ export type GeoJSONSol = FeatureCollectionSol;
  * @param geometry Geometry object, both standard or solidity format
  * @returns true if geometry is Polygon or MultiPolygon type
  */
-export const isPolygon = (geometry: Geometry | GeometrySol): boolean => {
+export const isPolygonType = (geometry: Geometry | GeometrySol): boolean => {
   const geomType = geometry.type;
   return geomType === "Polygon" || geomType === "MultiPolygon";
 };
