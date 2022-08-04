@@ -5,6 +5,16 @@ import { Trigonometry } from "../lib/Trigonometry.sol";
 
 
 library AreaCalculation {
+    // Multiplications exponents to avoid decimals
+    int256 private constant RAD_EXP = 1e9; // Radians exponent
+    int256 private constant SIN_EXP = 1e9; // Sine exponent
+    int256 private constant COORD_EXP = 1e9; // Coordinates exponent
+    int256 private constant PI_EXP = 1e9; // Pi exponent
+
+    // Other constants
+    int256 private constant PI = 3141592653;
+    int256 private constant EARTH_RADIUS = 6371008; // m
+
     /**
      * @notice Calculate the area of a multi polygon coordinates
      * @param _coordinates Big Number integer coordinates of a multi polygon
@@ -46,12 +56,6 @@ library AreaCalculation {
      * @return Area measured in square meters
     */
     function ringArea(int256[][] memory _coordinates) private pure returns (int256) {
-        int256 RAD_EXP = 1e9; // Radians exponent
-        int256 COORD_EXP = 1e9; // Coordinates exponent
-        int256 SIN_EXP = 1e9; // Sine exponent
-        int256 PI_EXP = 1e9; // Pi exponent
-        int256 EARTH_RADIUS = 6371008; // m
-
         uint256 coordsLength = _coordinates.length;
         int256[] memory p1;
         int256[] memory p2;
@@ -103,8 +107,6 @@ library AreaCalculation {
      * @return Nano radians
     */
     function nanoRad(int256 _angle) private pure returns (int256) {
-        int256 RAD_EXP = 1e9; // Radians exponent
-        int256 PI = 3141592653;
         return (_angle * PI * RAD_EXP) / (180);
     }
 
@@ -123,8 +125,6 @@ library AreaCalculation {
      * @return Nano sine
     */
     function nanoSin(int256 _angle) private pure returns (int256) {
-        int256 SIN_EXP = 1e9; // Sine exponent
-        int256 COORD_EXP = 1e9; // Coordinates exponent
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
         int256 tAngle = (_angle * angleUnits) / (360 * COORD_EXP);
