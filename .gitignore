@@ -29,5 +29,3 @@ packages/dapp/config/map.json
 
 #local deployments
 packages/hardhat-ts/deployments/localhost/*
-yarn.lock
-package-lock.json
