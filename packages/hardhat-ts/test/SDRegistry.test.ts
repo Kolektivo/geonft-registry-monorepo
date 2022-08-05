@@ -5,7 +5,6 @@ import {
   GeoNFT,
   SDRegistry,
   AreaCalculation,
-  GeohashUtils,
   // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
 import {
@@ -22,14 +21,13 @@ import {
   GEOJSON3_MULTIPOLYGON,
   GEOJSON3_POLYGON,
   // eslint-disable-next-line node/no-missing-import
-} from "./SDRegistry.mock";
+} from "./mockData";
 
 const { expect } = chai;
 
 let sdRegistry: SDRegistry;
 let geoNFT: GeoNFT;
 let areaCalculation: AreaCalculation;
-let geohashUtils: GeohashUtils;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
@@ -42,9 +40,6 @@ describe("registry", () => {
     // Libraries
     const trigonometryFactory = await ethers.getContractFactory("Trigonometry");
     const trigonometry = await trigonometryFactory.deploy();
-
-    const geohashUtilsFactory = await ethers.getContractFactory("GeohashUtils");
-    geohashUtils = (await geohashUtilsFactory.deploy()) as GeohashUtils;
 
     const areaFactory = await ethers.getContractFactory("AreaCalculation", {
       libraries: {
@@ -493,35 +488,6 @@ describe("registry", () => {
       // Sum the area of all the features
       const totalArea = featureAreas.reduce((a, b) => a + b.toNumber(), 0);
       expect(totalArea).to.equal(10276251371240); // In square meters (m2)
-    });
-  });
-
-  describe("FUCKKKK", async () => {
-    it("Encodes Curazao's coordinates with precision from 1 to 9", async () => {
-      const expectedGeohash = "d6nvms58e"; // Precision 9
-      const lat = 12.194946;
-      const lon = -69.011151;
-      const latSol = solidityCoordinate(lat); // Solidity latitude version
-      const lonSol = solidityCoordinate(lon); // Solidity longitude version
-
-      // Array of promises with the geohash returned from the encode() function.
-      // Each geohash is calculated using the same coordinates pair but with
-      // a different precision, withing a range from 1 to 9
-      const geohashEncodingPromises: Array<Promise<string>> = Array.from({
-        length: 9,
-      }).map((_, i: number) => {
-        const precision = i + 1;
-        return geohashUtils.encode(latSol, lonSol, precision);
-      });
-      const geohashes = await Promise.all(geohashEncodingPromises);
-
-      geohashes.forEach((geohash, i) => {
-        // Calculate expected geohash for certain precision i by slicing the
-        // full expectedGeohash. So, the expected geohash for precision 4
-        // would be: "d6nv" (length = 4)
-        const expectedGeohashForPrecisionI = expectedGeohash.slice(0, i + 1);
-        expect(geohash).to.equal(expectedGeohashForPrecisionI);
-      });
     });
   });
 });

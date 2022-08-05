@@ -125,7 +125,7 @@ library GeohashUtils {
 
         for (uint8 i = 0; i < bytes(_geohash).length; i++) {
             string memory code = string(abi.encodePacked(bytes(_geohash)[i]));
-            // REQUIRE TO BE >= 0
+            // TODO: REQUIRE TO BE >= 0
             hashValue = uint8(indexOf(GEOHASH_CODES, code));
 
             for (uint8 bits = 5; bits > 0; bits--) {
