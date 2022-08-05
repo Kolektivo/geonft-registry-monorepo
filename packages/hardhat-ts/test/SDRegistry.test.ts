@@ -49,7 +49,7 @@ describe("registry", () => {
     areaCalculation = (await areaFactory.deploy()) as AreaCalculation;
 
     // Contracts
-    const geoNFTFactory = await ethers.getContractFactory("GeoNFT", deployer);
+    const geoNFTFactory = await ethers.getContractFactory("GeoNFT");
     geoNFT = (await geoNFTFactory.deploy()) as GeoNFT;
 
     const sdRegistryFactory = await ethers.getContractFactory("SDRegistry", {
@@ -75,17 +75,15 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -108,17 +106,15 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -127,9 +123,8 @@ describe("registry", () => {
       expect(tokens.length).to.equal(1);
 
       // unregister minted GeoNFT with Spatial Data Registry
-      const unregisterTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .unregisterGeoNFT(tokenId);
+      const unregisterTX: ContractTransaction =
+        await sdRegistry.unregisterGeoNFT(tokenId);
       const unregisterReceipt: ContractReceipt = await unregisterTX.wait();
       expect(unregisterReceipt.status).to.equal(1);
 
@@ -147,22 +142,19 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      await sdRegistry.connect(deployer).registerGeoNFT(tokenId);
+      await sdRegistry.registerGeoNFT(tokenId);
 
       // update geoJson on minted GeoNFT
       await geoNFT.setGeoJson(tokenId, GEOJSON2.toString());
 
-      const updateTopologyTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .updateGeoNFTTopology(tokenId);
+      const updateTopologyTX: ContractTransaction =
+        await sdRegistry.updateGeoNFTTopology(tokenId);
       const updateTopologyReceipt: ContractReceipt =
         await updateTopologyTX.wait();
 
@@ -187,17 +179,15 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -225,17 +215,15 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -270,9 +258,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await areaCalculation
-        .connect(deployer)
-        .isPolygon(polygonInt);
+      const isPolygon = await areaCalculation.isPolygon(polygonInt);
       expect(isPolygon).to.equal(true);
     });
 
@@ -291,9 +277,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await areaCalculation
-        .connect(deployer)
-        .isPolygon(polygonInt);
+      const isPolygon = await areaCalculation.isPolygon(polygonInt);
       expect(isPolygon).to.equal(false);
     });
 
@@ -311,7 +295,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -334,7 +318,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -357,7 +341,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -380,7 +364,7 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
       const area =
         feature.geometry.type === "Polygon"
           ? await contract.polygonArea(coordinates as BigNumber[][][])
@@ -412,7 +396,7 @@ describe("registry", () => {
 
       const coordinatesSingle = featureSingle.geometry.coordinates;
       const coordinatesMulti = featureMulti.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
 
       const areas = await Promise.all([
         contract.polygonArea(coordinatesSingle as BigNumber[][][]),
@@ -445,7 +429,7 @@ describe("registry", () => {
 
       const coordinatesCCW = featureCCW.geometry.coordinates;
       const coordinatesCW = featureCW.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
+      const contract = areaCalculation;
 
       const areaCCWPromise =
         featureCCW.geometry.type === "Polygon"
@@ -478,7 +462,7 @@ describe("registry", () => {
           }
 
           const coordinates = feature.geometry.coordinates;
-          const contract = areaCalculation.connect(deployer);
+          const contract = areaCalculation;
           return feature.geometry.type === "Polygon"
             ? contract.polygonArea(coordinates as BigNumber[][][])
             : contract.multiPolygonArea(coordinates as BigNumber[][][][]);

@@ -1,110 +1,24 @@
 import { ethers } from "hardhat";
 import chai from "chai";
 // eslint-disable-next-line camelcase, node/no-missing-import, node/no-unpublished-import
-import { GeoNFT__factory, GeoNFT } from "../typechain";
+import { GeoNFT } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+// eslint-disable-next-line node/no-missing-import
+import { GEOJSON1, GEOJSON2 } from "./mockData";
 
 const { expect } = chai;
 
 let geonft: GeoNFT;
-// eslint-disable-next-line camelcase
-let geonftFactory: GeoNFT__factory;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-const GEOJSON1 = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8906744122505, 12.147418397582491],
-            [-68.8907468318939, 12.147347599447487],
-            [-68.8907213509083, 12.14723615790054],
-            [-68.8905939459801, 12.147198136656193],
-            [-68.89051884412766, 12.147280734524921],
-            [-68.89055103063583, 12.147379065287602],
-            [-68.8906744122505, 12.147418397582491],
-          ],
-        ],
-      },
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8905443251133, 12.147381687440772],
-            [-68.89051616191864, 12.147279423447841],
-            [-68.89041021466255, 12.147224358204612],
-            [-68.8903096318245, 12.147300400680368],
-            [-68.8903257250786, 12.147409220047532],
-            [-68.8904584944248, 12.147449863414236],
-            [-68.8905443251133, 12.147381687440772],
-          ],
-        ],
-      },
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8901272416115, 12.147367265597998],
-            [-68.89017820358276, 12.147195514501217],
-            [-68.8900186121464, 12.147116849839737],
-            [-68.8899327814579, 12.147217802817746],
-            [-68.8899743556976, 12.147334488679682],
-            [-68.8901272416115, 12.147367265597998],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
-const GEOJSON2 = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [-68.8906744122505, 12.147418397582491],
-            [-68.8907468318939, 12.147347599447487],
-            [-68.8907213509083, 12.14723615790054],
-            [-68.8905939459801, 12.147198136656193],
-            [-68.89051884412766, 12.147280734524921],
-            [-68.89055103063583, 12.147379065287602],
-            [-68.8906744122505, 12.147418397582491],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
 describe("geonft", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
-    geonftFactory = (await ethers.getContractFactory(
-      "GeoNFT",
-      deployer
-    )) as GeoNFT__factory; // eslint-disable-line camelcase
 
+    const geonftFactory = await ethers.getContractFactory("GeoNFT");
     geonft = (await geonftFactory.deploy()) as GeoNFT;
   });
 
@@ -125,9 +39,7 @@ describe("geonft", () => {
       const tokenURI = "0";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -166,9 +78,7 @@ describe("geonft", () => {
       const tokenURIUpdate = "0 update";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -182,9 +92,7 @@ describe("geonft", () => {
       const tokenURI = "0";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -200,9 +108,7 @@ describe("geonft", () => {
       const indexValueUpdate = 10;
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -219,9 +125,7 @@ describe("geonft", () => {
       const indexTypeUpdate = "ecologicalindex_percent";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -241,25 +145,19 @@ describe("geonft", () => {
       const token3URI = "3";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(deployer.address, token0URI, GEOJSON1.toString())
+        geonft.safeMint(deployer.address, token0URI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId);
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(deployer.address, token1URI, GEOJSON1.toString())
+        geonft.safeMint(deployer.address, token1URI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId.add(1));
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(deployer.address, token2URI, GEOJSON1.toString())
+        geonft.safeMint(deployer.address, token2URI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId.add(2));
@@ -267,7 +165,7 @@ describe("geonft", () => {
       expect(await geonft.balanceOf(deployer.address)).to.equal(3);
 
       // burn token 1
-      await expect(geonft.connect(deployer).burn(1))
+      await expect(geonft.burn(1))
         .to.emit(geonft, "Transfer")
         .withArgs(deployer.address, ZERO_ADDRESS, 1);
 
@@ -299,9 +197,7 @@ describe("geonft", () => {
       const token0URI = "0";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, token0URI, GEOJSON1.toString())
+        geonft.safeMint(other.address, token0URI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
@@ -325,14 +221,12 @@ describe("geonft", () => {
       const token0URI = "0";
 
       await expect(
-        geonft
-          .connect(deployer)
-          .safeMint(other.address, token0URI, GEOJSON1.toString())
+        geonft.safeMint(other.address, token0URI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
-      await expect(geonft.connect(deployer).burn(tokenId)).to.be.revertedWith(
+      await expect(geonft.burn(tokenId)).to.be.revertedWith(
         "ERC721: caller is not token owner nor approved'"
       );
 

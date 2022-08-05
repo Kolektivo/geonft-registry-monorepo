@@ -9,7 +9,6 @@ import {
   isPolygonType,
   // eslint-disable-next-line node/no-missing-import
 } from "../utils/geomUtils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
   GEOJSON2,
   GEOJSON2_CLOCKWISE,
@@ -21,12 +20,9 @@ import {
 const { expect } = chai;
 
 let areaCalculation: AreaCalculation;
-let deployer: SignerWithAddress;
 
 describe("registry", () => {
   beforeEach(async () => {
-    [deployer] = await ethers.getSigners();
-
     const trigonometryFactory = await ethers.getContractFactory("Trigonometry");
     const trigonometry = await trigonometryFactory.deploy();
 
@@ -54,9 +50,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await areaCalculation
-        .connect(deployer)
-        .isPolygon(polygonInt);
+      const isPolygon = await areaCalculation.isPolygon(polygonInt);
       expect(isPolygon).to.equal(true);
     });
 
@@ -75,9 +69,7 @@ describe("registry", () => {
         solidityCoordinate(x[0]),
         solidityCoordinate(x[1]),
       ]);
-      const isPolygon = await areaCalculation
-        .connect(deployer)
-        .isPolygon(polygonInt);
+      const isPolygon = await areaCalculation.isPolygon(polygonInt);
       expect(isPolygon).to.equal(false);
     });
 
@@ -95,11 +87,12 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          : await areaCalculation.multiPolygonArea(
+              coordinates as BigNumber[][][][]
+            );
 
       expect(area).to.equal(451167820); // In square meters (m2)
     });
@@ -118,11 +111,12 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          : await areaCalculation.multiPolygonArea(
+              coordinates as BigNumber[][][][]
+            );
 
       expect(area).to.equal(27172); // In square meters (m2)
     });
@@ -141,11 +135,12 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          : await areaCalculation.multiPolygonArea(
+              coordinates as BigNumber[][][][]
+            );
 
       expect(area).to.equal(417); // In square meters (m2)
     });
@@ -164,11 +159,12 @@ describe("registry", () => {
       }
 
       const coordinates = feature.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
       const area =
         feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          : await areaCalculation.multiPolygonArea(
+              coordinates as BigNumber[][][][]
+            );
 
       expect(area).to.equal(5376806769293); // In square meters (m2)
     });
@@ -196,11 +192,10 @@ describe("registry", () => {
 
       const coordinatesSingle = featureSingle.geometry.coordinates;
       const coordinatesMulti = featureMulti.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
 
       const areas = await Promise.all([
-        contract.polygonArea(coordinatesSingle as BigNumber[][][]),
-        contract.multiPolygonArea(coordinatesMulti as BigNumber[][][][]),
+        areaCalculation.polygonArea(coordinatesSingle as BigNumber[][][]),
+        areaCalculation.multiPolygonArea(coordinatesMulti as BigNumber[][][][]),
       ]);
 
       const [areaSingle, areaMulti] = areas;
@@ -229,17 +224,20 @@ describe("registry", () => {
 
       const coordinatesCCW = featureCCW.geometry.coordinates;
       const coordinatesCW = featureCW.geometry.coordinates;
-      const contract = areaCalculation.connect(deployer);
 
       const areaCCWPromise =
         featureCCW.geometry.type === "Polygon"
-          ? contract.polygonArea(coordinatesCCW as BigNumber[][][])
-          : contract.multiPolygonArea(coordinatesCCW as BigNumber[][][][]);
+          ? areaCalculation.polygonArea(coordinatesCCW as BigNumber[][][])
+          : areaCalculation.multiPolygonArea(
+              coordinatesCCW as BigNumber[][][][]
+            );
 
       const areaCWPromise =
         featureCW.geometry.type === "Polygon"
-          ? contract.polygonArea(coordinatesCW as BigNumber[][][])
-          : contract.multiPolygonArea(coordinatesCW as BigNumber[][][][]);
+          ? areaCalculation.polygonArea(coordinatesCW as BigNumber[][][])
+          : areaCalculation.multiPolygonArea(
+              coordinatesCW as BigNumber[][][][]
+            );
 
       const areas = await Promise.all([areaCCWPromise, areaCWPromise]);
       const [areaCCW, areaCW] = areas;
@@ -262,10 +260,11 @@ describe("registry", () => {
           }
 
           const coordinates = feature.geometry.coordinates;
-          const contract = areaCalculation.connect(deployer);
           return feature.geometry.type === "Polygon"
-            ? contract.polygonArea(coordinates as BigNumber[][][])
-            : contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+            ? areaCalculation.polygonArea(coordinates as BigNumber[][][])
+            : areaCalculation.multiPolygonArea(
+                coordinates as BigNumber[][][][]
+              );
         })
       );
 
