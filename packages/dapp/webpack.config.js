@@ -7,6 +7,7 @@ const project = require('./aurelia_project/aurelia.json');
 const { AureliaPlugin, ModuleDependenciesPlugin } = require('aurelia-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 // config helpers:
 const ensureArray = (config) => config && (Array.isArray(config) ? config : [config]) || [];
@@ -258,6 +259,9 @@ module.exports = ({ production }, { analyze, hmr, port, host }) => ({
         // available in index.ejs //
         baseUrl
       }
+    }),
+    new Dotenv({
+      path: `./.env${production ? '' :  '.' + (process.env.NODE_ENV || 'development')}`,
     }),
     // ref: https://webpack.js.org/plugins/mini-css-extract-plugin/
     new MiniCssExtractPlugin({ // updated to match the naming conventions for the js files

@@ -24,6 +24,13 @@ export class App {
         name: "map",
         route: ["map"],
         title: "Map",
+      },
+      {
+        moduleId: PLATFORM.moduleName("./mint/mint-component"),
+        nav: false,
+        name: "mint",
+        route: ["mint"],
+        title: "Mint",
       }
     ]);
 

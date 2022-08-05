@@ -13,6 +13,8 @@ build
 
 # misc
 .env
+.env.development
+.env.production
 
 # debug
 npm-debug.log*

@@ -1,0 +1,33 @@
+<template>
+  <div class="page animated-page au-animate home">
+    <div class="section top">
+      <div class="title heading heading0">Mint</div>
+      <div class="subtitle">
+        Create New GeoNFT
+      </div>
+    </div>
+    <form>
+      <div class="form-group">
+        <label>GeoNFT Name</label>
+        <input class="form-control" value.bind="name">
+      </div>
+      <div class="form-group">
+        <label>GeoNFT Description</label>
+        <input class="form-control" value.bind="description">
+      </div>
+      <div class="form-group">
+        <label>GeoJSON</label>
+        <input class="form-control" value.bind="geojson">
+      </div>            
+      <div class="form-group">
+          <input
+            id="upload-file"
+            name="upload-file"
+            type="file" />
+          <button click.trigger="uploadImage()">
+            Upload image
+          </button>
+      </div>
+      <button class="btn btn-primary" click.trigger="saveNFT()">Create NFT</button>
+  </div>
+</template>
