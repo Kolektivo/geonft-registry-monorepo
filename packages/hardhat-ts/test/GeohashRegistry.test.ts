@@ -10,7 +10,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 // eslint-disable-next-line node/no-missing-import
 import { solidityCoordinate, centroid } from "../utils/geomUtils";
 // eslint-disable-next-line node/no-missing-import
-import { GEOJSON2 } from "./SDRegistry.mock";
+import { GEOJSON2 } from "./mockData";
 
 const { expect } = chai;
 
