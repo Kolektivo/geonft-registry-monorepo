@@ -81,7 +81,7 @@ describe("registry", () => {
       expect(registerReceipt.status).to.equal(1);
 
       // get calculated area from spatial data registry
-      const calculatedArea = registerReceipt.events![0].args![2];
+      const calculatedArea = registerReceipt.events?.[0].args?.[2];
       expect(calculatedArea).to.equal(newArea);
 
       // set area on minted GeoNFT
@@ -152,7 +152,7 @@ describe("registry", () => {
         await updateTopologyTX.wait();
 
       // get calculated area from spatial data registry
-      const calculatedArea = updateTopologyReceipt.events![0].args![2];
+      const calculatedArea = updateTopologyReceipt.events?.[0].args?.[2];
       expect(calculatedArea).to.equal(updatedArea);
 
       // set area on minted GeoNFT

@@ -144,6 +144,7 @@ type TransformGeometryOverload = {
  */
 const transformGeometry: TransformGeometryOverload = (
   geometry: Geometry
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any => {
   if (geometry.type === "GeometryCollection") {
     throw new Error(`
