@@ -55,7 +55,8 @@ export class MintComponent {
       image: this.fileurl,
       geojson: this.geojson,
     };
-    // const metaRecv = await ipfsClient.add(JSON.stringify(metadata));
+    const metaRecv = await this.ipfsClient.add(JSON.stringify(metadata));
+    console.log(metaRecv);
 
     // await dispatch(
     //   mint({ metadataURI: metaRecv.path, geojson: this.geojson })

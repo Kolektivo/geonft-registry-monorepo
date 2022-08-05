@@ -31,3 +31,10 @@ Run `npm run build`, or the old way `au build --env prod`.
 Run `au test` (or `au jest`).
 
 To run in watch mode, `au test --watch` or `au jest --watch`.
+
+## Start a local instance of IPFS
+
+```sh
+ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8888
+ipfs daemon --enable-pubsub-experiment
+```

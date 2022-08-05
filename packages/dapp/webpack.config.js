@@ -53,6 +53,7 @@ module.exports = ({ production }, { analyze, hmr, port, host }) => ({
       'aurelia-binding': path.resolve(nodeModulesDir, 'aurelia-binding'),
 
       'aurelia-testing': path.resolve(nodeModulesDir, 'aurelia-testing'),
+      '@ipld/dag-cbor': path.resolve(nodeModulesDir, '@ipld/dag-cbor'),
     }
   },
   entry: {
