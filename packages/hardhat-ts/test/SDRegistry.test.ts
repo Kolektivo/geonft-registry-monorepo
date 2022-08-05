@@ -1,17 +1,11 @@
 import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
-import {
-  GeoNFT,
-  SDRegistry,
-  AreaCalculation,
-  // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
-} from "../typechain";
+import { GeoNFT, SDRegistry, AreaCalculation } from "../typechain";
 import {
   transformSolidityGeoJSON,
   solidityCoordinate,
   isPolygonType,
-  // eslint-disable-next-line node/no-missing-import
 } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import {
@@ -20,7 +14,6 @@ import {
   GEOJSON2_CLOCKWISE,
   GEOJSON3_MULTIPOLYGON,
   GEOJSON3_POLYGON,
-  // eslint-disable-next-line node/no-missing-import
 } from "./mockData";
 
 const { expect } = chai;

@@ -1,5 +1,3 @@
-/* eslint-disable node/no-missing-import */
-/* eslint-disable node/no-unsupported-features/es-syntax */
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import turfCentroid from "@turf/centroid";

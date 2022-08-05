@@ -4,12 +4,9 @@ import {
   // eslint-disable-next-line camelcase
   GeohashRegistry__factory,
   GeohashRegistry,
-  // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-// eslint-disable-next-line node/no-missing-import
 import { solidityCoordinate, centroid } from "../utils/geomUtils";
-// eslint-disable-next-line node/no-missing-import
 import { GEOJSON2 } from "./mockData";
 
 const { expect } = chai;

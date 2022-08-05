@@ -1,11 +1,8 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import chai from "chai";
-// eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 import { GeohashUtils } from "../typechain";
-// eslint-disable-next-line node/no-missing-import
 import { solidityCoordinate, centroid } from "../utils/geomUtils";
-// eslint-disable-next-line node/no-missing-import
 import { GEOJSON2 } from "./mockData";
 
 const { expect } = chai;
