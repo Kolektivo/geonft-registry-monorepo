@@ -128,7 +128,6 @@ library AreaCalculation {
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
         int256 tAngle = (_angle * angleUnits) / (360 * COORD_EXP);
-        // solhint-disable-next-line mark-callable-contracts
         return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
     }
 
@@ -151,13 +150,16 @@ library AreaCalculation {
     function isPolygon (int256[2][] memory _coordinates) public pure returns (bool) {
         uint256 length = _coordinates.length;
         if (length > 2) {
+            // Coordinates of first coordinate of polygon
             int256 firstLat = _coordinates[0][0];
             int256 firstLon = _coordinates[0][1];
+            // Coordinates of last coordinate of polygon
             int256 lastLat = _coordinates[length - 1][0];
             int256 lastLon = _coordinates[length - 1][1];
 
             return (firstLat == lastLat && firstLon == lastLon);
         }
+
         return false;
     }
 }
