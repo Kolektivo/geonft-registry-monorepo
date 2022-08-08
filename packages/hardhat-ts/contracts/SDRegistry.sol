@@ -18,10 +18,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     // length of the geohash string
     uint8 public constant GEOHASH_LENGTH = 8;
 
-    // Trigonometry functions library
-    // using Trigonometry for uint256;
-    // TODO: remove this list when quadtree is implemented
-
     struct Node {
         uint256[] data;
     }
@@ -61,8 +57,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         string memory geoJson = geoNFT.geoJson(tokenId);
 
         // add GeoNFT to the registry
-        uint256 _area = _register(tokenId, geoJson);
+        uint256 _area = 10;
 
+        // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
 
         add(geohash, tokenId);
@@ -84,20 +81,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         geoJsonMapSize--;
 
         emit GeoNFTUnregistered(tokenId);
-    }
-
-    function _register(uint256 tokenId, string memory geoJson)
-        internal
-        returns (uint256 area)
-    {
-        // TODO: add tokenId to quadtree instead of mapping
-        geoJsons[tokenId] = geoJson;
-        geoJsonMapSize++;
-
-        // TODO: calculate area
-        uint256 _area = 10;
-
-        return _area;
     }
 
     /**
@@ -258,6 +241,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return _area;
     }
 
+    // TODO
     // Return all the GeoNFTs in the registry
     function getAllGeoNFTs()
         public
@@ -276,6 +260,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return (_tokenIds);
     }
 
+    // TODO
     // Query registry by latitude and longitude
     function queryGeoNFTsByLatLng(
         // solhint-disable-next-line no-unused-vars        
@@ -299,6 +284,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return (_tokenIds);
     }
 
+    // TODO
     // Query registry by bounding box
     function queryGeoNFTsByBoundingBox(
         // solhint-disable-next-line no-unused-vars
@@ -326,7 +312,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return (_tokenIds);
     }
 
-    // TODO: REMOVE THIS FUNCTIONS WHEN AREA CALCULATION IS CALLED IN THE REGISTER FUNCTION
+    // TODO: REMOVE THE FOLLOWING FUNCTIONS WHEN AREA CALCULATION IS CALLED IN THE REGISTER FUNCTION
 
     /**
      * @notice Calculate the area of a multi polygon coordinates
@@ -334,6 +320,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @return Area measured in square meters
     */
     function multiPolygonArea(int256[][][][] memory _coordinates) public pure returns (uint256) {
+        // solhint-disable-next-line mark-callable-contracts
         return AreaCalculation.multiPolygonArea(_coordinates);
     }
 
@@ -343,6 +330,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @return Area measured in square meters
     */
     function polygonArea (int256[][][] memory _coordinates) public pure returns (uint256) {
+        // solhint-disable-next-line mark-callable-contracts
         return AreaCalculation.polygonArea(_coordinates);
     }
 }
