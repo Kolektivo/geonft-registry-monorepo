@@ -1,7 +1,6 @@
 import { Signer } from "ethers";
 import { task } from "hardhat/config";
 
-// eslint-disable-next-line node/no-missing-import
 import { TASK_ACCOUNTS } from "../task-names";
 
 task(TASK_ACCOUNTS, "Prints the list of accounts", async (_taskArgs, hre) => {

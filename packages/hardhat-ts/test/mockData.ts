@@ -1,4 +1,3 @@
-/* eslint-disable node/no-missing-import */
 import { FeatureCollection, Polygon, MultiPolygon } from "geojson";
 
 /**

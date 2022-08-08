@@ -1,5 +1,3 @@
-/* eslint-disable node/no-missing-import */
-/* eslint-disable node/no-unsupported-features/es-syntax */
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import turfCentroid from "@turf/centroid";
@@ -146,6 +144,7 @@ type TransformGeometryOverload = {
  */
 const transformGeometry: TransformGeometryOverload = (
   geometry: Geometry
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any => {
   if (geometry.type === "GeometryCollection") {
     throw new Error(`

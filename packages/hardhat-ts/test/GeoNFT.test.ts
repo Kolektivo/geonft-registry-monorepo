@@ -1,9 +1,7 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-// eslint-disable-next-line camelcase, node/no-missing-import, node/no-unpublished-import
-import { GeoNFT } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-// eslint-disable-next-line node/no-missing-import
+import { GeoNFT } from "../typechain";
 import { GEOJSON1, GEOJSON2 } from "./mockData";
 
 const { expect } = chai;

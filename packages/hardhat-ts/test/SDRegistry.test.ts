@@ -1,20 +1,10 @@
 import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
-import {
-  GeoNFT,
-  SDRegistry,
-  AreaCalculation,
-  // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
-} from "../typechain";
-// eslint-disable-next-line node/no-missing-import
+import { GeoNFT, SDRegistry, AreaCalculation } from "../typechain";
 import { solidityCoordinate } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import {
-  GEOJSON1,
-  GEOJSON2,
-  // eslint-disable-next-line node/no-missing-import
-} from "./mockData";
+import { GEOJSON1, GEOJSON2 } from "./mockData";
 
 const { expect } = chai;
 
@@ -90,7 +80,7 @@ describe("registry", () => {
       expect(registerReceipt.status).to.equal(1);
 
       // get calculated area from spatial data registry
-      const calculatedArea = registerReceipt.events![0].args![2];
+      const calculatedArea = registerReceipt.events?.[0].args?.[2];
       expect(calculatedArea).to.equal(newArea);
 
       // set area on minted GeoNFT
@@ -161,7 +151,7 @@ describe("registry", () => {
         await updateTopologyTX.wait();
 
       // get calculated area from spatial data registry
-      const calculatedArea = updateTopologyReceipt.events![0].args![2];
+      const calculatedArea = updateTopologyReceipt.events?.[0].args?.[2];
       expect(calculatedArea).to.equal(updatedArea);
 
       // set area on minted GeoNFT

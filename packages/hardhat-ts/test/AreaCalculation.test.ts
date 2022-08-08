@@ -1,20 +1,17 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import chai from "chai";
-// eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
 import { AreaCalculation } from "../typechain";
 import {
   transformSolidityGeoJSON,
   solidityCoordinate,
   isPolygonType,
-  // eslint-disable-next-line node/no-missing-import
 } from "../utils/geomUtils";
 import {
   GEOJSON2,
   GEOJSON2_CLOCKWISE,
   GEOJSON3_MULTIPOLYGON,
   GEOJSON3_POLYGON,
-  // eslint-disable-next-line node/no-missing-import
 } from "./mockData";
 
 const { expect } = chai;
