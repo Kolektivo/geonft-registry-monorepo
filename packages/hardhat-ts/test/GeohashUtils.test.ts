@@ -12,7 +12,7 @@ const { expect } = chai;
 
 let geohashUtils: GeohashUtils;
 
-describe("registry", () => {
+describe("geohashing", () => {
   beforeEach(async () => {
     const geohashUtilsFactory = await ethers.getContractFactory("GeohashUtils");
     geohashUtils = (await geohashUtilsFactory.deploy()) as GeohashUtils;
