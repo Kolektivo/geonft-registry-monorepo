@@ -6,9 +6,8 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { GeoNFT } from "./GeoNFT.sol";
 import { AreaCalculation } from "../lib/AreaCalculation.sol";
 import { GeohashUtils } from "../lib/GeohashUtils.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
-// import console.log
-import "hardhat/console.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol"; // Utils to slice array
+import "hardhat/console.sol"; // Import console.log
 
 contract SDRegistry is ReentrancyGuard, Ownable {
     using BytesLib for bytes;
@@ -18,13 +17,17 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     // length of the geohash string
     uint8 public constant GEOHASH_LENGTH = 8;
 
+    // Array of registered token ids
+    uint256[] private tokenArray;
+
     struct Node {
         uint256[] data;
     }
 
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(string => Node) private nodes;
-    uint private geoJsonMapSize;
+    mapping(string => Node) private geotree;
+    mapping(uint256 => string) private tokenGeohash; // mapping of tokenId to geohash
+    uint private geotreeMapSize;
 
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
@@ -43,44 +46,75 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     /**
      * @notice Register a GeoNFT in the Spatial Data Registry
-     * @param tokenId the index of the GeoNFT to register
+     * @param _tokenId the index of the GeoNFT to register
+     * @param _centroid Centroid of the polygon passed as [latitude, longitude]
      * @return area of the GeoNFT in meters squared
      */
-    function registerGeoNFT(uint256 tokenId, int64[2] memory _centroid) 
+    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid) 
         external 
         onlyOwner
         returns (uint256 area)
     {
         int64 lat = _centroid[0];
         int64 lon = _centroid[1];
-        // retrieve the geoJson from the GeoNFT contract
-        string memory geoJson = geoNFT.geoJson(tokenId);
 
-        // add GeoNFT to the registry
+        // Add token id to tokenArray
+        tokenArray.push(_tokenId);
+        // retrieve the geoJson from the GeoNFT contract
+        string memory geoJson = geoNFT.geoJson(_tokenId);
+
+        // TODO
+        // Calculate area of the polygon
         uint256 _area = 10;
 
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
+        // Add token id to the geotree
+        add(geohash, _tokenId);
+        // Add token id - geohash to the registry
+        tokenGeohash[_tokenId] = geohash;
 
-        add(geohash, tokenId);
+        geotreeMapSize++;
 
-        emit GeoNFTRegistered(tokenId, geoJson, _area);
+        emit GeoNFTRegistered(_tokenId, geoJson, _area);
         return _area;
     }
 
     /**
      * @notice Unregister a GeoNFT from the Spatial Data Registry
-     * @param tokenId the index of the GeoNFT to unregister
+     * @param _tokenId the index of the GeoNFT to unregister
     */
-    function unregisterGeoNFT(uint256 tokenId) 
+    function unregisterGeoNFT(uint256 _tokenId) 
         external 
         onlyOwner 
-    {
-        // TODO: remove tokenId from quadtree instead of mapping
-        delete geoJsons[tokenId];
-        geoJsonMapSize--;
+    { 
+        string memory geohash = tokenGeohash[_tokenId];
+        // geohash characters splitted into an array
+        bytes memory geohashArray = bytes(geohash);
+        // require the length of the _geohash is GEOHASH_LENGTH
+        require(geohashArray.length == GEOHASH_LENGTH);
 
-        emit GeoNFTUnregistered(tokenId);
+        for (uint8 i = 0; i < geohashArray.length; i++) {
+            // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
+            string memory subhash = string(geohashArray.slice(0, i + 1));
+            remove(subhash, _tokenId);
+        }
+
+        if (tokenArray.length == 1) {
+            tokenArray.pop();
+        } else {
+            uint256[] memory newData = new uint256[](tokenArray.length - 1);
+            uint256 counter = 0;
+            for (uint256 i = 0; i < tokenArray.length - 1; i++) {
+                if (tokenArray[i] != _tokenId) {
+                    newData[counter] = tokenArray[i];
+                    counter++;
+                }
+            }
+        }
+
+        emit GeoNFTUnregistered(_tokenId);
     }
 
     /**
@@ -106,12 +140,12 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             string memory subhash = string(geohashArray.slice(0, i + 1));
 
             // lookup existing node
-            Node storage node = nodes[subhash];
+            Node storage node = geotree[subhash];
 
             // check if data is in node
-            bool isInNode = dataExists(node, _data);
+            bool isInNode = dataExistsInNode(node, _data);
 
-            // if data already in node, return
+            // if data already in node, continue
             if (isInNode) {
                 console.log("Data already in the node");
                 continue;
@@ -120,7 +154,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             if (node.data.length == 0) {
                 node.data = new uint256[](1);
                 node.data[0] = _data;
-                nodes[subhash] = node;
+                geotree[subhash] = node;
             } else {
                 // if node exists, add data to it
                 uint256[] memory newData = new uint256[](node.data.length + 1);
@@ -129,7 +163,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
                 }
                 newData[node.data.length] = _data;
                 node.data = newData;
-                nodes[subhash] = node;
+                geotree[subhash] = node;
             }
         }
     }
@@ -143,7 +177,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         view
         returns (uint256[] memory)
     {
-        Node storage node = nodes[_geohash];
+        Node storage node = geotree[_geohash];
         return node.data;
     }
 
@@ -172,10 +206,10 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      */
     function remove(string memory _geohash, uint256 _data) public {
         // lookup existing node
-        Node storage node = nodes[_geohash];
+        Node storage node = geotree[_geohash];
 
         // check if data is in node
-        bool isInNode = dataExists(node, _data);
+        bool isInNode = dataExistsInNode(node, _data);
 
         // if data wasn't in node, return
         if (!isInNode) {
@@ -185,7 +219,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
         // if node contains only one value, delete node
         if (node.data.length == 1) {
-            delete nodes[_geohash];
+            delete geotree[_geohash];
         } else {
             // if node contains more than one value, rebuild data array
             uint256[] memory newData = new uint256[](node.data.length - 1);
@@ -197,7 +231,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
                 }
             }
             node.data = newData;
-            nodes[_geohash] = node;
+            geotree[_geohash] = node;
         }
     }
 
@@ -206,7 +240,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @param _node node
      * @param _data the uint data
      */
-    function dataExists(Node memory _node, uint256 _data)
+    function dataExistsInNode(Node memory _node, uint256 _data)
         internal
         pure
         returns (bool)
@@ -222,7 +256,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     /**
      * @notice Update the topology of the GeoNFT
      * @param tokenId the index of the GeoNFT to update
-    */
+     */
     function updateGeoNFTTopology(uint256 tokenId) 
         external 
         onlyOwner
@@ -243,21 +277,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     // TODO
     // Return all the GeoNFTs in the registry
-    function getAllGeoNFTs()
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
-        // TODO: use quadtree to get all tokens
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
-        uint256 i;
-
-        for (i = 0; i < geoJsonMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
+    function getAllGeoNFTs() public view returns (uint256[] memory) { 
+        return tokenArray;
     }
 
     // TODO
@@ -275,10 +296,10 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         )
     {
         // TODO: use quadtree to search by lat/lng
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
+        uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
         uint256 i;
 
-        for (i = 0; i < geoJsonMapSize; i++) {
+        for (i = 0; i < geotreeMapSize; i++) {
             _tokenIds[i] = i;
         }
         return (_tokenIds);
@@ -303,10 +324,10 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         )
     {
         // TODO: use quadtree to search by bounding box
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
+        uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
         uint256 i;
 
-        for (i = 0; i < geoJsonMapSize; i++) {
+        for (i = 0; i < geotreeMapSize; i++) {
             _tokenIds[i] = i;
         }
         return (_tokenIds);

@@ -113,6 +113,11 @@ describe("registry", () => {
 
       // get all tokens in the registry
       const tokens = await sdRegistry.getAllGeoNFTs();
+      console.log("TOKEN ID: ", tokenId.toNumber());
+      console.log(
+        "TOKENS: ",
+        tokens.map((token) => token.toNumber())
+      );
       expect(tokens.length).to.equal(1);
 
       // unregister minted GeoNFT with Spatial Data Registry
@@ -239,8 +244,11 @@ describe("registry", () => {
   describe("geohash registry", async () => {
     const geohash1 = "d6nuzk8c";
     const geohash2 = "d6nuzk8d";
-    const tokenId1 = 42; // Simulates GeoNFT ID
-    const tokenId2 = 676; // Simulates GeoNFT ID
+    // Simulates GeoNFT ID
+    const tokenId1 = 42;
+    const tokenId2 = 676;
+    const tokenId3 = 128;
+    const tokenId4 = 6;
 
     it("add nft to geohash and check subtree is filled", async () => {
       // When adding an nft, data is not only appended to it's geohash array, but also
@@ -256,7 +264,7 @@ describe("registry", () => {
 
       await sdRegistry.add(geohash1, tokenId1);
 
-      // Node array of all geohash subhashe's tree
+      // Nodes array of all geohash subhashe's tree
       const nodes = await Promise.all(
         Array.from({ length: geohash1.length }).map((_, i) => {
           const subhash = geohash1.slice(0, i + 1);
@@ -333,6 +341,21 @@ describe("registry", () => {
 
       const formerNode = await sdRegistry.get(geohash1);
       expect(formerNode.length).to.equal(1);
+    });
+    it("remove data from geohash with multiple items", async () => {
+      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.add(geohash1, tokenId2);
+      await sdRegistry.add(geohash1, tokenId3);
+      await sdRegistry.add(geohash1, tokenId4);
+
+      const node = await sdRegistry.get(geohash1);
+      expect(node.length).to.equal(4);
+
+      // remove tokenId1 from geohash d6nuzk8c
+      await sdRegistry.remove(geohash1, tokenId1);
+
+      const formerNode = await sdRegistry.get(geohash1);
+      expect(formerNode.length).to.equal(3);
     });
     it("try to remove data from geohash that hasn't been added", async () => {
       await sdRegistry.add(geohash1, tokenId1);
