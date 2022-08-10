@@ -17,7 +17,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     // length of the geohash string
     uint8 public constant GEOHASH_LENGTH = 8;
 
-    // Array of registered token ids
+    // Array of registered token IDs
     uint256[] private tokenArray;
 
     struct Node {
@@ -58,7 +58,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         int64 lat = _centroid[0];
         int64 lon = _centroid[1];
 
-        // Add token id to tokenArray
+        // Add token ID to tokenArray
         tokenArray.push(_tokenId);
         // retrieve the geoJson from the GeoNFT contract
         string memory geoJson = geoNFT.geoJson(_tokenId);
@@ -69,9 +69,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
-        // Add token id to the geotree
+        // Add token ID to the geotree
         addToGeotree(geohash, _tokenId);
-        // Add token id - geohash to the registry
+        // Add token ID - geohash to the registry
         tokenGeohash[_tokenId] = geohash;
 
         geotreeMapSize++;
@@ -101,6 +101,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             removeFromGeotree(subhash, _tokenId);
         }
 
+        // Remove token ID from the global token array
         if (tokenArray.length == 1) {
             tokenArray.pop();
         } else {
@@ -141,18 +142,24 @@ contract SDRegistry is ReentrancyGuard, Ownable {
 
     /**
      * @notice Return all the GeoNFT ids in the registry
+     * @return geoNFTsArray Array of all registered token IDs
      */
-    function getAllGeoNFTs() public view returns (uint256[] memory) { 
+    function getAllGeoNFTs() public view returns (uint256[] memory geoNFTsArray) { 
         return tokenArray;
     }
 
-    // TODO
-    // Query registry by latitude and longitude
-    function queryGeoNFTsByLatLng(
-        // solhint-disable-next-line no-unused-vars        
-        int256 latitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 longitude
+    /**
+     * @notice Query registry by latitude, longitude and geohash depth level
+     * @param _latitude Latitude
+     * @param _longitude Longitude
+     * @param _precision Precision (geohash depth level) of the query. Must be in range [1, 8]
+     * @return geoNFTsArray Array of all registered token IDs
+     */
+    // 
+    function queryGeoNFTsByLatLng(       
+        int64 _latitude,       
+        int64 _longitude,
+        uint8 _precision
     )
         public
         view
@@ -160,14 +167,10 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             uint256[] memory
         )
     {
-        // TODO: use quadtree to search by lat/lng
-        uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
-        uint256 i;
+        string memory geohash = GeohashUtils.encode(_latitude, _longitude, _precision);
+        Node memory node = geotree[geohash];
 
-        for (i = 0; i < geotreeMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
+        return node.data;
     }
 
     // TODO
@@ -268,7 +271,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @param _newgeohash the new geohash
      * @param _data the uint data
      */
-    function updateToGeotree(
+    function updateGeotree(
         string memory _formergeohash,
         string calldata _newgeohash,
         uint256 _data

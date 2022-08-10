@@ -16,8 +16,8 @@ let other: SignerWithAddress;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CENTROID: [BigNumber, BigNumber] = [
-  solidityCoordinate(-68.890674),
   solidityCoordinate(12.147418),
+  solidityCoordinate(-68.890674),
 ];
 
 describe("registry", () => {
@@ -113,11 +113,6 @@ describe("registry", () => {
 
       // get all tokens in the registry
       const tokens = await sdRegistry.getAllGeoNFTs();
-      console.log("TOKEN ID: ", tokenId.toNumber());
-      console.log(
-        "TOKENS: ",
-        tokens.map((token) => token.toNumber())
-      );
       expect(tokens.length).to.equal(1);
 
       // unregister minted GeoNFT with Spatial Data Registry
@@ -171,8 +166,13 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then queries for it with lat/lng", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const latitude = -10613206;
-      const longitude = 2301056;
+      const latitude = 12.147418397;
+      const longitude = -68.890674412;
+      const centroid: [BigNumber, BigNumber] = [
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+      ];
+      const precision = 8;
 
       // mint GeoNFT
       await expect(
@@ -184,7 +184,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID
+        centroid
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -195,10 +195,117 @@ describe("registry", () => {
 
       // query for minted GeoNFT with lat/lng
       const tokensQuery = await sdRegistry.queryGeoNFTsByLatLng(
-        latitude,
-        longitude
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision
       );
       expect(tokensQuery.length).to.equal(1);
+    });
+    it("contract owner mints multiple GeoNFTs, adds them to registry, then queries for them with lat/lng at different precision levels", async () => {
+      // At level 8, all three GeoNFTs are in different geohash areas
+      // At level 7, GeoNFTs 1 and 2 are in the same geohash area, but GeoNFT 3 is not
+      // At level 6, all of them are in the same geohash area: d6pj07
+
+      const latitude = 12.147418397;
+      const longitude = -68.890674412;
+
+      // GeoNFT 1
+      const tokenId1 = ethers.BigNumber.from(0);
+      const centroid1: [BigNumber, BigNumber] = [
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+      ];
+      // GeoNFT 2
+      const tokenId2 = ethers.BigNumber.from(1);
+      const centroid2: [BigNumber, BigNumber] = [
+        solidityCoordinate(12.147315),
+        solidityCoordinate(-68.890126),
+      ];
+      // GeoNFT 3
+      const tokenId3 = ethers.BigNumber.from(2);
+      const centroid3: [BigNumber, BigNumber] = [
+        solidityCoordinate(12.147477),
+        solidityCoordinate(-68.891608),
+      ];
+
+      const tokenURI = "0";
+      const precision1 = 8;
+      const precision2 = 7;
+      const precision3 = 6;
+
+      // mint GeoNFTs
+      // GeoNFT 1 minting
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId1);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX1: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId1,
+        centroid1
+      );
+      const registerReceipt1: ContractReceipt = await registerTX1.wait();
+      expect(registerReceipt1.status).to.equal(1);
+
+      // GeoNFT 2 minting
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId2);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX2: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId2,
+        centroid2
+      );
+      const registerReceipt2: ContractReceipt = await registerTX2.wait();
+      expect(registerReceipt2.status).to.equal(1);
+
+      // GeoNFT 3 minting
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId3);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX3: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId3,
+        centroid3
+      );
+      const registerReceipt3: ContractReceipt = await registerTX3.wait();
+      expect(registerReceipt3.status).to.equal(1);
+
+      // get all tokens in the registry
+      const tokens = await sdRegistry.getAllGeoNFTs();
+      expect(tokens.length).to.equal(3);
+
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery1 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision1
+      );
+      expect(tokensQuery1.length).to.equal(1);
+
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery2 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision2
+      );
+      expect(tokensQuery2.length).to.equal(2);
+
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery3 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision3
+      );
+      expect(tokensQuery3.length).to.equal(3);
     });
   });
 
@@ -262,13 +369,13 @@ describe("registry", () => {
       // 'd6nuzk8' -> [42]
       // 'd6nuzk8c' -> [42]
 
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
       // Nodes array of all geohash subhashe's tree
       const nodes = await Promise.all(
         Array.from({ length: geohash1.length }).map((_, i) => {
           const subhash = geohash1.slice(0, i + 1);
-          return sdRegistry.get(subhash);
+          return sdRegistry.getFromGeotree(subhash);
         })
       );
 
@@ -278,95 +385,95 @@ describe("registry", () => {
       });
     });
     it("add two nfts to same geohash", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
       // add a node to the tree
-      await sdRegistry.add(geohash1, tokenId2);
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
 
       expect(node.length).to.equal(2);
       expect(node[0]).to.equal(tokenId1);
       expect(node[1]).to.equal(tokenId2);
     });
     it("add the same nft to same geohash", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
       // add a node to the tree
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
 
       expect(node.length).to.equal(1);
       expect(node[0]).to.equal(tokenId1);
     });
     it("update geohash", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
       expect(node.length).to.equal(1);
 
       // update geohash from geohash1 (d6nuzk8c) to geohash2 (d6nuzk8d) for tokenId1 (42)
       const formerGeohash = geohash1;
       const newGeohash = geohash2;
-      await sdRegistry.update(formerGeohash, newGeohash, tokenId1);
+      await sdRegistry.updateGeotree(formerGeohash, newGeohash, tokenId1);
 
-      const formerNode = await sdRegistry.get(geohash1);
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(0);
 
-      const newNode = await sdRegistry.get(geohash2);
+      const newNode = await sdRegistry.getFromGeotree(geohash2);
       expect(newNode.length).to.equal(1);
     });
     it("remove data from node with geohash", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
       expect(node.length).to.equal(1);
 
       // remove tokenId1 (42) from geohash d6nuzk8c
-      await sdRegistry.remove(geohash1, tokenId1);
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
 
-      const formerNode = await sdRegistry.get(geohash1);
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(0);
     });
     it("remove data from geohash with two items", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
-      await sdRegistry.add(geohash1, tokenId2);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
       expect(node.length).to.equal(2);
 
       // remove tokenId1 from geohash d6nuzk8c
-      await sdRegistry.remove(geohash1, tokenId1);
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
 
-      const formerNode = await sdRegistry.get(geohash1);
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(1);
     });
     it("remove data from geohash with multiple items", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
-      await sdRegistry.add(geohash1, tokenId2);
-      await sdRegistry.add(geohash1, tokenId3);
-      await sdRegistry.add(geohash1, tokenId4);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
+      await sdRegistry.addToGeotree(geohash1, tokenId3);
+      await sdRegistry.addToGeotree(geohash1, tokenId4);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
       expect(node.length).to.equal(4);
 
       // remove tokenId1 from geohash d6nuzk8c
-      await sdRegistry.remove(geohash1, tokenId1);
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
 
-      const formerNode = await sdRegistry.get(geohash1);
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(3);
     });
     it("try to remove data from geohash that hasn't been added", async () => {
-      await sdRegistry.add(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
-      const node = await sdRegistry.get(geohash1);
+      const node = await sdRegistry.getFromGeotree(geohash1);
       expect(node.length).to.equal(1);
 
       // remove tokenId2 (676) from geohash d6nuzk8c
-      await sdRegistry.remove(geohash1, tokenId2);
+      await sdRegistry.removeFromGeotree(geohash1, tokenId2);
 
-      const formerNode = await sdRegistry.get(geohash1);
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(1);
     });
   });
@@ -389,16 +496,16 @@ describe("registry", () => {
        *             [22]          [33]           [44]
        */
       await Promise.all([
-        sdRegistry.add(geohash1, tokenId1),
-        sdRegistry.add(geohash2, tokenId2),
-        sdRegistry.add(geohash3, tokenId3),
+        sdRegistry.addToGeotree(geohash1, tokenId1),
+        sdRegistry.addToGeotree(geohash2, tokenId2),
+        sdRegistry.addToGeotree(geohash3, tokenId3),
       ]);
 
       const subhashLevel7 = geohash1.slice(0, 7);
       const subhashLevel6 = geohash1.slice(0, 6);
       const [resultLevel7BigNumber, resultLevel6BigNumber] = await Promise.all([
-        sdRegistry.get(subhashLevel7),
-        sdRegistry.get(subhashLevel6),
+        sdRegistry.getFromGeotree(subhashLevel7),
+        sdRegistry.getFromGeotree(subhashLevel6),
       ]);
 
       // Transform from Big Number values to integer values
