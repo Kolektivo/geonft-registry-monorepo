@@ -86,9 +86,11 @@ describe("registry", () => {
       const coordinates = feature.geometry.coordinates;
       const area =
         feature.geometry.type === "Polygon"
-          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          ? await areaCalculation.polygonArea(
+              coordinates as [BigNumber, BigNumber][][]
+            )
           : await areaCalculation.multiPolygonArea(
-              coordinates as BigNumber[][][][]
+              coordinates as [BigNumber, BigNumber][][][]
             );
 
       expect(area).to.equal(451167820); // In square meters (m2)
@@ -110,9 +112,11 @@ describe("registry", () => {
       const coordinates = feature.geometry.coordinates;
       const area =
         feature.geometry.type === "Polygon"
-          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          ? await areaCalculation.polygonArea(
+              coordinates as [BigNumber, BigNumber][][]
+            )
           : await areaCalculation.multiPolygonArea(
-              coordinates as BigNumber[][][][]
+              coordinates as [BigNumber, BigNumber][][][]
             );
 
       expect(area).to.equal(27172); // In square meters (m2)
@@ -134,9 +138,11 @@ describe("registry", () => {
       const coordinates = feature.geometry.coordinates;
       const area =
         feature.geometry.type === "Polygon"
-          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          ? await areaCalculation.polygonArea(
+              coordinates as [BigNumber, BigNumber][][]
+            )
           : await areaCalculation.multiPolygonArea(
-              coordinates as BigNumber[][][][]
+              coordinates as [BigNumber, BigNumber][][][]
             );
 
       expect(area).to.equal(417); // In square meters (m2)
@@ -158,9 +164,11 @@ describe("registry", () => {
       const coordinates = feature.geometry.coordinates;
       const area =
         feature.geometry.type === "Polygon"
-          ? await areaCalculation.polygonArea(coordinates as BigNumber[][][])
+          ? await areaCalculation.polygonArea(
+              coordinates as [BigNumber, BigNumber][][]
+            )
           : await areaCalculation.multiPolygonArea(
-              coordinates as BigNumber[][][][]
+              coordinates as [BigNumber, BigNumber][][][]
             );
 
       expect(area).to.equal(5376806769293); // In square meters (m2)
@@ -191,8 +199,12 @@ describe("registry", () => {
       const coordinatesMulti = featureMulti.geometry.coordinates;
 
       const areas = await Promise.all([
-        areaCalculation.polygonArea(coordinatesSingle as BigNumber[][][]),
-        areaCalculation.multiPolygonArea(coordinatesMulti as BigNumber[][][][]),
+        areaCalculation.polygonArea(
+          coordinatesSingle as [BigNumber, BigNumber][][]
+        ),
+        areaCalculation.multiPolygonArea(
+          coordinatesMulti as [BigNumber, BigNumber][][][]
+        ),
       ]);
 
       const [areaSingle, areaMulti] = areas;
@@ -224,16 +236,20 @@ describe("registry", () => {
 
       const areaCCWPromise =
         featureCCW.geometry.type === "Polygon"
-          ? areaCalculation.polygonArea(coordinatesCCW as BigNumber[][][])
+          ? areaCalculation.polygonArea(
+              coordinatesCCW as [BigNumber, BigNumber][][]
+            )
           : areaCalculation.multiPolygonArea(
-              coordinatesCCW as BigNumber[][][][]
+              coordinatesCCW as [BigNumber, BigNumber][][][]
             );
 
       const areaCWPromise =
         featureCW.geometry.type === "Polygon"
-          ? areaCalculation.polygonArea(coordinatesCW as BigNumber[][][])
+          ? areaCalculation.polygonArea(
+              coordinatesCW as [BigNumber, BigNumber][][]
+            )
           : areaCalculation.multiPolygonArea(
-              coordinatesCW as BigNumber[][][][]
+              coordinatesCW as [BigNumber, BigNumber][][][]
             );
 
       const areas = await Promise.all([areaCCWPromise, areaCWPromise]);
@@ -258,9 +274,11 @@ describe("registry", () => {
 
           const coordinates = feature.geometry.coordinates;
           return feature.geometry.type === "Polygon"
-            ? areaCalculation.polygonArea(coordinates as BigNumber[][][])
+            ? areaCalculation.polygonArea(
+                coordinates as [BigNumber, BigNumber][][]
+              )
             : areaCalculation.multiPolygonArea(
-                coordinates as BigNumber[][][][]
+                coordinates as [BigNumber, BigNumber][][][]
               );
         })
       );

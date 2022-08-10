@@ -20,7 +20,7 @@ library AreaCalculation {
      * @param _coordinates Big Number integer coordinates of a multi polygon
      * @return Area measured in square meters
     */
-    function multiPolygonArea(int256[][][][] memory _coordinates) public pure returns (uint256) {
+    function multiPolygonArea(int256[2][][][] memory _coordinates) public pure returns (uint256) {
         uint256 total = 0;
 
         for (uint256 i = 0; i < _coordinates.length; i++) {
@@ -35,7 +35,7 @@ library AreaCalculation {
      * @param _coordinates Big Number integer coordinates of a single polygon - an array of rings
      * @return Area measured in square meters
     */
-    function polygonArea (int256[][][] memory _coordinates) public pure returns (uint256) {
+    function polygonArea (int256[2][][] memory _coordinates) public pure returns (uint256) {
         int256 total = 0;
 
         if (_coordinates.length > 0) {
@@ -55,11 +55,11 @@ library AreaCalculation {
      * @param _coordinates Big Number integer coordinates of a single polygon ring
      * @return Area measured in square meters
     */
-    function ringArea(int256[][] memory _coordinates) private pure returns (int256) {
+    function ringArea(int256[2][] memory _coordinates) private pure returns (int256) {
         uint256 coordsLength = _coordinates.length;
-        int256[] memory p1;
-        int256[] memory p2;
-        int256[] memory p3;
+        int256[2] memory p1;
+        int256[2] memory p2;
+        int256[2] memory p3;
         uint256 lowerIndex;
         uint256 middleIndex;
         uint256 upperIndex;

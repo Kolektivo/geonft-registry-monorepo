@@ -4,7 +4,7 @@ import chai from "chai";
 import { GeoNFT, SDRegistry, AreaCalculation } from "../typechain";
 import { solidityCoordinate } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { GEOJSON1, GEOJSON2 } from "./mockData";
+import { GEOJSON1, GEOJSON2, GEOJSON3_POLYGON } from "./mockData";
 
 const { expect } = chai;
 
@@ -18,6 +18,14 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CENTROID: [BigNumber, BigNumber] = [
   solidityCoordinate(12.147418),
   solidityCoordinate(-68.890674),
+];
+const mockGeoNFTCoordinates: number[][] =
+  GEOJSON3_POLYGON.features[0].geometry.coordinates[0]; // Curazao coordinates
+const COORDINATES: [BigNumber, BigNumber][][] = [
+  mockGeoNFTCoordinates.map((point) => [
+    solidityCoordinate(point[0]),
+    solidityCoordinate(point[1]),
+  ]),
 ];
 
 describe("registry", () => {
@@ -62,7 +70,7 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then updates area", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const newArea = 10;
+      const newArea = 451167820;
 
       // mint GeoNFT
       await expect(
@@ -74,7 +82,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID
+        CENTROID,
+        COORDINATES
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -106,7 +115,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID
+        CENTROID,
+        COORDINATES
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -141,7 +151,7 @@ describe("registry", () => {
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      await sdRegistry.registerGeoNFT(tokenId, CENTROID);
+      await sdRegistry.registerGeoNFT(tokenId, CENTROID, COORDINATES);
       // update geoJson on minted GeoNFT
       await geoNFT.setGeoJson(tokenId, GEOJSON2.toString());
 
@@ -184,7 +194,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        centroid
+        centroid,
+        COORDINATES
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -244,7 +255,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX1: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId1,
-        centroid1
+        centroid1,
+        COORDINATES
       );
       const registerReceipt1: ContractReceipt = await registerTX1.wait();
       expect(registerReceipt1.status).to.equal(1);
@@ -259,7 +271,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX2: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId2,
-        centroid2
+        centroid2,
+        COORDINATES
       );
       const registerReceipt2: ContractReceipt = await registerTX2.wait();
       expect(registerReceipt2.status).to.equal(1);
@@ -274,7 +287,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX3: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId3,
-        centroid3
+        centroid3,
+        COORDINATES
       );
       const registerReceipt3: ContractReceipt = await registerTX3.wait();
       expect(registerReceipt3.status).to.equal(1);
@@ -328,7 +342,8 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID
+        CENTROID,
+        COORDINATES
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -352,10 +367,10 @@ describe("registry", () => {
     const geohash1 = "d6nuzk8c";
     const geohash2 = "d6nuzk8d";
     // Simulates GeoNFT ID
-    const tokenId1 = 42;
-    const tokenId2 = 676;
-    const tokenId3 = 128;
-    const tokenId4 = 6;
+    const tokenId1 = ethers.BigNumber.from(42);
+    const tokenId2 = ethers.BigNumber.from(676);
+    const tokenId3 = ethers.BigNumber.from(128);
+    const tokenId4 = ethers.BigNumber.from(6);
 
     it("add nft to geohash and check subtree is filled", async () => {
       // When adding an nft, data is not only appended to it's geohash array, but also
@@ -483,9 +498,9 @@ describe("registry", () => {
       const geohash1 = "gc7j98fg";
       const geohash2 = "gc7j98fj";
       const geohash3 = "gc7j98k3";
-      const tokenId1 = 22;
-      const tokenId2 = 33;
-      const tokenId3 = 44;
+      const tokenId1 = ethers.BigNumber.from(22);
+      const tokenId2 = ethers.BigNumber.from(33);
+      const tokenId3 = ethers.BigNumber.from(44);
 
       /**
        * Level 6                   gc7j98
@@ -517,9 +532,16 @@ describe("registry", () => {
       );
 
       // Geohash gc7j98f groups geohash1 and geohash2, so its data is -> [tokenId1, tokenId2]
-      expect(resultLevel7).deep.equal([tokenId1, tokenId2]);
+      expect(resultLevel7).deep.equal([
+        tokenId1.toNumber(),
+        tokenId2.toNumber(),
+      ]);
       // Geohash gc7j98 groups geohash1, geohash2 and geohash3, so its data is -> [tokenId1, tokenId2, tokenId3]
-      expect(resultLevel6).deep.equal([tokenId1, tokenId2, tokenId3]);
+      expect(resultLevel6).deep.equal([
+        tokenId1.toNumber(),
+        tokenId2.toNumber(),
+        tokenId3.toNumber(),
+      ]);
     });
   });
 });

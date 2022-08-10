@@ -50,7 +50,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @param _centroid Centroid of the polygon passed as [latitude, longitude]
      * @return area of the GeoNFT in meters squared
      */
-    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid) 
+    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid, int256[2][][] memory _coordinates) 
         external 
         onlyOwner
         returns (uint256 area)
@@ -63,9 +63,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         // retrieve the geoJson from the GeoNFT contract
         string memory geoJson = geoNFT.geoJson(_tokenId);
 
-        // TODO
-        // Calculate area of the polygon
-        uint256 _area = 10;
+        // TODO: Check all parts are valid polygons using the AreaCalculation.isPolygon() function
+        // solhint-disable-next-line mark-callable-contracts
+        uint256 _area = AreaCalculation.polygonArea(_coordinates);
 
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
@@ -167,6 +167,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             uint256[] memory
         )
     {
+        // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(_latitude, _longitude, _precision);
         Node memory node = geotree[geohash];
 
@@ -335,29 +336,5 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             }
         }
         return false;
-    }
-
-
-
-    // TODO: REMOVE THE FOLLOWING FUNCTIONS WHEN AREA CALCULATION IS CALLED IN THE REGISTER FUNCTION
-
-    /**
-     * @notice Calculate the area of a multi polygon coordinates
-     * @param _coordinates Big Number integer coordinates of a multi polygon
-     * @return Area measured in square meters
-    */
-    function multiPolygonArea(int256[][][][] memory _coordinates) public pure returns (uint256) {
-        // solhint-disable-next-line mark-callable-contracts
-        return AreaCalculation.multiPolygonArea(_coordinates);
-    }
-
-    /**
-     * @notice Calculate the area of a single polygon coordinates
-     * @param _coordinates Big Number integer coordinates of a single polygon - an array of rings
-     * @return Area measured in square meters
-    */
-    function polygonArea (int256[][][] memory _coordinates) public pure returns (uint256) {
-        // solhint-disable-next-line mark-callable-contracts
-        return AreaCalculation.polygonArea(_coordinates);
     }
 }
