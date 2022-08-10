@@ -70,7 +70,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
         // Add token id to the geotree
-        add(geohash, _tokenId);
+        addToGeotree(geohash, _tokenId);
         // Add token id - geohash to the registry
         tokenGeohash[_tokenId] = geohash;
 
@@ -98,7 +98,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
             // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
             string memory subhash = string(geohashArray.slice(0, i + 1));
-            remove(subhash, _tokenId);
+            removeFromGeotree(subhash, _tokenId);
         }
 
         if (tokenArray.length == 1) {
@@ -115,142 +115,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
 
         emit GeoNFTUnregistered(_tokenId);
-    }
-
-    /**
-     * @notice Add uint data by geohash to its relative subtree
-     * @param _geohash the geohash
-     * @param _data the uint data
-     */
-    function add(string memory _geohash, uint256 _data) public {
-        // require the length of the _geohash is GEOHASH_LENGTH
-        require(bytes(_geohash).length == GEOHASH_LENGTH);
-
-        // geohash characters splitted into an array
-        bytes memory geohashArray = bytes(_geohash);
-        // geohash substring used each level of the subtree
-        // string memory subhash;
-
-        // iterates over all 8 levels of the geohash and insert/append data
-        // to each of those levels indexed by its subhash
-        for (uint8 i = 0; i < geohashArray.length; i++) {
-            // create subhash according to the depth level by slicing original geohash;
-            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
-            // solhint-disable-next-line
-            string memory subhash = string(geohashArray.slice(0, i + 1));
-
-            // lookup existing node
-            Node storage node = geotree[subhash];
-
-            // check if data is in node
-            bool isInNode = dataExistsInNode(node, _data);
-
-            // if data already in node, continue
-            if (isInNode) {
-                console.log("Data already in the node");
-                continue;
-            }
-            // if node does not exist, create it
-            if (node.data.length == 0) {
-                node.data = new uint256[](1);
-                node.data[0] = _data;
-                geotree[subhash] = node;
-            } else {
-                // if node exists, add data to it
-                uint256[] memory newData = new uint256[](node.data.length + 1);
-                for (uint256 j = 0; j < node.data.length; j++) {
-                    newData[j] = node.data[j];
-                }
-                newData[node.data.length] = _data;
-                node.data = newData;
-                geotree[subhash] = node;
-            }
-        }
-    }
-
-    /**
-     * @notice Get a data by geohash
-     * @param _geohash the geohash
-     */
-    function get(string memory _geohash)
-        public
-        view
-        returns (uint256[] memory)
-    {
-        Node storage node = geotree[_geohash];
-        return node.data;
-    }
-
-    /**
-     * @notice Update geohash
-     * @param _formergeohash the former geohash
-     * @param _newgeohash the new geohash
-     * @param _data the uint data
-     */
-    function update(
-        string memory _formergeohash,
-        string calldata _newgeohash,
-        uint256 _data
-    ) public {
-        // remove data from former geohash
-        remove(_formergeohash, _data);
-
-        // add data to new node
-        add(_newgeohash, _data);
-    }
-
-    /**
-     * @notice Remove data from node with specified geohash
-     * @param _geohash geohash
-     * @param _data the uint data
-     */
-    function remove(string memory _geohash, uint256 _data) public {
-        // lookup existing node
-        Node storage node = geotree[_geohash];
-
-        // check if data is in node
-        bool isInNode = dataExistsInNode(node, _data);
-
-        // if data wasn't in node, return
-        if (!isInNode) {
-            console.log("Data not in node");
-            return;
-        }
-
-        // if node contains only one value, delete node
-        if (node.data.length == 1) {
-            delete geotree[_geohash];
-        } else {
-            // if node contains more than one value, rebuild data array
-            uint256[] memory newData = new uint256[](node.data.length - 1);
-            uint256 counter = 0;
-            for (uint256 i = 0; i < node.data.length - 1; i++) {
-                if (node.data[i] != _data) {
-                    newData[counter] = node.data[i];
-                    counter++;
-                }
-            }
-            node.data = newData;
-            geotree[_geohash] = node;
-        }
-    }
-
-    /**
-     * @notice Check if data in node
-     * @param _node node
-     * @param _data the uint data
-     */
-    function dataExistsInNode(Node memory _node, uint256 _data)
-        internal
-        pure
-        returns (bool)
-    {
-        for (uint256 i = 0; i < _node.data.length; i++) {
-            if (_node.data[i] == _data) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -275,8 +139,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return _area;
     }
 
-    // TODO
-    // Return all the GeoNFTs in the registry
+    /**
+     * @notice Return all the GeoNFT ids in the registry
+     */
     function getAllGeoNFTs() public view returns (uint256[] memory) { 
         return tokenArray;
     }
@@ -332,6 +197,144 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
         return (_tokenIds);
     }
+
+    /**
+     * @notice Add uint data by geohash to its relative subtree
+     * @param _geohash the geohash
+     * @param _data the uint data
+     */
+    function addToGeotree(string memory _geohash, uint256 _data) public {
+        // require the length of the _geohash is GEOHASH_LENGTH
+        require(bytes(_geohash).length == GEOHASH_LENGTH);
+
+        // geohash characters splitted into an array
+        bytes memory geohashArray = bytes(_geohash);
+        // geohash substring used each level of the subtree
+        // string memory subhash;
+
+        // iterates over all 8 levels of the geohash and insert/append data
+        // to each of those levels indexed by its subhash
+        for (uint8 i = 0; i < geohashArray.length; i++) {
+            // create subhash according to the depth level by slicing original geohash;
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
+            // solhint-disable-next-line
+            string memory subhash = string(geohashArray.slice(0, i + 1));
+
+            // lookup existing node
+            Node storage node = geotree[subhash];
+
+            // check if data is in node
+            bool isInNode = dataExistsInNode(node, _data);
+
+            // if data already in node, continue
+            if (isInNode) {
+                console.log("Data already in the node");
+                continue;
+            }
+            // if node does not exist, create it
+            if (node.data.length == 0) {
+                node.data = new uint256[](1);
+                node.data[0] = _data;
+                geotree[subhash] = node;
+            } else {
+                // if node exists, add data to it
+                uint256[] memory newData = new uint256[](node.data.length + 1);
+                for (uint256 j = 0; j < node.data.length; j++) {
+                    newData[j] = node.data[j];
+                }
+                newData[node.data.length] = _data;
+                node.data = newData;
+                geotree[subhash] = node;
+            }
+        }
+    }
+
+    /**
+     * @notice Get a data by geohash
+     * @param _geohash the geohash
+     */
+    function getFromGeotree(string memory _geohash)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        Node storage node = geotree[_geohash];
+        return node.data;
+    }
+
+    /**
+     * @notice Update geohash
+     * @param _formergeohash the former geohash
+     * @param _newgeohash the new geohash
+     * @param _data the uint data
+     */
+    function updateToGeotree(
+        string memory _formergeohash,
+        string calldata _newgeohash,
+        uint256 _data
+    ) public {
+        // remove data from former geohash
+        removeFromGeotree(_formergeohash, _data);
+
+        // add data to new node
+        addToGeotree(_newgeohash, _data);
+    }
+
+    /**
+     * @notice Remove data from node with specified geohash
+     * @param _geohash geohash
+     * @param _data the uint data
+     */
+    function removeFromGeotree(string memory _geohash, uint256 _data) public {
+        // lookup existing node
+        Node storage node = geotree[_geohash];
+
+        // check if data is in node
+        bool isInNode = dataExistsInNode(node, _data);
+
+        // if data wasn't in node, return
+        if (!isInNode) {
+            console.log("Data not in node");
+            return;
+        }
+
+        // if node contains only one value, delete node
+        if (node.data.length == 1) {
+            delete geotree[_geohash];
+        } else {
+            // if node contains more than one value, rebuild data array
+            uint256[] memory newData = new uint256[](node.data.length - 1);
+            uint256 counter = 0;
+            for (uint256 i = 0; i < node.data.length - 1; i++) {
+                if (node.data[i] != _data) {
+                    newData[counter] = node.data[i];
+                    counter++;
+                }
+            }
+            node.data = newData;
+            geotree[_geohash] = node;
+        }
+    }
+
+    /**
+     * @notice Check if data in node
+     * @param _node node
+     * @param _data the uint data
+     */
+    function dataExistsInNode(Node memory _node, uint256 _data)
+        internal
+        pure
+        returns (bool)
+    {
+        for (uint256 i = 0; i < _node.data.length; i++) {
+            if (_node.data[i] == _data) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 
     // TODO: REMOVE THE FOLLOWING FUNCTIONS WHEN AREA CALCULATION IS CALLED IN THE REGISTER FUNCTION
 
