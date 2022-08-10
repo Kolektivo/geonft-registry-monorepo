@@ -20,7 +20,7 @@ contract GeoNFT is
 
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint8) private indexValues; // mapping of tokenId to index
+    mapping(uint256 => uint256) private indexValues; // mapping of tokenId to index value
     mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
 
     // solhint-disable-next-line no-empty-blocks, func-visibility
@@ -114,8 +114,8 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
     }
 
-    function setIndexValue(uint256 tokenId, uint8 indice) external onlyOwner {
-        indexValues[tokenId] = indice;
+    function setIndexValue(uint256 tokenId, uint256 _indexValue) external onlyOwner {
+        indexValues[tokenId] = _indexValue;
     }
 
     function setIndexType(uint256 tokenId, string memory indiceType)
@@ -163,9 +163,9 @@ contract GeoNFT is
     function indexValue(uint256 tokenId)
         public
         view
-        returns (uint8)
+        returns (uint256)
     {
-        uint8 _indexValue = indexValues[tokenId];
+        uint256 _indexValue = indexValues[tokenId];
         return _indexValue;
     }
 

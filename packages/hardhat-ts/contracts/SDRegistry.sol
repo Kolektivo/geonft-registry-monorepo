@@ -32,11 +32,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
      */
-    
-    constructor(
-        GeoNFT _geoNFT
     // solhint-disable-next-line func-visibility
-    ) {
+    constructor(GeoNFT _geoNFT) {
         geoNFT = _geoNFT;
     }
 
@@ -50,7 +47,11 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @param _centroid Centroid of the polygon passed as [latitude, longitude]
      * @return area of the GeoNFT in meters squared
      */
-    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid, int256[2][][] memory _coordinates) 
+    function registerGeoNFT(
+        uint256 _tokenId, 
+        int64[2] memory _centroid, 
+        int256[2][][] memory _coordinates
+    ) 
         external 
         onlyOwner
         returns (uint256 area)
