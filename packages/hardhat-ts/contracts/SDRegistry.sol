@@ -27,7 +27,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
     mapping(string => Node) private geotree;
     mapping(uint256 => string) private tokenGeohash; // mapping of tokenId to geohash
-    uint private geotreeMapSize;
 
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
@@ -59,23 +58,22 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         int64 lat = _centroid[0];
         int64 lon = _centroid[1];
 
-        // Add token ID to tokenArray
-        tokenArray.push(_tokenId);
+        addToTokenArray(_tokenId);
         // retrieve the geoJson from the GeoNFT contract
         string memory geoJson = geoNFT.geoJson(_tokenId);
 
-        // TODO: Check all parts are valid polygons using the AreaCalculation.isPolygon() function
+        // solhint-disable-next-line mark-callable-contracts
+        bool isValidPolygon = AreaCalculation.isPolygon(_coordinates[0]);
+        require(isValidPolygon == true);
+
         // solhint-disable-next-line mark-callable-contracts
         uint256 _area = AreaCalculation.polygonArea(_coordinates);
+        // TODO:? Update the GeoNFT area directly from here
 
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
-        // Add token ID to the geotree
         addToGeotree(geohash, _tokenId);
-        // Add token ID - geohash to the registry
-        tokenGeohash[_tokenId] = geohash;
-
-        geotreeMapSize++;
+        addToTokenGeohashMapping(_tokenId, geohash);
 
         emit GeoNFTRegistered(_tokenId, geoJson, _area);
         return _area;
@@ -119,6 +117,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         emit GeoNFTUnregistered(_tokenId);
     }
 
+    // TODO
     /**
      * @notice Update the topology of the GeoNFT
      * @param tokenId the index of the GeoNFT to update
@@ -153,10 +152,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @notice Query registry by latitude, longitude and geohash depth level
      * @param _latitude Latitude
      * @param _longitude Longitude
-     * @param _precision Precision (geohash depth level) of the query. Must be in range [1, 8]
+     * @param _precision Precision level of the geohash searching
      * @return geoNFTsArray Array of all registered token IDs
      */
-    // 
     function queryGeoNFTsByLatLng(       
         int64 _latitude,       
         int64 _longitude,
@@ -170,37 +168,51 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     {
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(_latitude, _longitude, _precision);
-        Node memory node = geotree[geohash];
-
-        return node.data;
+        return getFromGeotree(geohash);
     }
 
     // TODO
     // Query registry by bounding box
-    function queryGeoNFTsByBoundingBox(
-        // solhint-disable-next-line no-unused-vars
-        int256 minLatitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 minLongitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 maxLatitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 maxLongitude
-    )
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
-        // TODO: use quadtree to search by bounding box
-        uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
-        uint256 i;
+    // function queryGeoNFTsByBoundingBox(
+    //     // solhint-disable-next-line no-unused-vars
+    //     int256 minLatitude,
+    //     // solhint-disable-next-line no-unused-vars        
+    //     int256 minLongitude,
+    //     // solhint-disable-next-line no-unused-vars        
+    //     int256 maxLatitude,
+    //     // solhint-disable-next-line no-unused-vars        
+    //     int256 maxLongitude
+    // )
+    //     public
+    //     view
+    //     returns (
+    //         uint256[] memory
+    //     )
+    // {
+    //     // TODO: use quadtree to search by bounding box
+    //     uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
+    //     uint256 i;
 
-        for (i = 0; i < geotreeMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
+    //     for (i = 0; i < geotreeMapSize; i++) {
+    //         _tokenIds[i] = i;
+    //     }
+    //     return (_tokenIds);
+    // }
+
+    /**
+     * @notice Add token ID to the general token array
+     * @param _tokenId Token ID
+     */
+    function addToTokenArray(uint256 _tokenId) private {
+        tokenArray.push(_tokenId);
+    }
+
+    /**
+     * @notice Add token ID to the global token array
+     * @param _tokenId Token ID
+     */
+    function addToTokenGeohashMapping(uint256 _tokenId, string memory _geohash) private {
+        tokenGeohash[_tokenId] = _geohash;
     }
 
     /**
