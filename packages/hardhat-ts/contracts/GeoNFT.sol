@@ -37,7 +37,6 @@ contract GeoNFT is
     ) public {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
 
         // set geoJson
         geoJsons[tokenId] = _geoJson;
@@ -46,6 +45,7 @@ contract GeoNFT is
         indexValues[tokenId] = 0;
         indexTypes[tokenId] = "area_m2";
 
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
     }
 
