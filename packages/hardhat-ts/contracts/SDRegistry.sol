@@ -171,34 +171,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         return getFromGeotree(geohash);
     }
 
-    // TODO
-    // Query registry by bounding box
-    // function queryGeoNFTsByBoundingBox(
-    //     // solhint-disable-next-line no-unused-vars
-    //     int256 minLatitude,
-    //     // solhint-disable-next-line no-unused-vars        
-    //     int256 minLongitude,
-    //     // solhint-disable-next-line no-unused-vars        
-    //     int256 maxLatitude,
-    //     // solhint-disable-next-line no-unused-vars        
-    //     int256 maxLongitude
-    // )
-    //     public
-    //     view
-    //     returns (
-    //         uint256[] memory
-    //     )
-    // {
-    //     // TODO: use quadtree to search by bounding box
-    //     uint256[] memory _tokenIds = new uint256[](geotreeMapSize);
-    //     uint256 i;
-
-    //     for (i = 0; i < geotreeMapSize; i++) {
-    //         _tokenIds[i] = i;
-    //     }
-    //     return (_tokenIds);
-    // }
-
     /**
      * @notice Add token ID to the general token array
      * @param _tokenId Token ID

@@ -323,46 +323,6 @@ describe("registry", () => {
     });
   });
 
-  // describe("query geonfts by bounding box", async () => {
-  //   it("contract owner mints a GeoNFT, adds to registry, then queries for it by bounding box", async () => {
-  //     const tokenId = ethers.BigNumber.from(0);
-  //     const tokenURI = "0";
-  //     const minLatitude = -10613206;
-  //     const minLongitude = 2301056;
-  //     const maxLatitude = -10613205;
-  //     const maxLongitude = 2301057;
-
-  //     // mint GeoNFT
-  //     await expect(
-  //       geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
-  //     )
-  //       .to.emit(geoNFT, "Transfer")
-  //       .withArgs(ZERO_ADDRESS, other.address, tokenId);
-
-  //     // register minted GeoNFT with Spatial Data Registry
-  //     const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
-  //       tokenId,
-  //       CENTROID,
-  //       COORDINATES
-  //     );
-  //     const registerReceipt: ContractReceipt = await registerTX.wait();
-  //     expect(registerReceipt.status).to.equal(1);
-
-  //     // get all tokens in the registry
-  //     const tokens = await sdRegistry.getAllGeoNFTs();
-  //     expect(tokens.length).to.equal(1);
-
-  //     // query for minted GeoNFT with bounding box
-  //     const tokensQuery = await sdRegistry.queryGeoNFTsByBoundingBox(
-  //       minLatitude,
-  //       minLongitude,
-  //       maxLatitude,
-  //       maxLongitude
-  //     );
-  //     expect(tokensQuery.length).to.equal(1);
-  //   });
-  // });
-
   describe("geohash registry", async () => {
     const geohash1 = "d6nuzk8c";
     const geohash2 = "d6nuzk8d";
