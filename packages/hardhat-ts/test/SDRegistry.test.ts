@@ -2,9 +2,14 @@ import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
 import { GeoNFT, SDRegistry, AreaCalculation } from "../typechain";
-import { solidityCoordinate } from "../utils/geomUtils";
+import {
+  centroid,
+  solidityPoint,
+  solidityCoordinate,
+  solidityCoordinatesPolygon,
+} from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { GEOJSON1, GEOJSON2, GEOJSON3_POLYGON } from "./mockData";
+import { GEOJSON1, GEOJSON3_POLYGON } from "./mockData";
 
 const { expect } = chai;
 
@@ -15,17 +20,11 @@ let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const CENTROID: [BigNumber, BigNumber] = [
-  solidityCoordinate(12.147418),
-  solidityCoordinate(-68.890674),
-];
+const CENTROID = solidityPoint([12.147418, -68.890674]);
 const mockGeoNFTCoordinates: number[][] =
   GEOJSON3_POLYGON.features[0].geometry.coordinates[0]; // Curazao coordinates
 const COORDINATES: [BigNumber, BigNumber][][] = [
-  mockGeoNFTCoordinates.map((point) => [
-    solidityCoordinate(point[0]),
-    solidityCoordinate(point[1]),
-  ]),
+  mockGeoNFTCoordinates.map(solidityPoint),
 ];
 
 describe("registry", () => {
@@ -141,34 +140,46 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then updates the topology", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const updatedArea = 20;
+      const newFeature = GEOJSON3_POLYGON.features[7];
+      const newCentroid = solidityPoint(centroid(newFeature.geometry));
+      const newCoordinates = solidityCoordinatesPolygon(
+        newFeature.geometry.coordinates
+      );
+      const newStringifiedGeoJSON = newCoordinates.toString();
+      const newArea = 27172;
 
       // mint GeoNFT
       await expect(
-        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(deployer.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
-        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+        .withArgs(ZERO_ADDRESS, deployer.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
       await sdRegistry.registerGeoNFT(tokenId, CENTROID, COORDINATES);
       // update geoJson on minted GeoNFT
-      await geoNFT.setGeoJson(tokenId, GEOJSON2.toString());
+      await geoNFT.setGeoJson(tokenId, GEOJSON3_POLYGON.toString());
 
       const updateTopologyTX: ContractTransaction =
-        await sdRegistry.updateGeoNFTTopology(tokenId);
+        await sdRegistry.updateGeoNFTTopology(
+          tokenId,
+          newCoordinates,
+          newCentroid,
+          newStringifiedGeoJSON
+        );
       const updateTopologyReceipt: ContractReceipt =
         await updateTopologyTX.wait();
 
       // get calculated area from spatial data registry
       const calculatedArea = updateTopologyReceipt.events?.[0].args?.[2];
-      expect(calculatedArea).to.equal(updatedArea);
-
-      // set area on minted GeoNFT
+      // update area on minted GeoNFT
       await geoNFT.setIndexValue(tokenId, calculatedArea);
+      expect(calculatedArea).to.equal(newArea);
 
       // verify area on minted GeoNFT
       expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
+
+      // TODO: verify stringified geojson is updated
     });
   });
 

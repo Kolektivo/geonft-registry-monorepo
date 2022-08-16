@@ -24,7 +24,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         uint256[] data;
     }
 
-    mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
+    mapping(uint256 => string) private geoJsons; // mapping of tokenId to geojson
     mapping(string => Node) private geotree;
     mapping(uint256 => string) private tokenGeohash; // mapping of tokenId to geohash
 
@@ -36,9 +36,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         geoNFT = _geoNFT;
     }
 
-    event GeoNFTRegistered(uint256 tokenId, string geoJson, uint256 _area);
+    event GeoNFTRegistered(uint256 tokenId, string geojson, uint256 _area);
     event GeoNFTUnregistered(uint256 tokenId);
-    event GeoNFTTopologyUpdated(uint256 tokenId, string geoJson, uint256 _area);
+    event GeoNFTTopologyUpdated(uint256 tokenId, string geojson, uint256 _area);
 
     /**
      * @notice Register a GeoNFT in the Spatial Data Registry
@@ -59,8 +59,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         int64 lon = _centroid[1];
 
         addToTokenArray(_tokenId);
-        // retrieve the geoJson from the GeoNFT contract
-        string memory geoJson = geoNFT.geoJson(_tokenId);
+        // retrieve the geojson from the GeoNFT contract
+        string memory geojson = geoNFT.geoJson(_tokenId);
 
         // solhint-disable-next-line mark-callable-contracts
         bool isValidPolygon = AreaCalculation.isPolygon(_coordinates[0]);
@@ -75,7 +75,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         addToGeotree(geohash, _tokenId);
         addToTokenGeohashMapping(_tokenId, geohash);
 
-        emit GeoNFTRegistered(_tokenId, geoJson, _area);
+        emit GeoNFTRegistered(_tokenId, geojson, _area);
         return _area;
     }
 
@@ -88,17 +88,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         onlyOwner 
     { 
         string memory geohash = tokenGeohash[_tokenId];
-        // geohash characters splitted into an array
-        bytes memory geohashArray = bytes(geohash);
-        // require the length of the _geohash is GEOHASH_LENGTH
-        require(geohashArray.length == GEOHASH_LENGTH);
-
-        for (uint8 i = 0; i < geohashArray.length; i++) {
-            // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
-            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
-            string memory subhash = string(geohashArray.slice(0, i + 1));
-            removeFromGeotree(subhash, _tokenId);
-        }
+        removeFromAllGeotreeSubhashes(geohash, _tokenId);
 
         // Remove token ID from the global token array
         if (tokenArray.length == 1) {
@@ -117,27 +107,38 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         emit GeoNFTUnregistered(_tokenId);
     }
 
-    // TODO
     /**
      * @notice Update the topology of the GeoNFT
-     * @param tokenId the index of the GeoNFT to update
+     * @param _tokenId The index of the GeoNFT to update
+     * @param _coordinates Array of polygon rings
+     * @param _geojson Strigified geojson of the new topology
      */
-    function updateGeoNFTTopology(uint256 tokenId) 
+    function updateGeoNFTTopology(
+        uint256 _tokenId, 
+        int256[2][][] memory _coordinates,
+        int64[2] memory _centroid,
+        string memory _geojson
+    ) 
         external 
-        onlyOwner
-        returns (uint256 area)        
+        onlyOwner     
     {
-        // retrieve the geoJson from the GeoNFT contract
-        string memory geoJson = geoNFT.geoJson(tokenId);
+        // solhint-disable-next-line mark-callable-contracts
+        uint256 _area = AreaCalculation.polygonArea(_coordinates);
 
-        // TODO: update topology in the quadtree
-        geoJsons[tokenId] = geoJson;
+        // Update GeoTree if geohash is different
+        int64 lat = _centroid[0];
+        int64 lon = _centroid[1];
+        string memory formerGeohash = tokenGeohash[_tokenId];
+        string memory newGeohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
+        bool geohashIsTheSame = areEqualStrings(formerGeohash, newGeohash);
 
-        // TODO: calculate area
-        uint256 _area = 20;
+        if (!geohashIsTheSame) {
+            removeFromAllGeotreeSubhashes(newGeohash, _tokenId);
+            addToGeotree(newGeohash, _tokenId);
+            tokenGeohash[_tokenId] = newGeohash;
+        }
 
-        emit GeoNFTTopologyUpdated(tokenId, geoJson, _area);
-        return _area;
+        emit GeoNFTTopologyUpdated(_tokenId, _geojson, _area);
     }
 
     /**
@@ -305,6 +306,20 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         }
     }
 
+    function removeFromAllGeotreeSubhashes(string memory _geohash, uint256 _tokenId) private {
+        // geohash characters splitted into an array
+        bytes memory geohashArray = bytes(_geohash);
+        // require the length of the _geohash is GEOHASH_LENGTH
+        require(geohashArray.length == GEOHASH_LENGTH);
+
+        for (uint8 i = 0; i < geohashArray.length; i++) {
+            // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
+            string memory subhash = string(geohashArray.slice(0, i + 1));
+            removeFromGeotree(subhash, _tokenId);
+        }
+    }
+
     /**
      * @notice Check if data in node
      * @param _node node
@@ -321,5 +336,9 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             }
         }
         return false;
+    }
+
+    function areEqualStrings(string memory _string1, string memory _string2) private pure returns (bool) {
+        return keccak256(abi.encodePacked(_string1)) == keccak256(abi.encodePacked(_string2));
     }
 }

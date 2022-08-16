@@ -14,7 +14,7 @@ import {
 
 // Solidity version of GeoJSON types
 // Uses BigNumber (integer) as coordinates to avoid decimals
-type PositionSol = BigNumber[]; // Coordinates point -> [X, Y]
+type PositionSol = [BigNumber, BigNumber]; // Coordinates point -> [X, Y]
 
 interface PointSol extends GeoJsonObject {
   type: "Point";
@@ -192,6 +192,16 @@ const transformCoordinatesRecursively = (value: RCoordinates): RCoordinates => {
 export const solidityCoordinate = (coord: number): BigNumber => {
   const DECIMAL_EXPONENT = 10 ** 9;
   return ethers.BigNumber.from(Math.floor(coord * DECIMAL_EXPONENT));
+};
+
+export const solidityPoint = (point: Position): PositionSol => {
+  return [solidityCoordinate(point[0]), solidityCoordinate(point[1])];
+};
+
+export const solidityCoordinatesPolygon = (
+  coordinates: Position[][]
+): [BigNumber, BigNumber][][] => {
+  return coordinates.map((ring) => ring.map(solidityPoint));
 };
 
 /**
