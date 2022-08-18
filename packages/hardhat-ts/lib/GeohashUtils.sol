@@ -127,6 +127,7 @@ library GeohashUtils {
             string memory code = string(abi.encodePacked(bytes(_geohash)[i]));
             // TODO: REQUIRE TO BE >= 0
             hashValue = uint8(indexOf(GEOHASH_CODES, code));
+            require(hashValue >= 0);
 
             for (uint8 bits = 5; bits > 0; bits--) {
                 uint8 bit = (hashValue >> (bits - 1)) & 1;
@@ -134,20 +135,17 @@ library GeohashUtils {
                 if (isLon) {
                     mid = (maxLon + minLon) / 2;
 
-                    if (bit == 1) {
-                        minLon = mid;
-                    } else {
-                        maxLon = mid;
-                    }
+                    bit == 1
+                        ? minLon = mid
+                        : maxLon = mid;
                 } else {
                     mid = (maxLat + minLat) / 2;
 
-                    if (bit == 1) {
-                        minLat = mid;
-                    } else {
-                        maxLat = mid;
-                    }
+                    bit == 1
+                        ? minLat = mid
+                        : maxLat = mid;
                 }
+                
                 isLon = !isLon;
             }
         }
