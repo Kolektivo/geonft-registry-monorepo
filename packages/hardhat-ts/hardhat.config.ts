@@ -9,7 +9,6 @@ import "solidity-coverage";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 
-// eslint-disable-next-line node/no-missing-import
 import "./tasks/operations/accounts";
 dotEnvConfig();
 

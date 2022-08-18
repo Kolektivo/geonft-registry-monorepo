@@ -13,6 +13,7 @@
       "./typechain",
       "./tasks",
       "./utils",
+      ".eslintrc.js",
     ],
     "files": ["./hardhat.config.ts"]
   }

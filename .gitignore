@@ -31,3 +31,4 @@ packages/dapp/config/map.json
 
 #local deployments
 packages/hardhat-ts/deployments/localhost/*
+package-lock.json
