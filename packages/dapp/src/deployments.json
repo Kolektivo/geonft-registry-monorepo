@@ -1654,7 +1654,7 @@
           ]
         },
         "GeoNFT": {
-          "address": "0xde9E696BC49269f518B2bE5016801962c23a800D",
+          "address": "0x16E6b0d95609bA6156E8933fF381880a5c787691",
           "abi": [
             {
               "inputs": [],
@@ -2296,7 +2296,7 @@
           ]
         },
         "Trigonometry": {
-          "address": "0x9b124b127eEFd69d417dAD08c7f666f79B134a5D",
+          "address": "0x5c82AEeaB2DCADB3aA6F8AD9318C1A3940B13bac",
           "abi": [
             {
               "inputs": [
@@ -2320,7 +2320,7 @@
           ]
         },
         "AreaCalculation": {
-          "address": "0xe425Ff6759d74bc405E9Ea2176fDa472d1e312Fe",
+          "address": "0xE4a658B83aF78f76D1231370ce417f3b61c61181",
           "abi": [
             {
               "inputs": [
@@ -2382,7 +2382,7 @@
           ]
         },
         "GeohashUtils": {
-          "address": "0xe44fFe634069D2f470638b4b2235314A57539920",
+          "address": "0x1ef62ad49E30dc0f0C0f1c692Aa468B902c64E63",
           "abi": [
             {
               "inputs": [
@@ -2435,7 +2435,7 @@
           ]
         },
         "SDRegistry": {
-          "address": "0x353eb257a83fb588BE2E8c3746D0182D9A42e9c7",
+          "address": "0xb9b4C7361fD4a66Cb792a07f6c923540964195E3",
           "abi": [
             {
               "inputs": [
