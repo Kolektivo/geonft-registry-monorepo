@@ -81,14 +81,13 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID,
-        COORDINATES
+        CENTROID
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
       // get calculated area from spatial data registry
-      const calculatedArea = registerReceipt.events?.[0].args?.[2];
+      const calculatedArea = await areaCalculation.polygonArea(COORDINATES);
       expect(calculatedArea).to.equal(newArea);
 
       // set area on minted GeoNFT
@@ -114,8 +113,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        CENTROID,
-        COORDINATES
+        CENTROID
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -156,7 +154,7 @@ describe("registry", () => {
         .withArgs(ZERO_ADDRESS, deployer.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      await sdRegistry.registerGeoNFT(tokenId, CENTROID, COORDINATES);
+      await sdRegistry.registerGeoNFT(tokenId, CENTROID);
       // update geoJson on minted GeoNFT
       await geoNFT.setGeoJson(tokenId, GEOJSON3_POLYGON.toString());
 
@@ -167,11 +165,11 @@ describe("registry", () => {
           newCentroid,
           newStringifiedGeoJSON
         );
-      const updateTopologyReceipt: ContractReceipt =
-        await updateTopologyTX.wait();
 
-      // get calculated area from spatial data registry
-      const calculatedArea = updateTopologyReceipt.events?.[0].args?.[2];
+      await updateTopologyTX.wait();
+
+      // get calculated area from AreaCalculation
+      const calculatedArea = await areaCalculation.polygonArea(newCoordinates);
       // update area on minted GeoNFT
       await geoNFT.setIndexValue(tokenId, calculatedArea);
       expect(calculatedArea).to.equal(newArea);
@@ -205,8 +203,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId,
-        centroid,
-        COORDINATES
+        centroid
       );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
@@ -266,8 +263,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX1: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId1,
-        centroid1,
-        COORDINATES
+        centroid1
       );
       const registerReceipt1: ContractReceipt = await registerTX1.wait();
       expect(registerReceipt1.status).to.equal(1);
@@ -282,8 +278,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX2: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId2,
-        centroid2,
-        COORDINATES
+        centroid2
       );
       const registerReceipt2: ContractReceipt = await registerTX2.wait();
       expect(registerReceipt2.status).to.equal(1);
@@ -298,8 +293,7 @@ describe("registry", () => {
       // register minted GeoNFT with Spatial Data Registry
       const registerTX3: ContractTransaction = await sdRegistry.registerGeoNFT(
         tokenId3,
-        centroid3,
-        COORDINATES
+        centroid3
       );
       const registerReceipt3: ContractReceipt = await registerTX3.wait();
       expect(registerReceipt3.status).to.equal(1);

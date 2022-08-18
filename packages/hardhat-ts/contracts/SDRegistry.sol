@@ -35,7 +35,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         geoNFT = _geoNFT;
     }
 
-    event GeoNFTRegistered(uint256 tokenId, string geojson, uint256 _area);
+    event GeoNFTRegistered(uint256 tokenId);
     event GeoNFTUnregistered(uint256 tokenId);
     event GeoNFTTopologyUpdated(uint256 tokenId, string geojson, uint256 _area);
 
@@ -43,46 +43,32 @@ contract SDRegistry is ReentrancyGuard, Ownable {
      * @notice Register a GeoNFT in the Spatial Data Registry
      * @param _tokenId the index of the GeoNFT to register
      * @param _centroid Centroid of the polygon passed as [latitude, longitude]
-     * @return area of the GeoNFT in meters squared
      */
     function registerGeoNFT(
         uint256 _tokenId, 
-        int64[2] memory _centroid, 
-        int256[2][][] memory _coordinates
+        int64[2] memory _centroid
     ) 
         external 
         onlyOwner
-        returns (uint256 area)
     {
         int64 lat = _centroid[0];
         int64 lon = _centroid[1];
 
         addToTokenArray(_tokenId);
-        // retrieve the geojson from the GeoNFT contract
-        string memory geojson = geoNFT.geoJson(_tokenId);
-
-        // solhint-disable-next-line mark-callable-contracts
-        bool isValidPolygon = AreaCalculation.isPolygon(_coordinates[0]);
-        require(isValidPolygon == true);
-
-        // solhint-disable-next-line mark-callable-contracts
-        uint256 _area = AreaCalculation.polygonArea(_coordinates);
-        // TODO:? Update the GeoNFT area directly from here
 
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
         addToGeotree(geohash, _tokenId);
         addToTokenGeohashMapping(_tokenId, geohash);
 
-        emit GeoNFTRegistered(_tokenId, geojson, _area);
-        return _area;
+        emit GeoNFTRegistered(_tokenId);
     }
 
     /**
      * @notice Unregister a GeoNFT from the Spatial Data Registry
      * @param _tokenId the index of the GeoNFT to unregister
     */
-    function unregisterGeoNFT(uint256 _tokenId) 
+    function unregisterGeoNFT(uint256 _tokenId)
         external 
         onlyOwner 
     { 

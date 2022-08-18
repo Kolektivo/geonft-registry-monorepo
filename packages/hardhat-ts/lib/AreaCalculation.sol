@@ -56,6 +56,9 @@ library AreaCalculation {
      * @return Area measured in square meters
     */
     function ringArea(int256[2][] memory _coordinates) private pure returns (int256) {
+        bool isValidPolygon = isPolygon(_coordinates);
+        require(isValidPolygon == true);
+
         uint256 coordsLength = _coordinates.length;
         int256[2] memory p1;
         int256[2] memory p2;
