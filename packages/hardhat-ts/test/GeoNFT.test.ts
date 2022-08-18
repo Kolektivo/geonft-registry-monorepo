@@ -183,9 +183,6 @@ describe("geonft", () => {
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId.add(3));
-
-      const alltokens = await geonft.getAllTokens();
-      expect(alltokens.length).to.equal(3);
     });
   });
 

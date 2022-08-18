@@ -24,7 +24,6 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         uint256[] data;
     }
 
-    mapping(uint256 => string) private geoJsons; // mapping of tokenId to geojson
     mapping(string => Node) private geotree;
     mapping(uint256 => string) private tokenGeohash; // mapping of tokenId to geohash
 

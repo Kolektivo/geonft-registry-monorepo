@@ -42,36 +42,12 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
 
         // default index value to 0 type to area_m2
+        // TODO: Refactor to Struct to unify value and type?
         indexValues[tokenId] = 0;
         indexTypes[tokenId] = "area_m2";
 
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-    }
-
-    // Returns an array of tokenIds
-    function getAllTokens()
-        public
-        view
-        returns (
-            uint256[] memory,
-            string[] memory,
-            string[] memory
-        )
-    {
-        uint256 totalTokens = totalSupply();
-        uint256[] memory _tokenIds = new uint256[](totalTokens);
-        string[] memory _uris = new string[](totalTokens);
-        string[] memory _geoJsons = new string[](totalTokens);
-        uint256 i;
-
-        for (i = 0; i < totalTokens; i++) {
-            // solhint-disable-next-line mark-callable-contracts
-            _tokenIds[i] = ERC721Enumerable.tokenByIndex(i);
-            _uris[i] = tokenURI(_tokenIds[i]);
-            _geoJsons[i] = geoJsons[_tokenIds[i]];
-        }
-        return (_tokenIds, _uris, _geoJsons);
     }
 
     // Returns an array of tokenIds, URIs for an owner address
