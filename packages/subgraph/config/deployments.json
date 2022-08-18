@@ -374,7 +374,7 @@
                 },
                 {
                   "internalType": "string",
-                  "name": "geoJson",
+                  "name": "_geoJson",
                   "type": "string"
                 }
               ],
@@ -425,26 +425,13 @@
                 },
                 {
                   "internalType": "bytes",
-                  "name": "_data",
+                  "name": "data",
                   "type": "bytes"
                 }
               ],
               "name": "safeTransferFrom",
               "outputs": [],
               "stateMutability": "nonpayable",
-              "type": "function"
-            },
-            {
-              "inputs": [],
-              "name": "sdRegistry",
-              "outputs": [
-                {
-                  "internalType": "address",
-                  "name": "",
-                  "type": "address"
-                }
-              ],
-              "stateMutability": "view",
               "type": "function"
             },
             {
@@ -474,7 +461,7 @@
                 },
                 {
                   "internalType": "string",
-                  "name": "geoJson",
+                  "name": "_geoJson",
                   "type": "string"
                 }
               ],
@@ -515,19 +502,6 @@
                 }
               ],
               "name": "setIndexValue",
-              "outputs": [],
-              "stateMutability": "nonpayable",
-              "type": "function"
-            },
-            {
-              "inputs": [
-                {
-                  "internalType": "address",
-                  "name": "_sdRegistry",
-                  "type": "address"
-                }
-              ],
-              "name": "setSDRegistry",
               "outputs": [],
               "stateMutability": "nonpayable",
               "type": "function"
@@ -742,6 +716,31 @@
                   "internalType": "uint256",
                   "name": "tokenId",
                   "type": "uint256"
+                },
+                {
+                  "indexed": false,
+                  "internalType": "string",
+                  "name": "geoJson",
+                  "type": "string"
+                },
+                {
+                  "indexed": false,
+                  "internalType": "uint256",
+                  "name": "_area",
+                  "type": "uint256"
+                }
+              ],
+              "name": "GeoNFTTopologyUpdated",
+              "type": "event"
+            },
+            {
+              "anonymous": false,
+              "inputs": [
+                {
+                  "indexed": false,
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
                 }
               ],
               "name": "GeoNFTUnregistered",
@@ -781,6 +780,19 @@
             },
             {
               "inputs": [],
+              "name": "getAllGeoNFTs",
+              "outputs": [
+                {
+                  "internalType": "uint256[]",
+                  "name": "",
+                  "type": "uint256[]"
+                }
+              ],
+              "stateMutability": "view",
+              "type": "function"
+            },
+            {
+              "inputs": [],
               "name": "owner",
               "outputs": [
                 {
@@ -798,11 +810,6 @@
                   "internalType": "uint256",
                   "name": "tokenId",
                   "type": "uint256"
-                },
-                {
-                  "internalType": "string",
-                  "name": "geoJson",
-                  "type": "string"
                 }
               ],
               "name": "registerGeoNFT",
@@ -846,6 +853,25 @@
               ],
               "name": "unregisterGeoNFT",
               "outputs": [],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            },
+            {
+              "inputs": [
+                {
+                  "internalType": "uint256",
+                  "name": "tokenId",
+                  "type": "uint256"
+                }
+              ],
+              "name": "updateGeoNFTTopology",
+              "outputs": [
+                {
+                  "internalType": "uint256",
+                  "name": "area",
+                  "type": "uint256"
+                }
+              ],
               "stateMutability": "nonpayable",
               "type": "function"
             }

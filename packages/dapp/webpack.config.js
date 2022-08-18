@@ -40,7 +40,20 @@ module.exports = ({ production }, { analyze, hmr, port, host }) => ({
   resolve: {
     extensions: ['.ts', '.js'],
     modules: [srcDir, 'node_modules'],
-
+    fallback: { 
+      "fs": false,
+      "http": false,
+      "https": false,
+      "net": false,
+      "crypto": false,
+      "os": false,
+      "stream": false,
+      "zlib": false,
+      "assert": false,
+      "buffer": false,
+      "querystring": false,
+      "url": false,
+    },
     alias: {
       // https://github.com/aurelia/dialog/issues/387
       // Uncomment next line if you had trouble to run aurelia-dialog on IE11
