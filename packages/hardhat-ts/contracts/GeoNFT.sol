@@ -20,7 +20,7 @@ contract GeoNFT is
 
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint8) private indexValues; // mapping of tokenId to index
+    mapping(uint256 => uint256) private indexValues; // mapping of tokenId to index value
     mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
 
     // solhint-disable-next-line no-empty-blocks, func-visibility
@@ -37,41 +37,17 @@ contract GeoNFT is
     ) public {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
 
         // set geoJson
         geoJsons[tokenId] = _geoJson;
 
         // default index value to 0 type to area_m2
+        // TODO?: Refactor to Struct to unify value and type?
         indexValues[tokenId] = 0;
         indexTypes[tokenId] = "area_m2";
 
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-    }
-
-    // Returns an array of tokenIds
-    function getAllTokens()
-        public
-        view
-        returns (
-            uint256[] memory,
-            string[] memory,
-            string[] memory
-        )
-    {
-        uint256 totalTokens = totalSupply();
-        uint256[] memory _tokenIds = new uint256[](totalTokens);
-        string[] memory _uris = new string[](totalTokens);
-        string[] memory _geoJsons = new string[](totalTokens);
-        uint256 i;
-
-        for (i = 0; i < totalTokens; i++) {
-            // solhint-disable-next-line mark-callable-contracts
-            _tokenIds[i] = ERC721Enumerable.tokenByIndex(i);
-            _uris[i] = tokenURI(_tokenIds[i]);
-            _geoJsons[i] = geoJsons[_tokenIds[i]];
-        }
-        return (_tokenIds, _uris, _geoJsons);
     }
 
     // Returns an array of tokenIds, URIs for an owner address
@@ -114,8 +90,8 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
     }
 
-    function setIndexValue(uint256 tokenId, uint8 indice) external onlyOwner {
-        indexValues[tokenId] = indice;
+    function setIndexValue(uint256 tokenId, uint256 _indexValue) external onlyOwner {
+        indexValues[tokenId] = _indexValue;
     }
 
     function setIndexType(uint256 tokenId, string memory indiceType)
@@ -163,9 +139,9 @@ contract GeoNFT is
     function indexValue(uint256 tokenId)
         public
         view
-        returns (uint8)
+        returns (uint256)
     {
-        uint8 _indexValue = indexValues[tokenId];
+        uint256 _indexValue = indexValues[tokenId];
         return _indexValue;
     }
 

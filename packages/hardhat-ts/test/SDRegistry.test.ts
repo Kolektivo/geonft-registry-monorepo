@@ -1,63 +1,60 @@
 import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
+import { GeoNFT, SDRegistry, AreaCalculation } from "../typechain";
 import {
-  // eslint-disable-next-line camelcase
-  GeoNFT__factory,
-  GeoNFT,
-  // eslint-disable-next-line camelcase
-  SDRegistry__factory,
-  SDRegistry,
-  // eslint-disable-next-line node/no-missing-import, node/no-unpublished-import
-} from "../typechain";
-import {
-  transformSolidityGeoJSON,
+  centroid,
+  solidityPoint,
   solidityCoordinate,
-  isPolygon,
-  // eslint-disable-next-line node/no-missing-import
+  solidityCoordinatesPolygon,
 } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import {
-  GEOJSON1,
-  GEOJSON2,
-  GEOJSON2_CLOCKWISE,
-  GEOJSON3_MULTIPOLYGON,
-  GEOJSON3_POLYGON,
-  // eslint-disable-next-line node/no-missing-import
-} from "./SDRegistry.mock";
+import { GEOJSON1, GEOJSON3_POLYGON } from "./mockData";
 
 const { expect } = chai;
 
 let sdRegistry: SDRegistry;
 let geoNFT: GeoNFT;
-// eslint-disable-next-line camelcase
-let geoNFTFactory: GeoNFT__factory;
-// eslint-disable-next-line camelcase
-let trigonometryFactory: any;
-// eslint-disable-next-line camelcase
-let sdRegistryFactory: SDRegistry__factory;
+let areaCalculation: AreaCalculation;
 let deployer: SignerWithAddress;
 let other: SignerWithAddress;
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const CENTROID = solidityPoint([12.147418, -68.890674]);
+const mockGeoNFTCoordinates: number[][] =
+  GEOJSON3_POLYGON.features[0].geometry.coordinates[0]; // Curazao coordinates
+const COORDINATES: [BigNumber, BigNumber][][] = [
+  mockGeoNFTCoordinates.map(solidityPoint),
+];
 
 describe("registry", () => {
   beforeEach(async () => {
     [deployer, other] = await ethers.getSigners();
-    geoNFTFactory = (await ethers.getContractFactory(
-      "GeoNFT",
-      deployer
-    )) as GeoNFT__factory; // eslint-disable-line camelcase
+
+    // Libraries
+    const trigonometryFactory = await ethers.getContractFactory("Trigonometry");
+    const trigonometry = await trigonometryFactory.deploy();
+
+    const geohashUtilsFactory = await ethers.getContractFactory("GeohashUtils");
+    const geohashUtils = await geohashUtilsFactory.deploy();
+
+    const areaFactory = await ethers.getContractFactory("AreaCalculation", {
+      libraries: {
+        Trigonometry: trigonometry.address,
+      },
+    });
+    areaCalculation = (await areaFactory.deploy()) as AreaCalculation;
+
+    // Contracts
+    const geoNFTFactory = await ethers.getContractFactory("GeoNFT");
     geoNFT = (await geoNFTFactory.deploy()) as GeoNFT;
 
-    trigonometryFactory = await ethers.getContractFactory("Trigonometry");
-    const trigonometryObj = await trigonometryFactory.deploy();
-
-    sdRegistryFactory = (await ethers.getContractFactory("SDRegistry", {
+    const sdRegistryFactory = await ethers.getContractFactory("SDRegistry", {
       libraries: {
-        Trigonometry: trigonometryObj.address,
+        AreaCalculation: areaCalculation.address,
+        GeohashUtils: geohashUtils.address,
       },
-    })) as SDRegistry__factory; // eslint-disable-line camelcase
+    });
     sdRegistry = (await sdRegistryFactory.deploy(geoNFT.address)) as SDRegistry;
   });
 
@@ -72,26 +69,25 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then updates area", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const newArea = 10;
+      const newArea = 451167820;
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId,
+        CENTROID
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
       // get calculated area from spatial data registry
-      const calculatedArea = registerReceipt.events![0].args![2];
+      const calculatedArea = await areaCalculation.polygonArea(COORDINATES);
       expect(calculatedArea).to.equal(newArea);
 
       // set area on minted GeoNFT
@@ -109,17 +105,16 @@ describe("registry", () => {
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId,
+        CENTROID
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -128,9 +123,8 @@ describe("registry", () => {
       expect(tokens.length).to.equal(1);
 
       // unregister minted GeoNFT with Spatial Data Registry
-      const unregisterTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .unregisterGeoNFT(tokenId);
+      const unregisterTX: ContractTransaction =
+        await sdRegistry.unregisterGeoNFT(tokenId);
       const unregisterReceipt: ContractReceipt = await unregisterTX.wait();
       expect(unregisterReceipt.status).to.equal(1);
 
@@ -144,38 +138,46 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then updates the topology", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const updatedArea = 20;
+      const newFeature = GEOJSON3_POLYGON.features[7];
+      const newCentroid = solidityPoint(centroid(newFeature.geometry));
+      const newCoordinates = solidityCoordinatesPolygon(
+        newFeature.geometry.coordinates
+      );
+      const newStringifiedGeoJSON = newCoordinates.toString();
+      const newArea = 27172;
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(deployer.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
-        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+        .withArgs(ZERO_ADDRESS, deployer.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      await sdRegistry.connect(deployer).registerGeoNFT(tokenId);
-
+      await sdRegistry.registerGeoNFT(tokenId, CENTROID);
       // update geoJson on minted GeoNFT
-      await geoNFT.setGeoJson(tokenId, GEOJSON2.toString());
+      await geoNFT.setGeoJson(tokenId, GEOJSON3_POLYGON.toString());
 
-      const updateTopologyTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .updateGeoNFTTopology(tokenId);
-      const updateTopologyReceipt: ContractReceipt =
-        await updateTopologyTX.wait();
+      const updateTopologyTX: ContractTransaction =
+        await sdRegistry.updateGeoNFTTopology(
+          tokenId,
+          newCoordinates,
+          newCentroid,
+          newStringifiedGeoJSON
+        );
 
-      // get calculated area from spatial data registry
-      const calculatedArea = updateTopologyReceipt.events![0].args![2];
-      expect(calculatedArea).to.equal(updatedArea);
+      await updateTopologyTX.wait();
 
-      // set area on minted GeoNFT
+      // get calculated area from AreaCalculation
+      const calculatedArea = await areaCalculation.polygonArea(newCoordinates);
+      // update area on minted GeoNFT
       await geoNFT.setIndexValue(tokenId, calculatedArea);
+      expect(calculatedArea).to.equal(newArea);
 
       // verify area on minted GeoNFT
       expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
+
+      // TODO: verify stringified geojson is updated
     });
   });
 
@@ -183,22 +185,26 @@ describe("registry", () => {
     it("contract owner mints a GeoNFT, adds to registry, then queries for it with lat/lng", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
-      const latitude = -10613206;
-      const longitude = 2301056;
+      const latitude = 12.147418397;
+      const longitude = -68.890674412;
+      const centroid: [BigNumber, BigNumber] = [
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+      ];
+      const precision = 8;
 
       // mint GeoNFT
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId,
+        centroid
+      );
       const registerReceipt: ContractReceipt = await registerTX.wait();
       expect(registerReceipt.status).to.equal(1);
 
@@ -208,283 +214,299 @@ describe("registry", () => {
 
       // query for minted GeoNFT with lat/lng
       const tokensQuery = await sdRegistry.queryGeoNFTsByLatLng(
-        latitude,
-        longitude
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision
       );
       expect(tokensQuery.length).to.equal(1);
     });
-  });
+    it("contract owner mints multiple GeoNFTs, adds them to registry, then queries for them with lat/lng at different precision levels", async () => {
+      // At level 8, all three GeoNFTs are in different geohash areas
+      // At level 7, GeoNFTs 1 and 2 are in the same geohash area, but GeoNFT 3 is not
+      // At level 6, all of them are in the same geohash area: d6pj07
 
-  describe("query geonfts by bounding box", async () => {
-    it("contract owner mints a GeoNFT, adds to registry, then queries for it by bounding box", async () => {
-      const tokenId = ethers.BigNumber.from(0);
+      const latitude = 12.147418397;
+      const longitude = -68.890674412;
+
+      // GeoNFT 1
+      const tokenId1 = ethers.BigNumber.from(0);
+      const centroid1: [BigNumber, BigNumber] = [
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+      ];
+      // GeoNFT 2
+      const tokenId2 = ethers.BigNumber.from(1);
+      const centroid2: [BigNumber, BigNumber] = [
+        solidityCoordinate(12.147315),
+        solidityCoordinate(-68.890126),
+      ];
+      // GeoNFT 3
+      const tokenId3 = ethers.BigNumber.from(2);
+      const centroid3: [BigNumber, BigNumber] = [
+        solidityCoordinate(12.147477),
+        solidityCoordinate(-68.891608),
+      ];
+
       const tokenURI = "0";
-      const minLatitude = -10613206;
-      const minLongitude = 2301056;
-      const maxLatitude = -10613205;
-      const maxLongitude = 2301057;
+      const precision1 = 8;
+      const precision2 = 7;
+      const precision3 = 6;
 
-      // mint GeoNFT
+      // mint GeoNFTs
+      // GeoNFT 1 minting
       await expect(
-        geoNFT
-          .connect(deployer)
-          .safeMint(other.address, tokenURI, GEOJSON1.toString())
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geoNFT, "Transfer")
-        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+        .withArgs(ZERO_ADDRESS, other.address, tokenId1);
 
       // register minted GeoNFT with Spatial Data Registry
-      const registerTX: ContractTransaction = await sdRegistry
-        .connect(deployer)
-        .registerGeoNFT(tokenId);
-      const registerReceipt: ContractReceipt = await registerTX.wait();
-      expect(registerReceipt.status).to.equal(1);
+      const registerTX1: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId1,
+        centroid1
+      );
+      const registerReceipt1: ContractReceipt = await registerTX1.wait();
+      expect(registerReceipt1.status).to.equal(1);
+
+      // GeoNFT 2 minting
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId2);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX2: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId2,
+        centroid2
+      );
+      const registerReceipt2: ContractReceipt = await registerTX2.wait();
+      expect(registerReceipt2.status).to.equal(1);
+
+      // GeoNFT 3 minting
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId3);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX3: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId3,
+        centroid3
+      );
+      const registerReceipt3: ContractReceipt = await registerTX3.wait();
+      expect(registerReceipt3.status).to.equal(1);
 
       // get all tokens in the registry
       const tokens = await sdRegistry.getAllGeoNFTs();
-      expect(tokens.length).to.equal(1);
+      expect(tokens.length).to.equal(3);
 
-      // query for minted GeoNFT with bounding box
-      const tokensQuery = await sdRegistry.queryGeoNFTsByBoundingBox(
-        minLatitude,
-        minLongitude,
-        maxLatitude,
-        maxLongitude
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery1 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision1
       );
-      expect(tokensQuery.length).to.equal(1);
+      expect(tokensQuery1.length).to.equal(1);
+
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery2 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision2
+      );
+      expect(tokensQuery2.length).to.equal(2);
+
+      // query for minted GeoNFT with lat/lng at precision 8
+      const tokensQuery3 = await sdRegistry.queryGeoNFTsByLatLng(
+        solidityCoordinate(latitude),
+        solidityCoordinate(longitude),
+        precision3
+      );
+      expect(tokensQuery3.length).to.equal(3);
     });
   });
 
-  describe("calculate area", async () => {
-    it("test isPolygon true", async () => {
-      const polygon = [
-        [-68.890674, 12.147418],
-        [-68.890746, 12.147347],
-        [-68.890721, 12.147236],
-        [-68.890593, 12.147198],
-        [-68.890518, 12.14728],
-        [-68.890551, 12.147379],
-        [-68.890674, 12.147418],
-      ];
+  describe("geohash registry", async () => {
+    const geohash1 = "d6nuzk8c";
+    const geohash2 = "d6nuzk8d";
+    // Simulates GeoNFT ID
+    const tokenId1 = ethers.BigNumber.from(42);
+    const tokenId2 = ethers.BigNumber.from(676);
+    const tokenId3 = ethers.BigNumber.from(128);
+    const tokenId4 = ethers.BigNumber.from(6);
 
-      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        solidityCoordinate(x[0]),
-        solidityCoordinate(x[1]),
-      ]);
-      const isPolygon = await sdRegistry
-        .connect(deployer)
-        .isPolygon(polygonInt);
-      expect(isPolygon).to.equal(true);
-    });
+    it("add nft to geohash and check subtree is filled", async () => {
+      // When adding an nft, data is not only appended to it's geohash array, but also
+      // to all subhashes arrays. E.g. for 'd6nuzk8c -> 42, data is added to the subtree:
+      // 'd' -> [42]
+      // 'd6' -> [42]
+      // 'd6n' -> [42]
+      // 'd6nu' -> [42]
+      // 'd6nuz' -> [42]
+      // 'd6nuzk' -> [42]
+      // 'd6nuzk8' -> [42]
+      // 'd6nuzk8c' -> [42]
 
-    it("test isPolygon false", async () => {
-      const polygon = [
-        [-68.890674, 12.147418],
-        [-68.890746, 12.147347],
-        [-68.890721, 12.147236],
-        [-68.890593, 12.147198],
-        [-68.890518, 12.14728],
-        [-68.890551, 12.147379],
-        [-68.890674, 12.147417], // should match first point
-      ];
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
 
-      const polygonInt: [BigNumber, BigNumber][] = polygon.map((x) => [
-        solidityCoordinate(x[0]),
-        solidityCoordinate(x[1]),
-      ]);
-      const isPolygon = await sdRegistry
-        .connect(deployer)
-        .isPolygon(polygonInt);
-      expect(isPolygon).to.equal(false);
-    });
-
-    it("elliptical area of polygon", async () => {
-      // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
-
-      const feature = geojsonSol.features[0]; // Curazao
-
-      if (!isPolygon(feature.geometry)) {
-        throw new Error(`
-          Geometry type '${feature.geometry.type}' invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-      const area =
-        feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
-
-      expect(area).to.equal(451167820); // In square meters (m2)
-    });
-
-    it("elliptical area of small polygon", async () => {
-      // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
-
-      const feature = geojsonSol.features[7];
-
-      if (!isPolygon(feature.geometry)) {
-        throw new Error(`
-          Geometry type '${feature.geometry.type}' invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-      const area =
-        feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
-
-      expect(area).to.equal(27172); // In square meters (m2)
-    });
-
-    it("elliptical area of small food forest", async () => {
-      // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON2);
-
-      const feature = geojsonSol.features[0];
-
-      if (!isPolygon(feature.geometry)) {
-        throw new Error(`
-          Geometry type '${feature.geometry.type}' invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-      const area =
-        feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
-
-      expect(area).to.equal(417); // In square meters (m2)
-    });
-
-    it("elliptical area of multipart polygon", async () => {
-      // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
-
-      const feature = geojsonSol.features[5]; // Splitted geometry
-
-      if (!isPolygon(feature.geometry)) {
-        throw new Error(`
-          Geometry type '${feature.geometry.type}' invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinates = feature.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-      const area =
-        feature.geometry.type === "Polygon"
-          ? await contract.polygonArea(coordinates as BigNumber[][][])
-          : await contract.multiPolygonArea(coordinates as BigNumber[][][][]);
-
-      expect(area).to.equal(5376806769293); // In square meters (m2)
-    });
-
-    it("area is equal on polygon and multipolygon format", async () => {
-      const geojsonSolSinglePolygon =
-        transformSolidityGeoJSON(GEOJSON3_POLYGON);
-      const geojsonSolMultipolygon = transformSolidityGeoJSON(
-        GEOJSON3_MULTIPOLYGON
-      );
-
-      const featureIndex = 0;
-      const featureSingle = geojsonSolSinglePolygon.features[featureIndex];
-      const featureMulti = geojsonSolMultipolygon.features[featureIndex];
-
-      if (
-        !isPolygon(featureSingle.geometry) ||
-        !isPolygon(featureMulti.geometry)
-      ) {
-        throw new Error(`
-          Geometry type invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinatesSingle = featureSingle.geometry.coordinates;
-      const coordinatesMulti = featureMulti.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-
-      const areas = await Promise.all([
-        contract.polygonArea(coordinatesSingle as BigNumber[][][]),
-        contract.multiPolygonArea(coordinatesMulti as BigNumber[][][][]),
-      ]);
-
-      const [areaSingle, areaMulti] = areas;
-      expect(areaSingle).to.equal(areaMulti).to.equal(451167820); // In square meters (m2)
-    });
-
-    it("area is equal on clockwise and counter-clockwise direction", async () => {
-      // CCW -> Counter clockwise (default)
-      // CW  -> Clockwise
-      const geojsonSolCCW = transformSolidityGeoJSON(GEOJSON2);
-      const geojsonSolCW = transformSolidityGeoJSON(GEOJSON2_CLOCKWISE);
-
-      const featureIndex = 0;
-      const featureCCW = geojsonSolCCW.features[featureIndex];
-      const featureCW = geojsonSolCW.features[featureIndex];
-
-      if (!isPolygon(featureCCW.geometry) || !isPolygon(featureCW.geometry)) {
-        throw new Error(`
-          Geometry type invalid.
-          Value must be 'Polygon' or 'MultiPolygon'.
-        `);
-      }
-
-      const coordinatesCCW = featureCCW.geometry.coordinates;
-      const coordinatesCW = featureCW.geometry.coordinates;
-      const contract = sdRegistry.connect(deployer);
-
-      const areaCCWPromise =
-        featureCCW.geometry.type === "Polygon"
-          ? contract.polygonArea(coordinatesCCW as BigNumber[][][])
-          : contract.multiPolygonArea(coordinatesCCW as BigNumber[][][][]);
-
-      const areaCWPromise =
-        featureCW.geometry.type === "Polygon"
-          ? contract.polygonArea(coordinatesCW as BigNumber[][][])
-          : contract.multiPolygonArea(coordinatesCW as BigNumber[][][][]);
-
-      const areas = await Promise.all([areaCCWPromise, areaCWPromise]);
-      const [areaCCW, areaCW] = areas;
-
-      expect(areaCCW).to.equal(areaCW).to.equal(417); // In square meters (m2)
-    });
-
-    it("elliptical area sum of GeoJSON", async () => {
-      // Solidity version of GeoJSON with integer coordinates
-      const geojsonSol = transformSolidityGeoJSON(GEOJSON3_MULTIPOLYGON);
-
-      // Array with the area of every feature
-      const featureAreas = await Promise.all(
-        geojsonSol.features.map((feature) => {
-          if (!isPolygon(feature.geometry)) {
-            throw new Error(`
-            Geometry type '${feature.geometry.type}' invalid.
-            Value must be 'Polygon' or 'MultiPolygon'.
-          `);
-          }
-
-          const coordinates = feature.geometry.coordinates;
-          const contract = sdRegistry.connect(deployer);
-          return feature.geometry.type === "Polygon"
-            ? contract.polygonArea(coordinates as BigNumber[][][])
-            : contract.multiPolygonArea(coordinates as BigNumber[][][][]);
+      // Nodes array of all geohash subhashe's tree
+      const nodes = await Promise.all(
+        Array.from({ length: geohash1.length }).map((_, i) => {
+          const subhash = geohash1.slice(0, i + 1);
+          return sdRegistry.getFromGeotree(subhash);
         })
       );
 
-      const totalArea = featureAreas.reduce((a, b) => a + b.toNumber(), 0);
-      expect(totalArea).to.equal(10276251371240); // In square meters (m2)
+      // Get first value of each subhash array and check it's the expected value
+      nodes.forEach((node) => {
+        expect(node[0]).to.equal(tokenId1);
+      });
+    });
+    it("add two nfts to same geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      // add a node to the tree
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+
+      expect(node.length).to.equal(2);
+      expect(node[0]).to.equal(tokenId1);
+      expect(node[1]).to.equal(tokenId2);
+    });
+    it("add the same nft to same geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      // add a node to the tree
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+
+      expect(node.length).to.equal(1);
+      expect(node[0]).to.equal(tokenId1);
+    });
+    it("update geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(1);
+
+      // update geohash from geohash1 (d6nuzk8c) to geohash2 (d6nuzk8d) for tokenId1 (42)
+      const formerGeohash = geohash1;
+      const newGeohash = geohash2;
+      await sdRegistry.updateGeotree(formerGeohash, newGeohash, tokenId1);
+
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
+      expect(formerNode.length).to.equal(0);
+
+      const newNode = await sdRegistry.getFromGeotree(geohash2);
+      expect(newNode.length).to.equal(1);
+    });
+    it("remove data from node with geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(1);
+
+      // remove tokenId1 (42) from geohash d6nuzk8c
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
+
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
+      expect(formerNode.length).to.equal(0);
+    });
+    it("remove data from geohash with two items", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(2);
+
+      // remove tokenId1 from geohash d6nuzk8c
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
+
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
+      expect(formerNode.length).to.equal(1);
+    });
+    it("remove data from geohash with multiple items", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+      await sdRegistry.addToGeotree(geohash1, tokenId2);
+      await sdRegistry.addToGeotree(geohash1, tokenId3);
+      await sdRegistry.addToGeotree(geohash1, tokenId4);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(4);
+
+      // remove tokenId1 from geohash d6nuzk8c
+      await sdRegistry.removeFromGeotree(geohash1, tokenId1);
+
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
+      expect(formerNode.length).to.equal(3);
+    });
+    it("try to remove data from geohash that hasn't been added", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(1);
+
+      // remove tokenId2 (676) from geohash d6nuzk8c
+      await sdRegistry.removeFromGeotree(geohash1, tokenId2);
+
+      const formerNode = await sdRegistry.getFromGeotree(geohash1);
+      expect(formerNode.length).to.equal(1);
+    });
+  });
+
+  describe("geohash searching", async () => {
+    it("find data of multiple geohashes at different levels", async () => {
+      const geohash1 = "gc7j98fg";
+      const geohash2 = "gc7j98fj";
+      const geohash3 = "gc7j98k3";
+      const tokenId1 = ethers.BigNumber.from(22);
+      const tokenId2 = ethers.BigNumber.from(33);
+      const tokenId3 = ethers.BigNumber.from(44);
+
+      /**
+       * Level 6                   gc7j98
+       *                          /      \
+       * Level 7            gc7j98f       gc7j98k
+       *                   /      \             \
+       * Level 8    gc7j98fg     gc7j98fj       gc7j98k3
+       *             [22]          [33]           [44]
+       */
+      await Promise.all([
+        sdRegistry.addToGeotree(geohash1, tokenId1),
+        sdRegistry.addToGeotree(geohash2, tokenId2),
+        sdRegistry.addToGeotree(geohash3, tokenId3),
+      ]);
+
+      const subhashLevel7 = geohash1.slice(0, 7);
+      const subhashLevel6 = geohash1.slice(0, 6);
+      const [resultLevel7BigNumber, resultLevel6BigNumber] = await Promise.all([
+        sdRegistry.getFromGeotree(subhashLevel7),
+        sdRegistry.getFromGeotree(subhashLevel6),
+      ]);
+
+      // Transform from Big Number values to integer values
+      const resultLevel7 = resultLevel7BigNumber.map((value) =>
+        value.toNumber()
+      );
+      const resultLevel6 = resultLevel6BigNumber.map((value) =>
+        value.toNumber()
+      );
+
+      // Geohash gc7j98f groups geohash1 and geohash2, so its data is -> [tokenId1, tokenId2]
+      expect(resultLevel7).deep.equal([
+        tokenId1.toNumber(),
+        tokenId2.toNumber(),
+      ]);
+      // Geohash gc7j98 groups geohash1, geohash2 and geohash3, so its data is -> [tokenId1, tokenId2, tokenId3]
+      expect(resultLevel6).deep.equal([
+        tokenId1.toNumber(),
+        tokenId2.toNumber(),
+        tokenId3.toNumber(),
+      ]);
     });
   });
 });
