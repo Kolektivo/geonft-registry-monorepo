@@ -114,6 +114,7 @@ contract SDRegistry is ReentrancyGuard, Ownable {
         int64 lat = _centroid[0];
         int64 lon = _centroid[1];
         string memory formerGeohash = tokenGeohash[_tokenId];
+        // solhint-disable-next-line mark-callable-contracts
         string memory newGeohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
         bool geohashIsTheSame = areEqualStrings(formerGeohash, newGeohash);
 
