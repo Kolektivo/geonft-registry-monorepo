@@ -42,7 +42,7 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
 
         // default index value to 0 type to area_m2
-        // TODO: Refactor to Struct to unify value and type?
+        // TODO?: Refactor to Struct to unify value and type?
         indexValues[tokenId] = 0;
         indexTypes[tokenId] = "area_m2";
 
