@@ -20,16 +20,14 @@ const sdRegistryDeployFunc: DeployFunction = async (
   const areaCalculationLibrary = await deploy("AreaCalculation", {
     from: deployer,
     libraries: {
-      Trigonometry: TrigonometryLibrary.address
-    }
+      Trigonometry: TrigonometryLibrary.address,
+    },
   });
 
   // deploy GeohashUtils Library
   const GeohashUtilsLibrary = await deploy("GeohashUtils", {
     from: deployer,
   });
-
-
 
   const deployResult = await deploy("SDRegistry", {
     from: deployer,
@@ -38,8 +36,8 @@ const sdRegistryDeployFunc: DeployFunction = async (
     libraries: {
       AreaCalculation: areaCalculationLibrary.address,
       GeohashUtils: GeohashUtilsLibrary.address,
-      Trigonometry: TrigonometryLibrary.address
-    }
+      Trigonometry: TrigonometryLibrary.address,
+    },
   });
 
   // get address from the deployed SD Registry contract
