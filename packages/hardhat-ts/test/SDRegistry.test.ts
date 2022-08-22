@@ -91,10 +91,12 @@ describe("registry", () => {
       expect(calculatedArea).to.equal(newArea);
 
       // set area on minted GeoNFT
-      await geoNFT.setIndexValue(tokenId, calculatedArea);
+      await geoNFT.setEcologicalIndex(tokenId, "area_m2", calculatedArea);
 
       // verify area on minted GeoNFT
-      expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
+      expect((await geoNFT.getEcologicalIndex(tokenId)).indexValue).to.equal(
+        calculatedArea
+      );
     });
   });
 
@@ -171,11 +173,13 @@ describe("registry", () => {
       // get calculated area from AreaCalculation
       const calculatedArea = await areaCalculation.polygonArea(newCoordinates);
       // update area on minted GeoNFT
-      await geoNFT.setIndexValue(tokenId, calculatedArea);
+      await geoNFT.setEcologicalIndex(tokenId, "area_m2", calculatedArea);
       expect(calculatedArea).to.equal(newArea);
 
       // verify area on minted GeoNFT
-      expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
+      expect((await geoNFT.getEcologicalIndex(tokenId)).indexValue).to.equal(
+        calculatedArea
+      );
 
       // TODO: verify stringified geojson is updated
     });

@@ -99,9 +99,36 @@ describe("geonft", () => {
       expect(await geonft.geoJson(tokenId)).to.be.equal(GEOJSON2.toString());
     });
 
-    it("update index value", async () => {
+    it("update ecological index type", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
+      const indexTypeDefault = "area_m2";
+      const indexTypeUpdate = "ecologicalindex_percent";
+      const indexValueDefault = 0;
+
+      await expect(
+        geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
+      )
+        .to.emit(geonft, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+      expect((await geonft.getEcologicalIndex(tokenId)).indexType).to.be.equal(
+        indexTypeDefault
+      );
+
+      await geonft.setEcologicalIndex(
+        tokenId,
+        indexTypeUpdate,
+        indexValueDefault
+      );
+      expect((await geonft.getEcologicalIndex(tokenId)).indexType).to.be.equal(
+        indexTypeUpdate
+      );
+    });
+
+    it("update ecological index value", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const indexTypeDefault = "area_m2";
       const indexValueDefault = 0;
       const indexValueUpdate = 10;
 
@@ -110,27 +137,47 @@ describe("geonft", () => {
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
-      expect(await geonft.indexValue(tokenId)).to.be.equal(indexValueDefault);
+      expect((await geonft.getEcologicalIndex(tokenId)).indexValue).to.be.equal(
+        indexValueDefault
+      );
 
-      await geonft.setIndexValue(tokenId, indexValueUpdate);
-      expect(await geonft.indexValue(tokenId)).to.be.equal(indexValueUpdate);
+      await geonft.setEcologicalIndex(
+        tokenId,
+        indexTypeDefault,
+        indexValueUpdate
+      );
+      expect((await geonft.getEcologicalIndex(tokenId)).indexValue).to.be.equal(
+        indexValueUpdate
+      );
     });
 
-    it("update index type", async () => {
+    it("update ecological index", async () => {
       const tokenId = ethers.BigNumber.from(0);
       const tokenURI = "0";
       const indexTypeDefault = "area_m2";
       const indexTypeUpdate = "ecologicalindex_percent";
+      const indexValueDefault = 0;
+      const indexValueUpdate = 10;
 
       await expect(
         geonft.safeMint(other.address, tokenURI, GEOJSON1.toString())
       )
         .to.emit(geonft, "Transfer")
         .withArgs(ZERO_ADDRESS, other.address, tokenId);
-      expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeDefault);
 
-      await geonft.setIndexType(tokenId, indexTypeUpdate);
-      expect(await geonft.indexType(tokenId)).to.be.equal(indexTypeUpdate);
+      const defaultEcologicalIndex = await geonft.getEcologicalIndex(tokenId);
+      expect(defaultEcologicalIndex.indexType).to.be.equal(indexTypeDefault);
+      expect(defaultEcologicalIndex.indexValue).to.be.equal(indexValueDefault);
+
+      await geonft.setEcologicalIndex(
+        tokenId,
+        indexTypeUpdate,
+        indexValueUpdate
+      );
+
+      const updateEcologicalIndex = await geonft.getEcologicalIndex(tokenId);
+      expect(updateEcologicalIndex.indexType).to.be.equal(indexTypeUpdate);
+      expect(updateEcologicalIndex.indexValue).to.be.equal(indexValueUpdate);
     });
   });
 
