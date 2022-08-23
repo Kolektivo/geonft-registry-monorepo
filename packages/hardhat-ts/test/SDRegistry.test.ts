@@ -9,7 +9,12 @@ import {
   solidityCoordinatesPolygon,
 } from "../utils/geomUtils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import { GEOJSON1, GEOJSON3_POLYGON } from "./mockData";
+import {
+  GEOJSON1,
+  GEOJSON3_POLYGON,
+  GEOJSON_INVALID_POLYGON1,
+  GEOJSON_INVALID_POLYGON2,
+} from "./mockData";
 
 const { expect } = chai;
 
@@ -95,6 +100,62 @@ describe("registry", () => {
 
       // verify area on minted GeoNFT
       expect(await geoNFT.indexValue(tokenId)).to.equal(calculatedArea);
+    });
+
+    it("contract owner mints a GeoNFT with wrong geometry (start/end points not the same)", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const coordinates = solidityCoordinatesPolygon(
+        GEOJSON_INVALID_POLYGON1.features[0].geometry.coordinates
+      );
+
+      // mint GeoNFT
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, coordinates.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId,
+        CENTROID
+      );
+      const registerReceipt: ContractReceipt = await registerTX.wait();
+      expect(registerReceipt.status).to.equal(1);
+
+      // get calculated area from spatial data registry
+      await expect(areaCalculation.polygonArea(coordinates)).to.be.revertedWith(
+        "The coordinates are invalid"
+      );
+    });
+
+    it("contract owner mints a GeoNFT with wrong geometry (less than 3 points)", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+      const tokenURI = "0";
+      const coordinates = solidityCoordinatesPolygon(
+        GEOJSON_INVALID_POLYGON2.features[0].geometry.coordinates
+      );
+
+      // mint GeoNFT
+      await expect(
+        geoNFT.safeMint(other.address, tokenURI, coordinates.toString())
+      )
+        .to.emit(geoNFT, "Transfer")
+        .withArgs(ZERO_ADDRESS, other.address, tokenId);
+
+      // register minted GeoNFT with Spatial Data Registry
+      const registerTX: ContractTransaction = await sdRegistry.registerGeoNFT(
+        tokenId,
+        CENTROID
+      );
+      const registerReceipt: ContractReceipt = await registerTX.wait();
+      expect(registerReceipt.status).to.equal(1);
+
+      // get calculated area from spatial data registry
+      await expect(areaCalculation.polygonArea(coordinates)).to.be.revertedWith(
+        "The coordinates are invalid"
+      );
     });
   });
 

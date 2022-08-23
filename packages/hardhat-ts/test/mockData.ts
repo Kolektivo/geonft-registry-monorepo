@@ -1078,3 +1078,53 @@ export const GEOJSON3_POLYGON: FeatureCollection<Polygon> = {
     },
   ],
 };
+
+export const GEOJSON_INVALID_POLYGON1: FeatureCollection<Polygon> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {
+        fid: 1,
+        position: "CURAZAO",
+        area_m2: 449411638.06331575,
+        order: 1,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-69.15370080990094, 12.391964777866605],
+            [-69.157212618903188, 12.389623571865103],
+            [-69.162772983156756, 12.379380795608535],
+            [-69.155164063651881, 12.37118657460328],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
+export const GEOJSON_INVALID_POLYGON2: FeatureCollection<Polygon> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {
+        fid: 1,
+        position: "CURAZAO",
+        area_m2: 449411638.06331575,
+        order: 1,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-69.15370080990094, 12.391964777866605],
+            [-69.15370080990094, 12.391964777866605],
+          ],
+        ],
+      },
+    },
+  ],
+};

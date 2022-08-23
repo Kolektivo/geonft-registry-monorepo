@@ -57,7 +57,7 @@ library AreaCalculation {
     */
     function ringArea(int256[2][] memory _coordinates) private pure returns (int256) {
         bool isValidPolygon = isPolygon(_coordinates);
-        require(isValidPolygon == true);
+        require(isValidPolygon == true, "The coordinates are invalid");
 
         uint256 coordsLength = _coordinates.length;
         int256[2] memory p1;
