@@ -18,10 +18,14 @@ contract GeoNFT is
 
     Counters.Counter private _tokenIdCounter;
 
+    struct EcologicalIndex {
+        string indexType;
+        int256 indexValue;
+    }
+
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint256) private indexValues; // mapping of tokenId to index value
-    mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
+    mapping(uint256 => EcologicalIndex) private ecologicalIndexMap;
 
     // solhint-disable-next-line no-empty-blocks, func-visibility
     constructor() ERC721("GEONFT Minter", "GEONFT") {}
@@ -43,8 +47,11 @@ contract GeoNFT is
 
         // default index value to 0 type to area_m2
         // TODO?: Refactor to Struct to unify value and type?
-        indexValues[tokenId] = 0;
-        indexTypes[tokenId] = "area_m2";
+        EcologicalIndex memory ecologicalIndex = EcologicalIndex("area_m2", 0);
+        ecologicalIndexMap[tokenId] = ecologicalIndex;
+
+        // indexValues[tokenId] = 0;
+        // indexTypes[tokenId] = "area_m2";
 
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
@@ -90,15 +97,18 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
     }
 
-    function setIndexValue(uint256 tokenId, uint256 _indexValue) external onlyOwner {
-        indexValues[tokenId] = _indexValue;
+    function getEcologicalIndex(uint256 _tokenId) public view returns (EcologicalIndex memory) {
+        return ecologicalIndexMap[_tokenId];
     }
 
-    function setIndexType(uint256 tokenId, string memory indiceType)
-        external
-        onlyOwner
-    {
-        indexTypes[tokenId] = indiceType;
+    function setEcologicalIndex(
+        uint256 _tokenId,
+        string memory _indexType,
+        int256 _indexValue
+    ) external onlyOwner {
+        EcologicalIndex storage ecologicalIndex =  ecologicalIndexMap[_tokenId];
+        ecologicalIndex.indexType = _indexType;
+        ecologicalIndex.indexValue = _indexValue;
     }
 
     // The following functions are overrides required by Solidity.
@@ -134,24 +144,6 @@ contract GeoNFT is
     {
         string memory _geoJson = geoJsons[tokenId];
         return _geoJson;
-    }
-
-    function indexValue(uint256 tokenId)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 _indexValue = indexValues[tokenId];
-        return _indexValue;
-    }
-
-    function indexType(uint256 tokenId)
-        public
-        view
-        returns (string memory)
-    {
-        string memory _indexType = indexTypes[tokenId];
-        return _indexType;
     }
 
     function supportsInterface(bytes4 interfaceId)
