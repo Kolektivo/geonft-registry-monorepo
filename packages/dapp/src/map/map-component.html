@@ -3,7 +3,21 @@
     <div class="map-wrap" ref="mapWrap">
       <div id="map" class="map" ref="mapDiv">
       </div>
-      <button click.trigger="toggleBasemap()" id="toggle-button">TOGGLE BASEMAP</button>
+      <button
+        id="toggle-button" 
+        click.trigger="toggleBasemap()"
+      >
+        TOGGLE BASEMAP
+      </button>
+      <div id="feature-data-box">
+        <button
+          id="close-data-box"
+          click.trigger="closeDataBox()"
+        >
+          X
+        </button>
+        <div id="feature-data"></div>
+      </div>
     </div>
   </div>
 </template>

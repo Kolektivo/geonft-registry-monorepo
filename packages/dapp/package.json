@@ -27,6 +27,7 @@
     "@aurelia/testing": "dev",
     "@aurelia/ts-jest": "dev",
     "@aurelia/webpack-loader": "dev",
+    "@types/geojson": "^7946.0.10",
     "@types/jest": "^27.5.1",
     "@types/maplibre-gl": "^1.14.0",
     "@types/node": "^17.0.35",
