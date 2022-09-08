@@ -23,7 +23,6 @@ import TileLayer from "ol/layer/Tile";
 import { Geometry } from "ol/geom";
 
 type Basemap = "cartographic" | "satellite";
-type LayerName = "EDIT" | "TEST";
 type Layer = VectorLayer<VectorSource<Geometry>>
 
 // const cartographicBasemap: L.TileLayer = L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -44,6 +43,9 @@ type Layer = VectorLayer<VectorSource<Geometry>>
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
+  editLayer: Layer;
+  previewLayer: Layer;
+  testLayer: Layer;
   draw: Draw;
   select: Select;
   currentBasemap: Basemap = "cartographic";
@@ -55,10 +57,6 @@ export class MapComponent {
     const osm = new TileLayer({
       source: new OSM(),
     });
-    
-    const LAYER_NAME_ATTRIBUTE = "name";
-    const EDIT_LAYER_NAME: LayerName = "EDIT";
-    const TEST_LAYER_NAME: LayerName = "TEST";
 
     const editStyle = new Style({
       fill: new Fill({
@@ -70,14 +68,12 @@ export class MapComponent {
       source: editSource,
       style: editStyle,
     });
-    editLayer.set(LAYER_NAME_ATTRIBUTE, EDIT_LAYER_NAME);
 
     const testLayer = new VectorLayer({
       source: new VectorSource({
         features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(testGeoJSON),
       }),
     });
-    testLayer.set(LAYER_NAME_ATTRIBUTE, TEST_LAYER_NAME);
     
     const map = new Map({
       layers: [osm, editLayer, testLayer],
@@ -117,9 +113,6 @@ export class MapComponent {
       layers: [testLayer], 
 
     });
-    select.on("select", (e) => {
-      console.log("SELECT: ", e);
-    });
 
     map.addInteraction(select);
 
@@ -128,39 +121,46 @@ export class MapComponent {
     this.select = select;
   }
 
-  private getLayer(name: LayerName): Layer {
-    let layer: Layer | undefined;
-
-    this.map.getLayers().forEach(mapLayer => {
-      if (mapLayer.get("name") === name && mapLayer instanceof VectorLayer) {
-        layer = mapLayer;
-      }
-    });
-    return layer;
-  }
-
   public startEdition(): void {
     this.draw.setActive(true);
     this.map.removeInteraction(this.select);
   }
 
   public finishEdition(): void {
-    this.draw.finishDrawing();
+    this.draw.setActive(false);
     this.select.setActive(false);
-    const editLayer = this.getLayer("EDIT");
-    const testLayer = this.getLayer("TEST");
-    const drawnFeatures = editLayer.getSource().getFeatures();
-    editLayer.getSource().clear();
-    testLayer.getSource().addFeatures(drawnFeatures);
+    this.showMetadataForm();
   }
 
   public cancelEdition(): void {
     this.draw.abortDrawing();
     this.draw.setActive(false);
     this.map.addInteraction(this.select);
-    
-    const editLayer = this.getLayer("EDIT");
-    editLayer.getSource().clear();
+    this.editLayer.getSource().clear();
+  }
+
+  private applyDrawnFeaturesToLayer(targetLayer: Layer): void {
+    const drawnFeatures = this.editLayer.getSource().getFeatures();
+    this.editLayer.getSource().clear();
+    targetLayer.getSource().addFeatures(drawnFeatures);
+  }
+
+  private showMetadataForm(): void {
+    const formDataElement = document.getElementById("form-data");
+    formDataElement.style.display = "block";
+  }
+
+  private hideMetadataForm(): void {
+    const formDataElement = document.getElementById("form-data");
+    formDataElement.style.display = "none";
+  }
+
+  public sendValue(): void {
+    const valueInputElement = document.getElementById("form-value") as HTMLInputElement;
+    const value = valueInputElement.value;
+    console.log("FORM VALUE: ", value);
+    this.hideMetadataForm();
+    this.applyDrawnFeaturesToLayer(this.previewLayer);
   }
 
   public closeDataBox(): void {
