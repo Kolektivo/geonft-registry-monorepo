@@ -1,8 +1,23 @@
 import { inject } from "aurelia-framework";
-import L, { FeatureGroup, Layer, LayerGroup, PathOptions } from "leaflet";
+import L, { FeatureGroup, Layer, layerGroup, LayerGroup, PathOptions } from "leaflet";
+import GeoJSON from 'ol/format/GeoJSON';
+import Circle from 'ol/geom/Circle';
+import FeatureOl from 'ol/Feature';
+import { fromLonLat } from "ol/proj";
+import Map from 'ol/Map';
+import OSM from "ol/source/OSM";
+import Select from 'ol/interaction/Select';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import View from 'ol/View';
+import { Fill, Stroke, Style } from 'ol/style';
+import { altKeyOnly, click, pointerMove } from 'ol/events/condition';
+import "ol/ol.css";
 import "leaflet-draw";
 import "leaflet/dist/leaflet.css";
-import "leaflet-draw/dist/leaflet.draw.css";
+// import "leaflet-draw/dist/leaflet.draw.css";
+import '@geoman-io/leaflet-geoman-free';  
+import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css'; 
 import { 
   weatherStationsGeoJSON, 
   foodforestsGeoJSON, 
@@ -10,6 +25,7 @@ import {
 } from "./map-component.data";
 import "./map-component.scss";
 import { Feature, FeatureCollection } from "geojson";
+import TileLayer from "ol/layer/Tile";
 
 type Basemap = "cartographic" | "satellite";
 
@@ -44,132 +60,86 @@ const selectStyle: PathOptions = {
   fillOpacity: 0.8,
 }
 
+const drawStyle: PathOptions = {
+  color: "red", // turquoise
+  fillColor: "red",
+  fillOpacity: 0.3,
+}
+
+const tempStyle: PathOptions = {
+  color: "purple",
+  fillColor: "green",
+  fillOpacity: 1,
+}
+
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
-  map: L.DrawMap;
+  map: Map;
+  select: Select | null;
   currentBasemap: Basemap = "cartographic";
-  selectedFeature: FeatureGroup<FeatureCollection> | null = null;
 
   public attached(): void {
-    const initialState = { lng: -68.95, lat: 12.138, zoom: 7 };
+    const initialCenter = [-68.95, 12.138];
+    const initialZoom = 7;
 
-    const map = L.map("map").setView(
-      [initialState.lat, initialState.lng,], initialState.zoom
-    );
+    const style = new Style({
+      fill: new Fill({
+        color: '#eeeeee',
+      }),
+    });
+    
+    const vectorSource = new VectorSource({
+      features: new GeoJSON({ featureProjection: "EPSG:3857"}).readFeatures(testGeoJSON),
+    });
+    
+    vectorSource.addFeature(new FeatureOl(new Circle([5e6, 7e6], 1e6)));
 
-    const initBasemap = basemaps[this.currentBasemap];
-    initBasemap.addTo(map);
-
-    const drawnItems = new L.FeatureGroup().addTo(map);
-
-    map.on(L.Draw.Event.CREATED, (e) => {
-      // Marked as deprecated but only way to work
-      const { layer } = e;
-      drawnItems.addLayer(layer);
+    const osm = new TileLayer({
+      source: new OSM(),
     });
 
-    const foodForestLayer = new L.GeoJSON(foodforestsGeoJSON).addTo(map);
-    const weatherStationsLayer = new L.GeoJSON(weatherStationsGeoJSON, {
-      pointToLayer: (_, latlng) => {
-        const icon = new L.Icon({
-          iconUrl: "/kolektivo_sun.png",
-          iconSize: [24, 24],
-        });
-        return L.marker(latlng, { icon, });
-      }
-    }).addTo(map);
-    const testLayer = new L.GeoJSON(testGeoJSON, {
-      // https://leafletjs.com/reference.html#path-option
-      style: () => defaultStyle,
-      onEachFeature: (feature, layer) => {
-        const label: string = feature.properties.name;
-        layer.bindTooltip(label);
-      }
-      
-    }).addTo(map);
-
-    // Define drawing toolbar and hiding some of them
-    new L.Control.Draw({
-      draw: {
-        polyline: false,
-        circle: false,
-        circlemarker: false,
-        rectangle: false,
-      },
-      edit: {
-        featureGroup: drawnItems,
-      }
-    }).addTo(map);
-
-    testLayer.on("mouseover", (e: L.LeafletMouseEvent) => {
-      const feature: FeatureGroup = e.layer;
-      const featureId = testLayer.getLayerId(feature);
-
-      if (isSelectedFeature(featureId)) return;
-
-      feature.setStyle(hoverStyle);
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+    });
+    
+    const map = new Map({
+      layers: [osm, vectorLayer],
+      target: 'map',
+      view: new View({
+        // projection: "EPSG:4326",
+        center: fromLonLat(initialCenter),
+        zoom: initialZoom,
+      }),
     });
 
-    testLayer.on("mouseout", (e: L.LeafletMouseEvent) => {
-      const feature: FeatureGroup = e.layer;
-      const featureId = testLayer.getLayerId(feature);
-
-      if (isSelectedFeature(featureId)) return;
-      testLayer.resetStyle(feature);
+    const selected = new Style({
+      fill: new Fill({
+        color: '#eeeeee',
+      }),
+      stroke: new Stroke({
+        color: 'rgba(255, 255, 255, 0.7)',
+        width: 2,
+      }),
     });
 
-    testLayer.on("click", (e: L.LeafletMouseEvent) => {
-      const feature: FeatureGroup = e.layer;
-      const featureId = testLayer.getLayerId(feature);
-      feature.setStyle(selectStyle);
-      
-      if (this.selectedFeature) {
-        this.selectedFeature.setStyle(defaultStyle);
-      }
-
-      this.selectedFeature = testLayer.getLayer(featureId) as FeatureGroup;
-      this.displayData();
-    });
-
-    const isSelectedFeature = (layerId: number): boolean => {
-      if (!this.selectedFeature) return false;
-
-      const selectedFeatureId = testLayer.getLayerId(this.selectedFeature);
-      return selectedFeatureId === layerId;
+    function selectStyle(feature) {
+      const color = feature.get('COLOR') || '#eeeeee';
+      selected.getFill().setColor(color);
+      return selected;
     }
 
-    this.map = map;
-  }
+    // select interaction working on "singleclick"
+    const select = new Select({ style: selectStyle });
+    select.on("select", (e) => {
+      console.log("SELECT: ", e);
+    });
 
-  private deselectFeature(): void {
-    this.selectedFeature.setStyle(defaultStyle);
-    this.selectedFeature = null;
-  }
-
-  public toggleBasemap(): void {
-    const newBasemap: Basemap = this.currentBasemap === "cartographic"
-      ? "satellite"
-      : "cartographic";
-    const oldBasemapLayer = basemaps[this.currentBasemap];
-    const newBasemapLayer = basemaps[newBasemap];
-
-    this.map.addLayer(newBasemapLayer);
-    this.map.removeLayer(oldBasemapLayer);
-    this.currentBasemap = newBasemap;
-  }
-
-  private displayData(): void {
-    const featureDataBoxElement = document.getElementById("feature-data-box");
-    const featureDataElement = document.getElementById("feature-data");
-    const feature = this.selectedFeature.feature as Feature;
-    featureDataBoxElement.style.display = "block";
-    featureDataElement.innerHTML = feature.properties.description;
+    map.addInteraction(select);
   }
 
   public closeDataBox(): void {
     const featureDataBoxElement = document.getElementById("feature-data-box");
     featureDataBoxElement.style.display = "none";
-    this.deselectFeature();
   }
 }

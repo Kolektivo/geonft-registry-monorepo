@@ -9,6 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@aurelia/validation-html": "dev",
+    "@geoman-io/leaflet-geoman-free": "^2.13.0",
     "@material-design-icons/svg": "^0.11.4",
     "@microsoft/fast-components": "^2.30.6",
     "@microsoft/fast-element": "^1.10.2",
@@ -21,7 +22,8 @@
     "html-loader": "^3.1.2",
     "leaflet": "^1.8.0",
     "leaflet-draw": "^1.0.4",
-    "maplibre-gl": "^1.15.2"
+    "maplibre-gl": "^1.15.2",
+    "ol": "^7.1.0"
   },
   "devDependencies": {
     "@aurelia/testing": "dev",
@@ -85,7 +87,8 @@
     "build:dev": "webpack",
     "analyze": "webpack --env production --analyze",
     "test": "au test",
-    "lint": "eslint --ext .ts ./src ./test"
+    "lint": "eslint --ext .ts ./src ./test",
+    "tunnel": "C:/cloudflared.exe tunnel --url localhost:8080"
   },
   "engines": {
     "node": ">=10.12.0"

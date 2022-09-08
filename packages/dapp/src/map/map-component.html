@@ -4,7 +4,25 @@
       <div id="map" class="map" ref="mapDiv">
       </div>
       <button
-        id="toggle-button" 
+        id="start-edition" 
+        click.trigger="startEdition()"
+      >
+        START EDITION
+      </button>
+      <button
+        id="finish-edition" 
+        click.trigger="finishEdition()"
+      >
+        FINISH EDITION
+      </button>
+      <button
+        id="cancel-edition" 
+        click.trigger="cancelEdition()"
+      >
+        CANCEL EDITION
+      </button>
+      <button
+        id="toggle-basemap" 
         click.trigger="toggleBasemap()"
       >
         TOGGLE BASEMAP
@@ -17,6 +35,14 @@
           X
         </button>
         <div id="feature-data"></div>
+        <button click.trigger="editFeature()">EDIT</button>
+        <button click.trigger="finishEdition()">FINISH</button>
+      </div>
+      <div id="form-data">
+        <input id="form-value" type="text" placeholder="Enter data value" />
+        <button click.trigger="sendValue()">
+          Send value
+        </button>
       </div>
     </div>
   </div>

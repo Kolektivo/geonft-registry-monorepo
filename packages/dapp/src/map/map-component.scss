@@ -13,7 +13,28 @@
     height: 100%;
   }
 
-  #toggle-button {
+  #start-edition {
+    position: absolute;
+    bottom: 200px;
+    right: 20px;
+    z-index: 999;
+  }
+
+  #finish-edition {
+    position: absolute;
+    bottom: 150px;
+    right: 20px;
+    z-index: 999;
+  }
+
+  #cancel-edition {
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    z-index: 999;
+  }
+
+  #toggle-basemap {
     position: absolute;
     bottom: 50px;
     right: 20px;
@@ -35,6 +56,19 @@
     #feature-data {
       color: black;
     }
+  }
+
+  #form-data {
+    display: none;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid lightgrey;
+    border-radius: 4px;
+    box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.2);
+    z-index: 999;
   }
 
   .watermark {

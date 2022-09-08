@@ -313,3 +313,93 @@ export const testGeoJSON: GeoJSON = {
     },
   ],
 }
+
+export const testGeoJSONSingle: GeoJSON = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: {
+        name: 'Test feature 1',
+        description:
+          'Food Forest 1<br><img width=\'200\' src=\'\\ff1.jpg\'><br>300 m²<br>3-4 Managers<br>Established in 2018',
+        icon: 'image_tree_green',
+        status: 'approved'
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [
+              -68.6354149997234,
+              12.110363491120767
+            ],
+            [
+              -68.3354699850082,
+              12.110321530841098
+            ],
+            [
+              -68.3354766905307,
+              11.610244166558177
+            ],
+            [
+              -68.6354056119919,
+              11.610210073816223
+            ],
+          ],
+          [
+            [
+              -67.9354149997234,
+              12.110363491120767
+            ],
+            [
+              -67.2354699850082,
+              12.110321530841098
+            ],
+            [
+              -67.2354766905307,
+              11.610244166558177
+            ],
+            [
+              -67.9354056119919,
+              11.610210073816223
+            ],
+          ], 
+        ]
+      },
+    },
+    {
+      type: 'Feature',
+      properties: {
+        name: 'Test feature 2',
+        description:
+          'Food Forest 2<br><img width=\'200\' src=\'\\kolektivo_sun.png\'><br>150 m²<br>2 Managers<br>Established in 2018',
+        icon: 'image_tree_green',
+        status: 'approved'
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [
+              -71.6354149997234,
+              12.110363491120767
+            ],
+            [
+              -71.3354699850082,
+              12.110321530841098
+            ],
+            [
+              -71.3354766905307,
+              11.610244166558177
+            ],
+            [
+              -71.6354056119919,
+              11.610210073816223
+            ],
+          ],
+        ]
+      },
+    },
+  ],
+}
