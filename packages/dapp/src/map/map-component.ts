@@ -1,17 +1,17 @@
 import { inject } from "aurelia-framework";
-import Draw from 'ol/interaction/Draw';
-import GeoJSON from 'ol/format/GeoJSON';
-import Circle from 'ol/geom/Circle';
-import FeatureOl from 'ol/Feature';
+import Draw from "ol/interaction/Draw";
+import GeoJSON from "ol/format/GeoJSON";
+import Circle from "ol/geom/Circle";
+import FeatureOl from "ol/Feature";
 import { fromLonLat } from "ol/proj";
-import Map from 'ol/Map';
+import Map from "ol/Map";
 import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
-import Select from 'ol/interaction/Select';
-import VectorLayer from 'ol/layer/Vector';
-import VectorSource from 'ol/source/Vector';
-import View from 'ol/View';
-import { Fill, Stroke, Style } from 'ol/style';
+import Select from "ol/interaction/Select";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import View from "ol/View";
+import { Fill, Stroke, Style } from "ol/style";
 import "ol/ol.css";
 import { 
   weatherStationsGeoJSON, 
@@ -54,15 +54,13 @@ const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
+  status: Status = "idle";
   editLayer: Layer;
   previewLayer: Layer;
   testLayer: Layer;
   draw: Draw;
   select: Select;
   currentBasemap: Basemap = "cartographic";
-  cartographicBasemap: TileLayer<OSM>;
-  satelliteBasemap: TileLayer<XYZ>;
-
 
   public attached(): void {
     const initialCenter = [-68.95, 12.138];
@@ -85,10 +83,10 @@ export class MapComponent {
 
     const previewStyle = new Style({
       fill: new Fill({
-        color: [245, 203, 66, 0.3]
+        color: this.makeStrippedPattern()
       }),
       stroke:  new Stroke({
-        color: [189, 147, 9],
+        color: [42, 86, 156],
         width: 2,
       })
     });
@@ -97,28 +95,38 @@ export class MapComponent {
       style: previewStyle,
     });
 
+    const testStyle = new Style({
+      fill: new Fill({
+        color: [50, 168, 82, 0.3]
+      }),
+      stroke:  new Stroke({
+        color: [26, 97, 45],
+        width: 2,
+      })
+    });
     const testLayer = new VectorLayer({
       source: new VectorSource({
         features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(testGeoJSON),
       }),
+      style: testStyle
     });
     
     const initBasemap = basemaps[this.currentBasemap];
     const map = new Map({
-      layers: [initBasemap, editLayer, testLayer],
-      target: 'map',
+      layers: [initBasemap, editLayer, previewLayer, testLayer],
+      target: "map",
       view: new View({
         center: fromLonLat(initialCenter),
         zoom: initialZoom,
       }),
     });
 
-    const selected = new Style({
+    const selectStyle = new Style({
       fill: new Fill({
-        color: '#eeeeee',
+        color: "rgba(230, 242, 5, 0.7)",
       }),
       stroke: new Stroke({
-        color: 'rgba(255, 255, 255, 0.7)',
+        color: "#34e1eb",
         width: 2,
       }),
     });
@@ -129,12 +137,6 @@ export class MapComponent {
     });
     draw.setActive(false);
     map.addInteraction(draw);
-
-    function selectStyle(feature) {
-      const color = feature.get('COLOR') || '#eeeeee';
-      selected.getFill().setColor(color);
-      return selected;
-    }
 
     // select interaction working on "singleclick"
     const select = new Select({ 
@@ -152,6 +154,21 @@ export class MapComponent {
     this.previewLayer = previewLayer;
   }
 
+  private makeStrippedPattern() {
+    const cnv = document.createElement("canvas");
+    const ctx = cnv.getContext("2d");
+    cnv.width = 8;
+    cnv.height = 8;
+    ctx.lineWidth = 600;
+    ctx.fillStyle = "#4287f5"; // light blue
+    
+    for(let i = 0; i < 6; ++i) {
+      ctx.fillRect(i, i, 1, 1);
+    }
+
+    return ctx.createPattern(cnv, "repeat");
+  }
+
   public toggleBasemap(): void {
     const newBasemap: Basemap = this.currentBasemap === "cartographic"
       ? "satellite"
@@ -165,22 +182,23 @@ export class MapComponent {
     newBasemapLayer.setZIndex(-1);
   }
 
-  public startEdition(): void {
+  public startDrawing(): void {
     this.draw.setActive(true);
     this.map.removeInteraction(this.select);
+    this.status = "drawing";
   }
 
-  public finishEdition(): void {
+  public finishDrawing(): void {
     this.draw.setActive(false);
-    this.select.setActive(false);
     this.showMetadataForm();
+    this.status = "metadata";
   }
 
-  public cancelEdition(): void {
+  public cancelDrawing(): void {
     this.draw.abortDrawing();
-    this.draw.setActive(false);
     this.map.addInteraction(this.select);
     this.editLayer.getSource().clear();
+    this.status = "idle";
   }
 
   private applyDrawnFeaturesToLayer(targetLayer: Layer): void {
@@ -205,6 +223,8 @@ export class MapComponent {
     console.log("FORM VALUE: ", value);
     this.hideMetadataForm();
     this.applyDrawnFeaturesToLayer(this.previewLayer);
+    this.map.addInteraction(this.select);
+    this.status = "idle";
   }
 
   public closeDataBox(): void {

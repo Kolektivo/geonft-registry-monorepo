@@ -4,20 +4,23 @@
       <div id="map" class="map" ref="mapDiv">
       </div>
       <button
-        id="start-edition" 
-        click.trigger="startEdition()"
+        id="start-edition"
+        click.trigger="startDrawing()"
+        disabled.bind="status !== 'idle'"
       >
-        START EDITION
+        START DRAWING
       </button>
       <button
         id="finish-edition" 
-        click.trigger="finishEdition()"
+        click.trigger="finishDrawing()"
+        disabled.bind="status !== 'drawing'"
       >
-        FINISH EDITION
+        FINISH DRAWING
       </button>
       <button
         id="cancel-edition" 
-        click.trigger="cancelEdition()"
+        click.trigger="cancelDrawing()"
+        disabled.bind="status !== 'drawing' && status !== 'metadata'"
       >
         CANCEL EDITION
       </button>
@@ -36,7 +39,7 @@
         </button>
         <div id="feature-data"></div>
         <button click.trigger="editFeature()">EDIT</button>
-        <button click.trigger="finishEdition()">FINISH</button>
+        <button click.trigger="finishDrawing()">FINISH</button>
       </div>
       <div id="form-data">
         <input id="form-value" type="text" placeholder="Enter data value" />
