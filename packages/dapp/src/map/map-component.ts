@@ -6,6 +6,7 @@ import FeatureOl from 'ol/Feature';
 import { fromLonLat } from "ol/proj";
 import Map from 'ol/Map';
 import OSM from "ol/source/OSM";
+import XYZ from "ol/source/XYZ";
 import Select from 'ol/interaction/Select';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -22,22 +23,32 @@ import { Feature, FeatureCollection } from "geojson";
 import TileLayer from "ol/layer/Tile";
 import { Geometry } from "ol/geom";
 
+type Layer = VectorLayer<VectorSource<Geometry>>;
 type Basemap = "cartographic" | "satellite";
-type Layer = VectorLayer<VectorSource<Geometry>>
+type Status = "idle" | "drawing" | "metadata" | "preview";
 
-// const cartographicBasemap: L.TileLayer = L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-//   maxZoom: 19,
-//   attribution: '© OpenStreetMap'
-// });
-// const satelliteBasemap: L.TileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
-//   maxZoom: 20,
-//   subdomains:['mt0','mt1','mt2','mt3']
-// });
+// Basemaps
+// OpenStreet Maps
+const cartographicBasemap = new TileLayer({
+  source: new OSM(),
+});
 
-// const basemaps: Record<Basemap, L.TileLayer> = {
-//   "cartographic": cartographicBasemap,
-//   "satellite": satelliteBasemap,
-// }
+// Google Maps
+const satelliteBasemap = new TileLayer({
+  source: new XYZ({
+    urls: [
+      "http://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "http://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "http://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      "http://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+    ]
+  }),
+});
+
+const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
+  "cartographic": cartographicBasemap,
+  "satellite": satelliteBasemap,
+}
 
 @inject(Element)
 export class MapComponent {
@@ -49,24 +60,41 @@ export class MapComponent {
   draw: Draw;
   select: Select;
   currentBasemap: Basemap = "cartographic";
+  cartographicBasemap: TileLayer<OSM>;
+  satelliteBasemap: TileLayer<XYZ>;
+
 
   public attached(): void {
     const initialCenter = [-68.95, 12.138];
     const initialZoom = 7;
 
-    const osm = new TileLayer({
-      source: new OSM(),
-    });
-
     const editStyle = new Style({
       fill: new Fill({
-        color: '#ff0000',
+        color: [245, 203, 66, 0.3]
       }),
+      stroke:  new Stroke({
+        color: [189, 147, 9],
+        width: 2,
+      })
     });
     const editSource = new VectorSource();
     const editLayer = new VectorLayer({
       source: editSource,
       style: editStyle,
+    });
+
+    const previewStyle = new Style({
+      fill: new Fill({
+        color: [245, 203, 66, 0.3]
+      }),
+      stroke:  new Stroke({
+        color: [189, 147, 9],
+        width: 2,
+      })
+    });
+    const previewLayer = new VectorLayer({
+      source: new VectorSource(),
+      style: previewStyle,
     });
 
     const testLayer = new VectorLayer({
@@ -75,8 +103,9 @@ export class MapComponent {
       }),
     });
     
+    const initBasemap = basemaps[this.currentBasemap];
     const map = new Map({
-      layers: [osm, editLayer, testLayer],
+      layers: [initBasemap, editLayer, testLayer],
       target: 'map',
       view: new View({
         center: fromLonLat(initialCenter),
@@ -119,6 +148,21 @@ export class MapComponent {
     this.map = map;
     this.draw = draw;
     this.select = select;
+    this.editLayer = editLayer;
+    this.previewLayer = previewLayer;
+  }
+
+  public toggleBasemap(): void {
+    const newBasemap: Basemap = this.currentBasemap === "cartographic"
+      ? "satellite"
+      : "cartographic";
+    const oldBasemapLayer = basemaps[this.currentBasemap];
+    const newBasemapLayer = basemaps[newBasemap];
+
+    this.map.addLayer(newBasemapLayer);
+    this.map.removeLayer(oldBasemapLayer);
+    this.currentBasemap = newBasemap;
+    newBasemapLayer.setZIndex(-1);
   }
 
   public startEdition(): void {
