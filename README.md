@@ -24,6 +24,8 @@ This `geonft-registry-monorepo` repository pertains to all things related to Geo
 
 This repository is organized as a [monorepo](https://monorepo.tools/), a single repository containing multiple distinct code bases, with well-defined relationships.
 
+## Monorepo Architecture
+
 This monorepo has three main packages whose function can be summarized as follows:
 
 - [hardhat-ts](https://github.com/Kolektivo/geonft-registry-monorepo/tree/main/packages/hardhat-ts): a hardhat typescript project
