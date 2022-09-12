@@ -21,9 +21,8 @@ import {
 import "./map-component.scss";
 import { Feature, FeatureCollection } from "geojson";
 import TileLayer from "ol/layer/Tile";
-import { Geometry } from "ol/geom";
+import { Geometry, MultiPolygon, Polygon, SimpleGeometry } from "ol/geom";
 
-type Layer = VectorLayer<VectorSource<Geometry>>;
 type Basemap = "cartographic" | "satellite";
 type Status = "idle" | "drawing" | "metadata" | "preview";
 
@@ -55,9 +54,9 @@ export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
   status: Status = "idle";
-  editLayer: Layer;
-  previewLayer: Layer;
-  testLayer: Layer;
+  editLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  testLayer: VectorLayer<VectorSource<Geometry>>;
   draw: Draw;
   select: Select;
   currentBasemap: Basemap = "cartographic";
@@ -75,9 +74,8 @@ export class MapComponent {
         width: 2,
       })
     });
-    const editSource = new VectorSource();
     const editLayer = new VectorLayer({
-      source: editSource,
+      source: new VectorSource<MultiPolygon>(),
       style: editStyle,
     });
 
@@ -91,7 +89,7 @@ export class MapComponent {
       })
     });
     const previewLayer = new VectorLayer({
-      source: new VectorSource(),
+      source: new VectorSource<MultiPolygon>(),
       style: previewStyle,
     });
 
@@ -132,8 +130,14 @@ export class MapComponent {
     });
 
     const draw = new Draw({
-      source: editSource,
-      type: "MultiPolygon"
+      source: editLayer.getSource(),
+      type: "MultiPolygon",
+      trace: true,
+      // geometryFunction: function(coords, geom): SimpleGeometry {
+      //   return geom !== undefined
+      //     ? geom
+      //     : new Polygon(coords as number[]);
+      // },
     });
     draw.setActive(false);
     map.addInteraction(draw);
@@ -188,6 +192,10 @@ export class MapComponent {
     this.status = "drawing";
   }
 
+  public undo(): void {
+    this.draw.removeLastPoint();
+  }
+
   public finishDrawing(): void {
     this.draw.setActive(false);
     this.showMetadataForm();
@@ -201,7 +209,7 @@ export class MapComponent {
     this.status = "idle";
   }
 
-  private applyDrawnFeaturesToLayer(targetLayer: Layer): void {
+  private applyDrawnFeaturesToLayer(targetLayer: VectorLayer<VectorSource<Geometry>>): void {
     const drawnFeatures = this.editLayer.getSource().getFeatures();
     this.editLayer.getSource().clear();
     targetLayer.getSource().addFeatures(drawnFeatures);

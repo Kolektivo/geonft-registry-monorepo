@@ -11,6 +11,12 @@
         START DRAWING
       </button>
       <button
+        id="undo-button"
+        click.trigger="undo()"
+      >
+        UNDO
+      </button>
+      <button
         id="finish-edition" 
         click.trigger="finishDrawing()"
         disabled.bind="status !== 'drawing'"

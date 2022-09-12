@@ -13,6 +13,13 @@
     height: 100%;
   }
 
+  #undo-button {
+    position: absolute;
+    bottom: 250px;
+    right: 20px;
+    z-index: 999;
+  }
+
   #start-edition {
     position: absolute;
     bottom: 200px;
