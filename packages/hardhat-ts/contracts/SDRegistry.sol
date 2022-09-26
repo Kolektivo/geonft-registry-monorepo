@@ -97,6 +97,19 @@ contract SDRegistry is ReentrancyGuard, Ownable {
     }
 
     /**
+     * @notice Checks if the token is registered by getting its value in the tokenGeohash mapping
+     * @param _tokenId The index of the GeoNFT to update
+     * @return tokenIsRegistered whether the token ID is registered or not
+     */
+    function isRegistered(uint256 _tokenId) public view returns (bool) {
+        string memory geohash = tokenGeohash[_tokenId];
+        // If token does not exists in tokenGeohash, it will return an empty string (the default value
+        // for string), with length = 0.
+        bool tokenIsRegistered = bytes(geohash).length > 0;
+        return tokenIsRegistered;
+    }
+
+    /**
      * @notice Update the topology of the GeoNFT
      * @param _tokenId The index of the GeoNFT to update
      * @param _coordinates Array of polygon rings
