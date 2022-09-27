@@ -93,6 +93,8 @@ contract SDRegistry is ReentrancyGuard, Ownable {
             }
         }
 
+        // Remove token from the tokenGeohash mapping
+        delete tokenGeohash[_tokenId];
         emit GeoNFTUnregistered(_tokenId);
     }
 
