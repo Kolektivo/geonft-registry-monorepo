@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 import { ethers } from "hardhat";
 import { BigNumber, ContractReceipt, ContractTransaction } from "ethers";
 import chai from "chai";
@@ -643,6 +644,46 @@ describe("registry", () => {
         tokenId2.toNumber(),
         tokenId3.toNumber(),
       ]);
+    });
+  });
+
+  describe("geoNFT is registered", async () => {
+    it("checks if a GeoNFT is registered by its token ID", async () => {
+      const tokenId1 = ethers.BigNumber.from(0);
+      const tokenId2 = ethers.BigNumber.from(1);
+
+      let isToken1Registered = await sdRegistry.isRegistered(tokenId1);
+      let isToken2Registered = await sdRegistry.isRegistered(tokenId2);
+      expect(isToken1Registered).to.be.false;
+      expect(isToken2Registered).to.be.false;
+
+      await sdRegistry.registerGeoNFT(tokenId1, CENTROID);
+
+      // Token 1 gets registered but token 2 does not
+      isToken1Registered = await sdRegistry.isRegistered(tokenId1);
+      isToken2Registered = await sdRegistry.isRegistered(tokenId2);
+      expect(isToken1Registered).to.be.true;
+      expect(isToken2Registered).to.be.false;
+    });
+
+    it("checks if a GeoNFT not registered after executing unregister function", async () => {
+      const tokenId = ethers.BigNumber.from(0);
+
+      // At first, token should not be registered
+      let isTokenRegistered = await sdRegistry.isRegistered(tokenId);
+      expect(isTokenRegistered).to.be.false;
+
+      await sdRegistry.registerGeoNFT(tokenId, CENTROID);
+
+      // After executing register function, token should be added to the registry
+      isTokenRegistered = await sdRegistry.isRegistered(tokenId);
+      expect(isTokenRegistered).to.be.true;
+
+      await sdRegistry.unregisterGeoNFT(tokenId);
+
+      // After executing unregister function, token should be removed from registry
+      isTokenRegistered = await sdRegistry.isRegistered(tokenId);
+      expect(isTokenRegistered).to.be.false;
     });
   });
 });
