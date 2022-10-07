@@ -1,4 +1,7 @@
 import { inject } from "aurelia-framework";
+import { createMachine } from "xstate";
+import { StateMachine } from "xstate/lib/types";
+import { State } from "xstate/lib/State";
 import Draw from "ol/interaction/Draw";
 import GeoJSON from "ol/format/GeoJSON";
 import Circle from "ol/geom/Circle";
@@ -49,11 +52,33 @@ const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
   "satellite": satelliteBasemap,
 }
 
+// State machine
+type MachineEvents = 
+  | { type: "CREATE_GEONFT" }
+  | { type: "START_EDITION"}
+
+const mapStateMachine = createMachine<null, MachineEvents>({
+  id: "map-machine",
+  initial: "idle",
+  states: {
+    idle: {
+      on: { CREATE_GEONFT: "metadata"}
+    },
+    metadata: {
+      on: { START_EDITION: "edition"}
+    },
+    edition: {},
+    preview: {},
+  }
+});
+
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
   status: Status = "idle";
+  state = mapStateMachine.initialState;
+  sidebar = false;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
@@ -171,6 +196,24 @@ export class MapComponent {
     }
 
     return ctx.createPattern(cnv, "repeat");
+  }
+
+  public toggleSidebar(): void {
+    const sidebarElement = document.getElementById("sidebar");
+    this.sidebar = !this.sidebar;
+    this.sidebar 
+      ? sidebarElement.classList.remove("closed")
+      : sidebarElement.classList.add("closed");
+  }
+
+  public createGeoNFT() {
+    const newState = mapStateMachine.transition(this.state, { type: "CREATE_GEONFT"});
+    this.state = newState;
+  }
+
+  public startEdition() {
+    const newState = mapStateMachine.transition(this.state, { type: "START_EDITION"});
+    this.state = newState;
   }
 
   public toggleBasemap(): void {

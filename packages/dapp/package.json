@@ -23,7 +23,8 @@
     "leaflet": "^1.8.0",
     "leaflet-draw": "^1.0.4",
     "maplibre-gl": "^1.15.2",
-    "ol": "^7.1.0"
+    "ol": "^7.1.0",
+    "xstate": "^4.33.6"
   },
   "devDependencies": {
     "@aurelia/testing": "dev",

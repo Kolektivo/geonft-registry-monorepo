@@ -1,5 +1,18 @@
 <template>
   <div class="page mapContainer">
+    <!-- <p>${state.value}</p>
+    <button click.trigger="createGeoNFT()">CREATE NFT</button>
+    <button click.trigger="startEdition()">START EDITION</button> -->
+    <div id="sidebar" class="sidebar closed">
+      <button click.trigger="toggleSidebar()" class="sidebar-button">
+        ${sidebar ? "X" : "-"}
+      </button>
+      <div class="sidebar-content">
+        <h2>GeoNFT's</h2>
+        <button>Add Foodforest</button>
+        <button>Add Weather station</button>
+      </div>
+    </div>
     <div class="map-wrap" ref="mapWrap">
       <div id="map" class="map" ref="mapDiv">
       </div>
