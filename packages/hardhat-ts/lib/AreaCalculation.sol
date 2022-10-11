@@ -44,11 +44,11 @@ library AreaCalculation {
         returns (uint256)
     {
         int256 total = 0;
-
-        if (_coordinates.length > 0) {
+        uint256 coordinatesLength = _coordinates.length;
+        if (coordinatesLength > 0) {
             total += abs(ringArea(_coordinates[0]));
 
-            for (uint256 i = 1; i < _coordinates.length; ++i) {
+            for (uint256 i = 1; i < coordinatesLength; ++i) {
                 total -= abs(ringArea(_coordinates[i]));
             }
         }

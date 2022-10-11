@@ -68,21 +68,22 @@ contract SDRegistry is Ownable {
         removeFromAllGeotreeSubhashes(geohash, _tokenId);
 
         // Remove token ID from the global token array
-        if (tokenArray.length == 1) {
+        uint256 tokenArrayLength = tokenArray.length;
+        if (tokenArrayLength == 1) {
             tokenArray.pop();
         } else {
             uint256[] memory newTokenArray = new uint256[](
-                tokenArray.length - 1
+                tokenArrayLength - 1
             );
             uint256 counter = 0;
-            for (uint256 i; i < tokenArray.length; ++i) {
+            for (uint256 i; i < tokenArrayLength; ++i) {
                 if (tokenArray[i] != _tokenId) {
                     newTokenArray[counter] = tokenArray[i];
                     counter++;
                 }
             }
 
-            if (counter == tokenArray.length - 1) {
+            if (counter == tokenArrayLength - 1) {
                 tokenArray = newTokenArray;
             }
         }
@@ -211,7 +212,8 @@ contract SDRegistry is Ownable {
 
         // iterates over all 8 levels of the geohash and insert/append data
         // to each of those levels indexed by its subhash
-        for (uint8 i; i < geohashArray.length; ++i) {
+        uint256 geohashArrayLength = geohashArray.length;
+        for (uint8 i; i < geohashArrayLength; ++i) {
             // create subhash according to the depth level by slicing original geohash;
             // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
             // solhint-disable-next-line
@@ -228,17 +230,18 @@ contract SDRegistry is Ownable {
                 continue;
             }
             // if node does not exist, create it
-            if (node.data.length == 0) {
+            uint256 nodeDataLength = node.data.length;
+            if (nodeDataLength == 0) {
                 node.data = new uint256[](1);
                 node.data[0] = _data;
                 geotree[subhash] = node;
             } else {
                 // if node exists, add data to it
-                uint256[] memory newData = new uint256[](node.data.length + 1);
-                for (uint256 j; j < node.data.length; ++j) {
+                uint256[] memory newData = new uint256[](nodeDataLength + 1);
+                for (uint256 j; j < nodeDataLength; ++j) {
                     newData[j] = node.data[j];
                 }
-                newData[node.data.length] = _data;
+                newData[nodeDataLength] = _data;
                 node.data = newData;
                 geotree[subhash] = node;
             }
@@ -297,13 +300,14 @@ contract SDRegistry is Ownable {
         }
 
         // if node contains only one value, delete node
-        if (node.data.length == 1) {
+        uint256 nodeDataLength = node.data.length;
+        if (nodeDataLength == 1) {
             delete geotree[_geohash];
         } else {
             // if node contains more than one value, rebuild data array
-            uint256[] memory newData = new uint256[](node.data.length - 1);
+            uint256[] memory newData = new uint256[](nodeDataLength - 1);
             uint256 counter = 0;
-            for (uint256 i; i < node.data.length - 1; ++i) {
+            for (uint256 i; i < nodeDataLength - 1; ++i) {
                 if (node.data[i] != _data) {
                     newData[counter] = node.data[i];
                     counter++;
@@ -320,10 +324,11 @@ contract SDRegistry is Ownable {
     ) private {
         // geohash characters splitted into an array
         bytes memory geohashArray = bytes(_geohash);
+        uint256 geohashArrayLength = geohashArray.length;
         // require the length of the _geohash is GEOHASH_LENGTH
-        require(geohashArray.length == GEOHASH_LENGTH);
+        require(geohashArrayLength == GEOHASH_LENGTH);
 
-        for (uint8 i; i < geohashArray.length; ++i) {
+        for (uint8 i; i < geohashArrayLength; ++i) {
             // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
             // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
             string memory subhash = string(geohashArray.slice(0, i + 1));
@@ -341,7 +346,8 @@ contract SDRegistry is Ownable {
         pure
         returns (bool)
     {
-        for (uint256 i; i < _node.data.length; ++i) {
+        uint256 nodeDataLength = _node.data.length;
+        for (uint256 i; i < nodeDataLength; ++i) {
             if (_node.data[i] == _data) {
                 return true;
             }
