@@ -122,7 +122,7 @@ library GeohashUtils {
         int64 mid;
         uint8 hashValue;
 
-        for (uint8 i = 0; i < bytes(_geohash).length; i++) {
+        for (uint8 i; i < bytes(_geohash).length; ++i) {
             string memory code = string(abi.encodePacked(bytes(_geohash)[i]));
             hashValue = indexOf(GEOHASH_CODES, code);
 
@@ -155,7 +155,7 @@ library GeohashUtils {
 
         assert(_valueBytes.length == 1);
 
-        for (uint8 i = 0; i < _baseBytes.length; i++) {
+        for (uint8 i; i < _baseBytes.length; ++i) {
             if (_baseBytes[i] == _valueBytes[0]) {
                 return i;
             }

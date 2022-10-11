@@ -13,7 +13,8 @@ contract GeoNFT is
     ERC721Enumerable,
     ERC721URIStorage,
     ERC721Burnable,
-    Ownable {
+    Ownable
+{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
@@ -72,9 +73,8 @@ contract GeoNFT is
         uint256[] memory _tokenIds = new uint256[](totalTokensForOwner);
         string[] memory _uris = new string[](totalTokensForOwner);
         string[] memory _geoJsons = new string[](totalTokensForOwner);
-        uint256 i;
 
-        for (i = 0; i < totalTokensForOwner; i++) {
+        for (uint256 i; i < totalTokensForOwner; ++i) {
             // solhint-disable-next-line mark-callable-contracts
             _tokenIds[i] = ERC721Enumerable.tokenOfOwnerByIndex(owner, i);
             _uris[i] = tokenURI(_tokenIds[i]);
@@ -97,7 +97,11 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
     }
 
-    function getEcologicalIndex(uint256 _tokenId) public view returns (EcologicalIndex memory) {
+    function getEcologicalIndex(uint256 _tokenId)
+        public
+        view
+        returns (EcologicalIndex memory)
+    {
         return ecologicalIndexMap[_tokenId];
     }
 
@@ -106,7 +110,7 @@ contract GeoNFT is
         string memory _indexType,
         int256 _indexValue
     ) external onlyOwner {
-        EcologicalIndex storage ecologicalIndex =  ecologicalIndexMap[_tokenId];
+        EcologicalIndex storage ecologicalIndex = ecologicalIndexMap[_tokenId];
         ecologicalIndex.indexType = _indexType;
         ecologicalIndex.indexValue = _indexValue;
     }
@@ -137,11 +141,7 @@ contract GeoNFT is
         return super.tokenURI(tokenId);
     }
 
-    function geoJson(uint256 tokenId)
-        public
-        view
-        returns (string memory)
-    {
+    function geoJson(uint256 tokenId) public view returns (string memory) {
         string memory _geoJson = geoJsons[tokenId];
         return _geoJson;
     }
