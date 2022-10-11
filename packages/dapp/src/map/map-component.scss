@@ -1,6 +1,8 @@
 @import "styles/styles.scss";
 
 .page.mapContainer {
+  position: relative;
+
   .sidebar {
     $width: 300px;
 
@@ -27,10 +29,22 @@
       background-color: pink;
       height: 100%;
 
-      h2 {
+      h2, h3 {
         color: black;
       }
     }
+  }
+
+  .edition-tools {
+    position: absolute;
+    top: 100px;
+    left: 20px;
+    background-color: lightgray;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 999;
   }
 
   .map-wrap {

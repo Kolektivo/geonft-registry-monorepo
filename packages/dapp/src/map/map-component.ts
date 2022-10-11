@@ -16,10 +16,10 @@ import VectorSource from "ol/source/Vector";
 import View from "ol/View";
 import { Fill, Stroke, Style } from "ol/style";
 import "ol/ol.css";
-import { 
-  weatherStationsGeoJSON, 
-  foodforestsGeoJSON, 
-  testGeoJSON 
+import {
+  weatherStationsGeoJSON,
+  foodforestsGeoJSON,
+  testGeoJSON,
 } from "./map-component.data";
 import "./map-component.scss";
 import { Feature, FeatureCollection } from "geojson";
@@ -27,7 +27,6 @@ import TileLayer from "ol/layer/Tile";
 import { Geometry, MultiPolygon, Polygon, SimpleGeometry } from "ol/geom";
 
 type Basemap = "cartographic" | "satellite";
-type Status = "idle" | "drawing" | "metadata" | "preview";
 
 // Basemaps
 // OpenStreet Maps
@@ -42,43 +41,67 @@ const satelliteBasemap = new TileLayer({
       "http://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
       "http://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
       "http://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-      "http://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-    ]
+      "http://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    ],
   }),
 });
 
 const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
-  "cartographic": cartographicBasemap,
-  "satellite": satelliteBasemap,
-}
+  cartographic: cartographicBasemap,
+  satellite: satelliteBasemap,
+};
 
 // State machine
-type MachineEvents = 
-  | { type: "CREATE_GEONFT" }
-  | { type: "START_EDITION"}
+type MachineEventsType =
+  | "CREATE_FOODFOREST"
+  | "CANCEL_METADATA"
+  | "START_EDITION"
+  | "FINISH_DRAWING"
+  | "START_DRAWING"
+  | "DELETE_FEATURE";
+type MachineEvents = { type: MachineEventsType };
 
 const mapStateMachine = createMachine<null, MachineEvents>({
   id: "map-machine",
   initial: "idle",
   states: {
     idle: {
-      on: { CREATE_GEONFT: "metadata"}
+      on: { CREATE_FOODFOREST: "metadata" },
     },
     metadata: {
-      on: { START_EDITION: "edition"}
+      on: {
+        START_EDITION: "edition",
+        CANCEL_METADATA: "idle",
+      },
     },
-    edition: {},
+    edition: {
+      initial: "draw",
+      states: {
+        draw: {
+          on: {
+            FINISH_DRAWING: "edit",
+          },
+        },
+        edit: {
+          on: {
+            START_DRAWING: "draw",
+            DELETE_FEATURE: "delete",
+          },
+        },
+        delete: {},
+      },
+    },
     preview: {},
-  }
+  },
 });
 
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
-  status: Status = "idle";
   state = mapStateMachine.initialState;
-  sidebar = false;
+  sidebar = true;
+  sidebarButton = true;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
@@ -92,12 +115,12 @@ export class MapComponent {
 
     const editStyle = new Style({
       fill: new Fill({
-        color: [245, 203, 66, 0.3]
+        color: [245, 203, 66, 0.3],
       }),
-      stroke:  new Stroke({
+      stroke: new Stroke({
         color: [189, 147, 9],
         width: 2,
-      })
+      }),
     });
     const editLayer = new VectorLayer({
       source: new VectorSource<MultiPolygon>(),
@@ -106,12 +129,12 @@ export class MapComponent {
 
     const previewStyle = new Style({
       fill: new Fill({
-        color: this.makeStrippedPattern()
+        color: this.makeStrippedPattern(),
       }),
-      stroke:  new Stroke({
+      stroke: new Stroke({
         color: [42, 86, 156],
         width: 2,
-      })
+      }),
     });
     const previewLayer = new VectorLayer({
       source: new VectorSource<MultiPolygon>(),
@@ -120,20 +143,22 @@ export class MapComponent {
 
     const testStyle = new Style({
       fill: new Fill({
-        color: [50, 168, 82, 0.3]
+        color: [50, 168, 82, 0.3],
       }),
-      stroke:  new Stroke({
+      stroke: new Stroke({
         color: [26, 97, 45],
         width: 2,
-      })
+      }),
     });
     const testLayer = new VectorLayer({
       source: new VectorSource({
-        features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(testGeoJSON),
+        features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(
+          testGeoJSON
+        ),
       }),
-      style: testStyle
+      style: testStyle,
     });
-    
+
     const initBasemap = basemaps[this.currentBasemap];
     const map = new Map({
       layers: [initBasemap, editLayer, previewLayer, testLayer],
@@ -158,20 +183,21 @@ export class MapComponent {
       source: editLayer.getSource(),
       type: "MultiPolygon",
       trace: true,
-      // geometryFunction: function(coords, geom): SimpleGeometry {
-      //   return geom !== undefined
-      //     ? geom
-      //     : new Polygon(coords as number[]);
-      // },
+      stopClick: true,
+    });
+    draw.on("drawend", () => {
+      if (this.state.matches("edition")) {
+        draw.setActive(false);
+        this.stateTransition("FINISH_DRAWING");
+      }
     });
     draw.setActive(false);
     map.addInteraction(draw);
 
     // select interaction working on "singleclick"
-    const select = new Select({ 
+    const select = new Select({
       style: selectStyle,
-      layers: [testLayer], 
-
+      layers: [testLayer],
     });
 
     map.addInteraction(select);
@@ -190,8 +216,8 @@ export class MapComponent {
     cnv.height = 8;
     ctx.lineWidth = 600;
     ctx.fillStyle = "#4287f5"; // light blue
-    
-    for(let i = 0; i < 6; ++i) {
+
+    for (let i = 0; i < 6; ++i) {
       ctx.fillRect(i, i, 1, 1);
     }
 
@@ -199,27 +225,34 @@ export class MapComponent {
   }
 
   public toggleSidebar(): void {
-    const sidebarElement = document.getElementById("sidebar");
     this.sidebar = !this.sidebar;
-    this.sidebar 
-      ? sidebarElement.classList.remove("closed")
-      : sidebarElement.classList.add("closed");
   }
 
-  public createGeoNFT() {
-    const newState = mapStateMachine.transition(this.state, { type: "CREATE_GEONFT"});
+  private stateTransition(newStateEvent: MachineEventsType): void {
+    const newState = mapStateMachine.transition(this.state, {
+      type: newStateEvent,
+    });
     this.state = newState;
+  }
+
+  public createFoodforest() {
+    this.stateTransition("CREATE_FOODFOREST");
+  }
+
+  public cancelMetadata() {
+    this.stateTransition("CANCEL_METADATA");
   }
 
   public startEdition() {
-    const newState = mapStateMachine.transition(this.state, { type: "START_EDITION"});
-    this.state = newState;
+    this.stateTransition("START_EDITION");
+    this.sidebar = false;
+    this.sidebarButton = false;
+    this.startDrawing();
   }
 
   public toggleBasemap(): void {
-    const newBasemap: Basemap = this.currentBasemap === "cartographic"
-      ? "satellite"
-      : "cartographic";
+    const newBasemap: Basemap =
+      this.currentBasemap === "cartographic" ? "satellite" : "cartographic";
     const oldBasemapLayer = basemaps[this.currentBasemap];
     const newBasemapLayer = basemaps[newBasemap];
 
@@ -230,9 +263,13 @@ export class MapComponent {
   }
 
   public startDrawing(): void {
+    this.stateTransition("START_DRAWING");
     this.draw.setActive(true);
     this.map.removeInteraction(this.select);
-    this.status = "drawing";
+  }
+
+  public stopDrawing(): void {
+    this.draw.setActive(false);
   }
 
   public undo(): void {
@@ -241,45 +278,19 @@ export class MapComponent {
 
   public finishDrawing(): void {
     this.draw.setActive(false);
-    this.showMetadataForm();
-    this.status = "metadata";
   }
 
   public cancelDrawing(): void {
     this.draw.abortDrawing();
     this.map.addInteraction(this.select);
     this.editLayer.getSource().clear();
-    this.status = "idle";
   }
 
-  private applyDrawnFeaturesToLayer(targetLayer: VectorLayer<VectorSource<Geometry>>): void {
+  private applyDrawnFeaturesToLayer(
+    targetLayer: VectorLayer<VectorSource<Geometry>>
+  ): void {
     const drawnFeatures = this.editLayer.getSource().getFeatures();
     this.editLayer.getSource().clear();
     targetLayer.getSource().addFeatures(drawnFeatures);
-  }
-
-  private showMetadataForm(): void {
-    const formDataElement = document.getElementById("form-data");
-    formDataElement.style.display = "block";
-  }
-
-  private hideMetadataForm(): void {
-    const formDataElement = document.getElementById("form-data");
-    formDataElement.style.display = "none";
-  }
-
-  public sendValue(): void {
-    const valueInputElement = document.getElementById("form-value") as HTMLInputElement;
-    const value = valueInputElement.value;
-    console.log("FORM VALUE: ", value);
-    this.hideMetadataForm();
-    this.applyDrawnFeaturesToLayer(this.previewLayer);
-    this.map.addInteraction(this.select);
-    this.status = "idle";
-  }
-
-  public closeDataBox(): void {
-    const featureDataBoxElement = document.getElementById("feature-data-box");
-    featureDataBoxElement.style.display = "none";
   }
 }
