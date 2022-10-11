@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { GeoNFT } from "./GeoNFT.sol";
-import { AreaCalculation } from "../lib/AreaCalculation.sol";
-import { GeohashUtils } from "../lib/GeohashUtils.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {GeoNFT} from "./GeoNFT.sol";
+import {AreaCalculation} from "../lib/AreaCalculation.sol";
+import {GeohashUtils} from "../lib/GeohashUtils.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol"; // Utils to slice array
 import "hardhat/console.sol"; // Import console.log
 
@@ -43,11 +43,8 @@ contract SDRegistry is Ownable {
      * @param _tokenId the index of the GeoNFT to register
      * @param _centroid Centroid of the polygon passed as [latitude, longitude]
      */
-    function registerGeoNFT(
-        uint256 _tokenId, 
-        int64[2] memory _centroid
-    ) 
-        external 
+    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid)
+        external
         onlyOwner
     {
         int64 lat = _centroid[0];
@@ -66,11 +63,8 @@ contract SDRegistry is Ownable {
     /**
      * @notice Unregister a GeoNFT from the Spatial Data Registry
      * @param _tokenId the index of the GeoNFT to unregister
-    */
-    function unregisterGeoNFT(uint256 _tokenId)
-        external 
-        onlyOwner 
-    { 
+     */
+    function unregisterGeoNFT(uint256 _tokenId) external onlyOwner {
         string memory geohash = tokenGeohash[_tokenId];
         removeFromAllGeotreeSubhashes(geohash, _tokenId);
 
@@ -78,7 +72,9 @@ contract SDRegistry is Ownable {
         if (tokenArray.length == 1) {
             tokenArray.pop();
         } else {
-            uint256[] memory newTokenArray = new uint256[](tokenArray.length - 1);
+            uint256[] memory newTokenArray = new uint256[](
+                tokenArray.length - 1
+            );
             uint256 counter = 0;
             for (uint256 i = 0; i < tokenArray.length; i++) {
                 if (tokenArray[i] != _tokenId) {
@@ -117,14 +113,11 @@ contract SDRegistry is Ownable {
      * @param _geojson Strigified geojson of the new topology
      */
     function updateGeoNFTTopology(
-        uint256 _tokenId, 
+        uint256 _tokenId,
         int256[2][][] memory _coordinates,
         int64[2] memory _centroid,
         string memory _geojson
-    ) 
-        external 
-        onlyOwner     
-    {
+    ) external onlyOwner {
         // solhint-disable-next-line mark-callable-contracts
         uint256 _area = AreaCalculation.polygonArea(_coordinates);
 
@@ -133,7 +126,11 @@ contract SDRegistry is Ownable {
         int64 lon = _centroid[1];
         string memory formerGeohash = tokenGeohash[_tokenId];
         // solhint-disable-next-line mark-callable-contracts
-        string memory newGeohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
+        string memory newGeohash = GeohashUtils.encode(
+            lat,
+            lon,
+            GEOHASH_LENGTH
+        );
         bool geohashIsTheSame = areEqualStrings(formerGeohash, newGeohash);
 
         if (!geohashIsTheSame) {
@@ -149,7 +146,11 @@ contract SDRegistry is Ownable {
      * @notice Return all the GeoNFT ids in the registry
      * @return geoNFTsArray Array of all registered token IDs
      */
-    function getAllGeoNFTs() public view returns (uint256[] memory geoNFTsArray) { 
+    function getAllGeoNFTs()
+        public
+        view
+        returns (uint256[] memory geoNFTsArray)
+    {
         return tokenArray;
     }
 
@@ -160,19 +161,17 @@ contract SDRegistry is Ownable {
      * @param _precision Precision level of the geohash searching
      * @return geoNFTsArray Array of all registered token IDs
      */
-    function queryGeoNFTsByLatLng(       
-        int64 _latitude,       
+    function queryGeoNFTsByLatLng(
+        int64 _latitude,
         int64 _longitude,
         uint8 _precision
-    )
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
+    ) public view returns (uint256[] memory) {
         // solhint-disable-next-line mark-callable-contracts
-        string memory geohash = GeohashUtils.encode(_latitude, _longitude, _precision);
+        string memory geohash = GeohashUtils.encode(
+            _latitude,
+            _longitude,
+            _precision
+        );
         return getFromGeotree(geohash);
     }
 
@@ -188,7 +187,9 @@ contract SDRegistry is Ownable {
      * @notice Add token ID to the global token array
      * @param _tokenId Token ID
      */
-    function addToTokenGeohashMapping(uint256 _tokenId, string memory _geohash) private {
+    function addToTokenGeohashMapping(uint256 _tokenId, string memory _geohash)
+        private
+    {
         tokenGeohash[_tokenId] = _geohash;
     }
 
@@ -197,7 +198,10 @@ contract SDRegistry is Ownable {
      * @param _geohash the geohash
      * @param _data the uint data
      */
-    function addToGeotree(string memory _geohash, uint256 _data) public {
+    function addToGeotree(string memory _geohash, uint256 _data)
+        public
+        onlyOwner
+    {
         // require the length of the _geohash is GEOHASH_LENGTH
         require(bytes(_geohash).length == GEOHASH_LENGTH);
 
@@ -266,7 +270,7 @@ contract SDRegistry is Ownable {
         string memory _formergeohash,
         string calldata _newgeohash,
         uint256 _data
-    ) public {
+    ) public onlyOwner {
         // remove data from former geohash
         removeFromGeotree(_formergeohash, _data);
 
@@ -279,7 +283,10 @@ contract SDRegistry is Ownable {
      * @param _geohash geohash
      * @param _data the uint data
      */
-    function removeFromGeotree(string memory _geohash, uint256 _data) public {
+    function removeFromGeotree(string memory _geohash, uint256 _data)
+        public
+        onlyOwner
+    {
         // lookup existing node
         Node storage node = geotree[_geohash];
 
@@ -310,7 +317,10 @@ contract SDRegistry is Ownable {
         }
     }
 
-    function removeFromAllGeotreeSubhashes(string memory _geohash, uint256 _tokenId) private {
+    function removeFromAllGeotreeSubhashes(
+        string memory _geohash,
+        uint256 _tokenId
+    ) private {
         // geohash characters splitted into an array
         bytes memory geohashArray = bytes(_geohash);
         // require the length of the _geohash is GEOHASH_LENGTH
@@ -342,7 +352,13 @@ contract SDRegistry is Ownable {
         return false;
     }
 
-    function areEqualStrings(string memory _string1, string memory _string2) private pure returns (bool) {
-        return keccak256(abi.encodePacked(_string1)) == keccak256(abi.encodePacked(_string2));
+    function areEqualStrings(string memory _string1, string memory _string2)
+        private
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(_string1)) ==
+            keccak256(abi.encodePacked(_string2));
     }
 }
