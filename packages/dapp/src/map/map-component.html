@@ -1,5 +1,6 @@
 <template>
   <div class="page mapContainer">
+    <p>${state.value}</p>
     <div id="sidebar" class="sidebar" class.bind="sidebar ? '' : 'closed'">
       <button 
         click.trigger="toggleSidebar()" 
@@ -26,15 +27,19 @@
     </div>
     <div class="edition-tools" if.bind="state.matches('edition')">
       <button
-        click.trigger="startDrawing()"
+        click.trigger="drawFeature()"
         disabled.bind="state.value.edition !== 'edit'"
       >
         Draw
       </button>
-      <button disabled.bind="state.value.edition !== 'draw'">
-        Abort drawing
+      <button 
+        click.trigger="editFeatures()" 
+        disabled.bind="state.value.edition !== 'draw'"
+      >
+        Edit
       </button>
       <button
+        click.trigger="setDeleteMode()"
         disabled.bind="state.value.edition !== 'edit'"
       >
         Delete

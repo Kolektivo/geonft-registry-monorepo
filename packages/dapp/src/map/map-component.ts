@@ -1,8 +1,9 @@
 import { inject } from "aurelia-framework";
-import { createMachine } from "xstate";
+import { createMachine, interpret, Interpreter } from "xstate";
 import { StateMachine } from "xstate/lib/types";
+import { ResolveTypegenMeta } from "xstate";
 import { State } from "xstate/lib/State";
-import Draw from "ol/interaction/Draw";
+import { Draw, Modify } from "ol/interaction";
 import GeoJSON from "ol/format/GeoJSON";
 import Circle from "ol/geom/Circle";
 import FeatureOl from "ol/Feature";
@@ -15,6 +16,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import View from "ol/View";
 import { Fill, Stroke, Style } from "ol/style";
+import { TypegenDisabled, BaseActionObject, ServiceMap } from "xstate";
 import "ol/ol.css";
 import {
   weatherStationsGeoJSON,
@@ -25,6 +27,7 @@ import "./map-component.scss";
 import { Feature, FeatureCollection } from "geojson";
 import TileLayer from "ol/layer/Tile";
 import { Geometry, MultiPolygon, Polygon, SimpleGeometry } from "ol/geom";
+import { Interpretation } from "@aurelia/runtime-html";
 
 type Basemap = "cartographic" | "satellite";
 
@@ -50,7 +53,6 @@ const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
   cartographic: cartographicBasemap,
   satellite: satelliteBasemap,
 };
-
 // State machine
 type MachineEventsType =
   | "CREATE_FOODFOREST"
@@ -58,15 +60,19 @@ type MachineEventsType =
   | "START_EDITION"
   | "FINISH_DRAWING"
   | "START_DRAWING"
-  | "DELETE_FEATURE";
+  | "DELETE_FEATURE"
+  | "EDIT_FEATURES";
+
 type MachineEvents = { type: MachineEventsType };
 
 const mapStateMachine = createMachine<null, MachineEvents>({
-  id: "map-machine",
   initial: "idle",
+  predictableActionArguments: true,
   states: {
     idle: {
-      on: { CREATE_FOODFOREST: "metadata" },
+      on: {
+        CREATE_FOODFOREST: "metadata",
+      },
     },
     metadata: {
       on: {
@@ -83,6 +89,8 @@ const mapStateMachine = createMachine<null, MachineEvents>({
           },
         },
         edit: {
+          entry: ["startModifying"],
+          exit: ["stopModifying"],
           on: {
             START_DRAWING: "draw",
             DELETE_FEATURE: "delete",
@@ -94,25 +102,35 @@ const mapStateMachine = createMachine<null, MachineEvents>({
     preview: {},
   },
 });
+const service = interpret(mapStateMachine);
 
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
-  state = mapStateMachine.initialState;
+  service = service;
+  state = service.initialState;
   sidebar = true;
   sidebarButton = true;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
   draw: Draw;
+  modify: Modify;
   select: Select;
   currentBasemap: Basemap = "cartographic";
 
   public attached(): void {
-    const initialCenter = [-68.95, 12.138];
-    const initialZoom = 7;
-
+    const newMachine = mapStateMachine.withConfig({
+      actions: {
+        startModifying: () => this.enableModifyFeature(),
+        stopModifying: () => this.disableModifyFeature(),
+      },
+    });
+    this.service.machine = newMachine;
+    this.service.onTransition((state) => console.log(state.value));
+    this.service.start();
+    // Layers setup
     const editStyle = new Style({
       fill: new Fill({
         color: [245, 203, 66, 0.3],
@@ -159,7 +177,11 @@ export class MapComponent {
       style: testStyle,
     });
 
+    // Map setup
+    const initialCenter = [-68.95, 12.138];
+    const initialZoom = 7;
     const initBasemap = basemaps[this.currentBasemap];
+
     const map = new Map({
       layers: [initBasemap, editLayer, previewLayer, testLayer],
       target: "map",
@@ -169,15 +191,20 @@ export class MapComponent {
       }),
     });
 
-    const selectStyle = new Style({
-      fill: new Fill({
-        color: "rgba(230, 242, 5, 0.7)",
+    // Interactions
+    const select = new Select({
+      style: new Style({
+        fill: new Fill({
+          color: "rgba(230, 242, 5, 0.7)",
+        }),
+        stroke: new Stroke({
+          color: "#34e1eb",
+          width: 2,
+        }),
       }),
-      stroke: new Stroke({
-        color: "#34e1eb",
-        width: 2,
-      }),
+      layers: [testLayer],
     });
+    map.addInteraction(select);
 
     const draw = new Draw({
       source: editLayer.getSource(),
@@ -194,16 +221,12 @@ export class MapComponent {
     draw.setActive(false);
     map.addInteraction(draw);
 
-    // select interaction working on "singleclick"
-    const select = new Select({
-      style: selectStyle,
-      layers: [testLayer],
-    });
-
-    map.addInteraction(select);
+    const modify = new Modify({ source: editLayer.getSource() });
+    map.addInteraction(modify);
 
     this.map = map;
     this.draw = draw;
+    this.modify = modify;
     this.select = select;
     this.editLayer = editLayer;
     this.previewLayer = previewLayer;
@@ -229,25 +252,38 @@ export class MapComponent {
   }
 
   private stateTransition(newStateEvent: MachineEventsType): void {
-    const newState = mapStateMachine.transition(this.state, {
-      type: newStateEvent,
-    });
+    const newState = this.service.send(newStateEvent);
     this.state = newState;
   }
 
-  public createFoodforest() {
+  public createFoodforest(): void {
     this.stateTransition("CREATE_FOODFOREST");
   }
 
-  public cancelMetadata() {
+  public cancelMetadata(): void {
     this.stateTransition("CANCEL_METADATA");
   }
 
-  public startEdition() {
+  public startEdition(): void {
     this.stateTransition("START_EDITION");
     this.sidebar = false;
     this.sidebarButton = false;
+    this.drawFeature();
+  }
+
+  public drawFeature(): void {
+    this.stateTransition("START_DRAWING");
     this.startDrawing();
+  }
+
+  public editFeatures(): void {
+    this.stateTransition("FINISH_DRAWING");
+    this.stopDrawing();
+    console.log(this.state.value);
+  }
+
+  public setDeleteMode(): void {
+    this.stateTransition("DELETE_FEATURE");
   }
 
   public toggleBasemap(): void {
@@ -262,25 +298,33 @@ export class MapComponent {
     newBasemapLayer.setZIndex(-1);
   }
 
-  public startDrawing(): void {
-    this.stateTransition("START_DRAWING");
+  // MAP FUNCTIONS
+  private startDrawing(): void {
     this.draw.setActive(true);
     this.map.removeInteraction(this.select);
   }
 
-  public stopDrawing(): void {
+  private stopDrawing(): void {
     this.draw.setActive(false);
   }
 
-  public undo(): void {
+  private enableModifyFeature(): void {
+    this.modify.setActive(true);
+  }
+
+  private disableModifyFeature(): void {
+    this.modify.setActive(false);
+  }
+
+  private undo(): void {
     this.draw.removeLastPoint();
   }
 
-  public finishDrawing(): void {
+  private finishDrawing(): void {
     this.draw.setActive(false);
   }
 
-  public cancelDrawing(): void {
+  private cancelDrawing(): void {
     this.draw.abortDrawing();
     this.map.addInteraction(this.select);
     this.editLayer.getSource().clear();
