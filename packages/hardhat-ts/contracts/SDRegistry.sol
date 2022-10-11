@@ -6,7 +6,6 @@ import {GeoNFT} from "./GeoNFT.sol";
 import {AreaCalculation} from "../lib/AreaCalculation.sol";
 import {GeohashUtils} from "../lib/GeohashUtils.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol"; // Utils to slice array
-import "hardhat/console.sol"; // Import console.log
 
 contract SDRegistry is Ownable {
     using BytesLib for bytes;
@@ -226,7 +225,6 @@ contract SDRegistry is Ownable {
 
             // if data already in node, continue
             if (isInNode) {
-                console.log("Data already in the node");
                 continue;
             }
             // if node does not exist, create it
@@ -295,7 +293,6 @@ contract SDRegistry is Ownable {
 
         // if data wasn't in node, return
         if (!isInNode) {
-            console.log("Data not in node");
             return;
         }
 

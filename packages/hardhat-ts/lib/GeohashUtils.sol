@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// import console.log
-import "hardhat/console.sol";
-
 error GeohashUtils__GeohashCodeNotFound();
 
 library GeohashUtils {
