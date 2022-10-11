@@ -98,7 +98,7 @@ contract SDRegistry is Ownable {
      * @param _tokenId The index of the GeoNFT to update
      * @return tokenIsRegistered whether the token ID is registered or not
      */
-    function isRegistered(uint256 _tokenId) public view returns (bool) {
+    function isRegistered(uint256 _tokenId) external view returns (bool) {
         string memory geohash = tokenGeohash[_tokenId];
         // If token does not exists in tokenGeohash, it will return an empty string (the default value
         // for string), with length = 0.
@@ -147,7 +147,7 @@ contract SDRegistry is Ownable {
      * @return geoNFTsArray Array of all registered token IDs
      */
     function getAllGeoNFTs()
-        public
+        external
         view
         returns (uint256[] memory geoNFTsArray)
     {
@@ -165,7 +165,7 @@ contract SDRegistry is Ownable {
         int64 _latitude,
         int64 _longitude,
         uint8 _precision
-    ) public view returns (uint256[] memory) {
+    ) external view returns (uint256[] memory) {
         // solhint-disable-next-line mark-callable-contracts
         string memory geohash = GeohashUtils.encode(
             _latitude,
