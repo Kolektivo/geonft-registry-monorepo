@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { GeoNFT } from "./GeoNFT.sol";
 import { AreaCalculation } from "../lib/AreaCalculation.sol";
@@ -9,7 +8,7 @@ import { GeohashUtils } from "../lib/GeohashUtils.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol"; // Utils to slice array
 import "hardhat/console.sol"; // Import console.log
 
-contract SDRegistry is ReentrancyGuard, Ownable {
+contract SDRegistry is Ownable {
     using BytesLib for bytes;
     // The GEONFT ERC721 token contract
     GeoNFT public geoNFT;
