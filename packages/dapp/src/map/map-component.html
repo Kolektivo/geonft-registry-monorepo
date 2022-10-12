@@ -10,12 +10,12 @@
         ${sidebar ? "X" : "-"}
       </button>
       <div class="sidebar-content">
-        <div class="idle" if.bind="state.value === 'idle'">
+        <div class="idle" if.bind="isIdleState">
           <h2>GeoNFT's</h2>
           <button click.trigger="createFoodforest()">Add Foodforest</button>
           <button>Add Weather station</button>
         </div>
-        <div class="metadata" if.bind="state.value === 'metadata'">
+        <div class="metadata" if.bind="isMetadataState">
           <h2>Enter metadata</h2>
           <h3>Basic information</h3>
           <input type="text" placeholder="Name">
@@ -25,22 +25,22 @@
         </div>
       </div>
     </div>
-    <div class="edition-tools" if.bind="state.matches('edition')">
+    <div class="edition-tools" if.bind="isEditionState">
       <button
         click.trigger="drawFeature()"
-        disabled.bind="state.value.edition !== 'edit'"
+        disabled.bind="!isEditState"
       >
         Draw
       </button>
       <button 
         click.trigger="editFeatures()" 
-        disabled.bind="state.value.edition !== 'draw'"
+        disabled.bind="isEditState"
       >
         Edit
       </button>
       <button
         click.trigger="setDeleteMode()"
-        disabled.bind="state.value.edition !== 'edit'"
+        disabled.bind="!isEditState"
       >
         Delete
       </button>
@@ -54,56 +54,6 @@
     <div class="map-wrap" ref="mapWrap">
       <div id="map" class="map" ref="mapDiv">
       </div>
-      <!-- <button
-        id="start-edition"
-        click.trigger="startDrawing()"
-        disabled.bind="status !== 'idle'"
-      >
-        START DRAWING
-      </button>
-      <button
-        id="undo-button"
-        click.trigger="undo()"
-      >
-        UNDO
-      </button>
-      <button
-        id="finish-edition" 
-        click.trigger="finishDrawing()"
-        disabled.bind="status !== 'drawing'"
-      >
-        FINISH DRAWING
-      </button>
-      <button
-        id="cancel-edition" 
-        click.trigger="cancelDrawing()"
-        disabled.bind="status !== 'drawing' && status !== 'metadata'"
-      >
-        CANCEL EDITION
-      </button> -->
-      <!-- <button
-        id="toggle-basemap" 
-        click.trigger="toggleBasemap()"
-      >
-        TOGGLE BASEMAP
-      </button> -->
-      <!-- <div id="feature-data-box">
-        <button
-          id="close-data-box"
-          click.trigger="closeDataBox()"
-        >
-          X
-        </button>
-        <div id="feature-data"></div>
-        <button click.trigger="editFeature()">EDIT</button>
-        <button click.trigger="finishDrawing()">FINISH</button>
-      </div>
-      <div id="form-data">
-        <input id="form-value" type="text" placeholder="Enter data value" />
-        <button click.trigger="sendValue()">
-          Send value
-        </button>
-      </div> -->
     </div>
   </div>
 </template>

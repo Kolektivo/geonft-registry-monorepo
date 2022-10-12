@@ -1,4 +1,4 @@
-import { inject } from "aurelia-framework";
+import { inject, computedFrom } from "aurelia-framework";
 import { createMachine, interpret, Interpreter } from "xstate";
 import { StateMachine } from "xstate/lib/types";
 import { ResolveTypegenMeta } from "xstate";
@@ -58,7 +58,7 @@ type MachineEventsType =
   | "CREATE_FOODFOREST"
   | "CANCEL_METADATA"
   | "START_EDITION"
-  | "FINISH_DRAWING"
+  | "EDIT_MODE"
   | "START_DRAWING"
   | "DELETE_FEATURE"
   | "EDIT_FEATURES";
@@ -85,7 +85,7 @@ const mapStateMachine = createMachine<null, MachineEvents>({
       states: {
         draw: {
           on: {
-            FINISH_DRAWING: "edit",
+            EDIT_MODE: "edit",
           },
         },
         edit: {
@@ -96,7 +96,11 @@ const mapStateMachine = createMachine<null, MachineEvents>({
             DELETE_FEATURE: "delete",
           },
         },
-        delete: {},
+        delete: {
+          on: {
+            EDIT_MODE: "edit",
+          },
+        },
       },
     },
     preview: {},
@@ -215,7 +219,7 @@ export class MapComponent {
     draw.on("drawend", () => {
       if (this.state.matches("edition")) {
         draw.setActive(false);
-        this.stateTransition("FINISH_DRAWING");
+        this.stateTransition("EDIT_MODE");
       }
     });
     draw.setActive(false);
@@ -277,7 +281,7 @@ export class MapComponent {
   }
 
   public editFeatures(): void {
-    this.stateTransition("FINISH_DRAWING");
+    this.stateTransition("EDIT_MODE");
     this.stopDrawing();
     console.log(this.state.value);
   }
@@ -336,5 +340,36 @@ export class MapComponent {
     const drawnFeatures = this.editLayer.getSource().getFeatures();
     this.editLayer.getSource().clear();
     targetLayer.getSource().addFeatures(drawnFeatures);
+  }
+
+  // GETTERS
+  @computedFrom("state.value")
+  public get isIdleState(): boolean {
+    return this.state.value === "idle";
+  }
+
+  @computedFrom("state.value")
+  public get isMetadataState(): boolean {
+    return this.state.value === "metadata";
+  }
+
+  @computedFrom("state.value")
+  public get isEditionState(): boolean {
+    return this.state.matches("edition");
+  }
+
+  @computedFrom("state.value")
+  public get isEditState(): boolean {
+    return this.state.matches("edition.edit");
+  }
+
+  @computedFrom("state.value")
+  public get isDrawState(): boolean {
+    return this.state.matches("edition.draw");
+  }
+
+  @computedFrom("state.value")
+  public get isDeleteState(): boolean {
+    return this.state.matches("edition.delete");
   }
 }
