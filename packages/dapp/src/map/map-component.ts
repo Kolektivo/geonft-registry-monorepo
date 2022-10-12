@@ -85,10 +85,10 @@ const mapStateMachine = createMachine<null, MachineEvents>({
       states: {
         draw: {
           on: {
-            EDIT_MODE: "edit",
+            EDIT_MODE: "modify",
           },
         },
-        edit: {
+        modify: {
           entry: ["startModifying"],
           exit: ["stopModifying"],
           on: {
@@ -98,7 +98,7 @@ const mapStateMachine = createMachine<null, MachineEvents>({
         },
         delete: {
           on: {
-            EDIT_MODE: "edit",
+            EDIT_MODE: "modify",
           },
         },
       },
@@ -359,8 +359,8 @@ export class MapComponent {
   }
 
   @computedFrom("state.value")
-  public get isEditState(): boolean {
-    return this.state.matches("edition.edit");
+  public get isModifyState(): boolean {
+    return this.state.matches("edition.modify");
   }
 
   @computedFrom("state.value")

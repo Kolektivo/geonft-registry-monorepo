@@ -28,19 +28,19 @@
     <div class="edition-tools" if.bind="isEditionState">
       <button
         click.trigger="drawFeature()"
-        disabled.bind="!isEditState"
+        disabled.bind="!isModifyState"
       >
         Draw
       </button>
       <button 
         click.trigger="editFeatures()" 
-        disabled.bind="isEditState"
+        disabled.bind="isModifyState"
       >
-        Edit
+        Modify
       </button>
       <button
         click.trigger="setDeleteMode()"
-        disabled.bind="!isEditState"
+        disabled.bind="!isModifyState"
       >
         Delete
       </button>
