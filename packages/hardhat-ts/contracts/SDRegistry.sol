@@ -166,13 +166,11 @@ contract SDRegistry is Ownable {
         int64 _longitude,
         uint8 _precision
     ) external view returns (uint256[] memory) {
-        // solhint-disable-next-line mark-callable-contracts
-        string memory geohash = GeohashUtils.encode(
-            _latitude,
-            _longitude,
-            _precision
-        );
-        return getFromGeotree(geohash);
+        return
+            getFromGeotree(
+                // solhint-disable-next-line mark-callable-contracts
+                GeohashUtils.encode(_latitude, _longitude, _precision)
+            );
     }
 
     /**
@@ -222,11 +220,8 @@ contract SDRegistry is Ownable {
             // lookup existing node
             Node storage node = geotree[subhash];
 
-            // check if data is in node
-            bool isInNode = dataExistsInNode(node, _data);
-
             // if data already in node, continue
-            if (isInNode) {
+            if (dataExistsInNode(node, _data)) {
                 continue;
             }
             // if node does not exist, create it
@@ -291,11 +286,8 @@ contract SDRegistry is Ownable {
         // lookup existing node
         Node storage node = geotree[_geohash];
 
-        // check if data is in node
-        bool isInNode = dataExistsInNode(node, _data);
-
         // if data wasn't in node, return
-        if (!isInNode) {
+        if (!dataExistsInNode(node, _data)) {
             return;
         }
 
@@ -331,8 +323,7 @@ contract SDRegistry is Ownable {
         for (uint8 i; i < geohashArrayLength; ++i) {
             // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
             // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
-            string memory subhash = string(geohashArray.slice(0, i + 1));
-            removeFromGeotree(subhash, _tokenId);
+            removeFromGeotree(string(geohashArray.slice(0, i + 1)), _tokenId);
         }
     }
 

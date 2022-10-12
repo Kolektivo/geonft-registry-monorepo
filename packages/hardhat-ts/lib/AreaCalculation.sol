@@ -67,8 +67,7 @@ library AreaCalculation {
         pure
         returns (int256)
     {
-        bool isValidPolygon = isPolygon(_coordinates);
-        require(isValidPolygon == true, "The coordinates are invalid");
+        require(isPolygon(_coordinates) == true, "The coordinates are invalid");
 
         uint256 coordsLength = _coordinates.length;
         int256[2] memory p1;
