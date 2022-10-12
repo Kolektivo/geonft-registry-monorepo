@@ -1,46 +1,23 @@
 import { inject, computedFrom } from "aurelia-framework";
-import { Draw, Modify } from "ol/interaction";
-import GeoJSON from "ol/format/GeoJSON";
-import { fromLonLat } from "ol/proj";
 import Map from "ol/Map";
-import OSM from "ol/source/OSM";
-import XYZ from "ol/source/XYZ";
-import Select from "ol/interaction/Select";
+import View from "ol/View";
+import { fromLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import View from "ol/View";
-import { Fill, Stroke, Style } from "ol/style";
-import TileLayer from "ol/layer/Tile";
+import { Select, Draw, Modify } from "ol/interaction";
 import { Geometry, MultiPolygon } from "ol/geom";
-import { testGeoJSON } from "./map-component.data";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
+import {
+  basemaps,
+  testLayer,
+  editLayer,
+  select,
+  draw,
+  modify,
+  Basemap,
+} from "./openlayers-components";
 import "ol/ol.css";
 import "./map-component.scss";
-
-type Basemap = "cartographic" | "satellite";
-
-// Basemaps
-// OpenStreet Maps
-const cartographicBasemap = new TileLayer({
-  source: new OSM(),
-});
-
-// Google Maps
-const satelliteBasemap = new TileLayer({
-  source: new XYZ({
-    urls: [
-      "http://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-      "http://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-      "http://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-      "http://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-    ],
-  }),
-});
-
-const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
-  cartographic: cartographicBasemap,
-  satellite: satelliteBasemap,
-};
 
 @inject(Element)
 export class MapComponent {
@@ -51,11 +28,10 @@ export class MapComponent {
   sidebar = true;
   sidebarButton = true;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
-  previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
+  select: Select;
   draw: Draw;
   modify: Modify;
-  select: Select;
   currentBasemap: Basemap = "cartographic";
 
   public attached(): void {
@@ -69,60 +45,13 @@ export class MapComponent {
     this.service.machine = newMachine;
     this.service.onTransition((state) => console.log(state.value));
     this.service.start();
-    // Layers setup
-    const editStyle = new Style({
-      fill: new Fill({
-        color: [245, 203, 66, 0.3],
-      }),
-      stroke: new Stroke({
-        color: [189, 147, 9],
-        width: 2,
-      }),
-    });
-    const editLayer = new VectorLayer({
-      source: new VectorSource<MultiPolygon>(),
-      style: editStyle,
-    });
-
-    const previewStyle = new Style({
-      fill: new Fill({
-        color: this.makeStrippedPattern(),
-      }),
-      stroke: new Stroke({
-        color: [42, 86, 156],
-        width: 2,
-      }),
-    });
-    const previewLayer = new VectorLayer({
-      source: new VectorSource<MultiPolygon>(),
-      style: previewStyle,
-    });
-
-    const testStyle = new Style({
-      fill: new Fill({
-        color: [50, 168, 82, 0.3],
-      }),
-      stroke: new Stroke({
-        color: [26, 97, 45],
-        width: 2,
-      }),
-    });
-    const testLayer = new VectorLayer({
-      source: new VectorSource({
-        features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(
-          testGeoJSON
-        ),
-      }),
-      style: testStyle,
-    });
 
     // Map setup
     const initialCenter = [-68.95, 12.138];
     const initialZoom = 7;
-    const initBasemap = basemaps[this.currentBasemap];
-
+    const initialBasemap = basemaps[this.currentBasemap];
     const map = new Map({
-      layers: [initBasemap, editLayer, previewLayer, testLayer],
+      layers: [initialBasemap, editLayer, testLayer],
       target: "map",
       view: new View({
         center: fromLonLat(initialCenter),
@@ -130,63 +59,25 @@ export class MapComponent {
       }),
     });
 
-    // Interactions
-    const select = new Select({
-      style: new Style({
-        fill: new Fill({
-          color: "rgba(230, 242, 5, 0.7)",
-        }),
-        stroke: new Stroke({
-          color: "#34e1eb",
-          width: 2,
-        }),
-      }),
-      layers: [testLayer],
-    });
     map.addInteraction(select);
+    map.addInteraction(draw);
+    map.addInteraction(modify);
 
-    const draw = new Draw({
-      source: editLayer.getSource(),
-      type: "MultiPolygon",
-      trace: true,
-      stopClick: true,
-    });
     draw.on("drawend", () => {
       if (this.state.matches("edition")) {
         draw.setActive(false);
         this.stateTransition("EDIT_MODE");
       }
     });
-    draw.setActive(false);
-    map.addInteraction(draw);
-
-    const modify = new Modify({ source: editLayer.getSource() });
-    map.addInteraction(modify);
 
     this.map = map;
+    this.editLayer = editLayer;
+    this.select = select;
     this.draw = draw;
     this.modify = modify;
-    this.select = select;
-    this.editLayer = editLayer;
-    this.previewLayer = previewLayer;
   }
 
-  // HELPERS
-  private makeStrippedPattern() {
-    const cnv = document.createElement("canvas");
-    const ctx = cnv.getContext("2d");
-    cnv.width = 8;
-    cnv.height = 8;
-    ctx.lineWidth = 600;
-    ctx.fillStyle = "#4287f5"; // light blue
-
-    for (let i = 0; i < 6; ++i) {
-      ctx.fillRect(i, i, 1, 1);
-    }
-
-    return ctx.createPattern(cnv, "repeat");
-  }
-
+  // Helpers
   private stateTransition(newStateEvent: MachineEventsType): void {
     const newState = this.service.send(newStateEvent);
     this.state = newState;
