@@ -57,7 +57,7 @@ const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
 type MachineEventsType =
   | "CREATE_FOODFOREST"
   | "CANCEL_METADATA"
-  | "START_EDITION"
+  | "SUBMIT_METADATA"
   | "EDIT_MODE"
   | "START_DRAWING"
   | "DELETE_FEATURE"
@@ -65,7 +65,7 @@ type MachineEventsType =
 
 type MachineEvents = { type: MachineEventsType };
 
-const mapStateMachine = createMachine<null, MachineEvents>({
+const mapMachine = createMachine<null, MachineEvents>({
   initial: "idle",
   predictableActionArguments: true,
   states: {
@@ -76,7 +76,7 @@ const mapStateMachine = createMachine<null, MachineEvents>({
     },
     metadata: {
       on: {
-        START_EDITION: "edition",
+        SUBMIT_METADATA: "edition",
         CANCEL_METADATA: "idle",
       },
     },
@@ -106,7 +106,7 @@ const mapStateMachine = createMachine<null, MachineEvents>({
     preview: {},
   },
 });
-const service = interpret(mapStateMachine);
+const service = interpret(mapMachine);
 
 @inject(Element)
 export class MapComponent {
@@ -125,7 +125,7 @@ export class MapComponent {
   currentBasemap: Basemap = "cartographic";
 
   public attached(): void {
-    const newMachine = mapStateMachine.withConfig({
+    const newMachine = mapMachine.withConfig({
       actions: {
         startModifying: () => this.enableModifyFeature(),
         stopModifying: () => this.disableModifyFeature(),
@@ -251,55 +251,47 @@ export class MapComponent {
     return ctx.createPattern(cnv, "repeat");
   }
 
-  public toggleSidebar(): void {
-    this.sidebar = !this.sidebar;
-  }
-
   private stateTransition(newStateEvent: MachineEventsType): void {
     const newState = this.service.send(newStateEvent);
     this.state = newState;
   }
 
+  // UI FUNCTIONS
+  public toggleSidebar(): void {
+    this.sidebar = !this.sidebar;
+  }
+
+  // IDLE FUNCTIONS
   public createFoodforest(): void {
     this.stateTransition("CREATE_FOODFOREST");
   }
 
+  // METADATA FUNCTIONS
   public cancelMetadata(): void {
     this.stateTransition("CANCEL_METADATA");
   }
 
-  public startEdition(): void {
-    this.stateTransition("START_EDITION");
+  public submitMetadata(): void {
+    this.stateTransition("SUBMIT_METADATA");
     this.sidebar = false;
     this.sidebarButton = false;
     this.drawFeature();
   }
 
+  // EDITION FUNCTIONS
   public drawFeature(): void {
     this.stateTransition("START_DRAWING");
     this.startDrawing();
   }
 
-  public editFeatures(): void {
+  public modifyFeatures(): void {
     this.stateTransition("EDIT_MODE");
     this.stopDrawing();
     console.log(this.state.value);
   }
 
-  public setDeleteMode(): void {
+  public deleteFeatures(): void {
     this.stateTransition("DELETE_FEATURE");
-  }
-
-  public toggleBasemap(): void {
-    const newBasemap: Basemap =
-      this.currentBasemap === "cartographic" ? "satellite" : "cartographic";
-    const oldBasemapLayer = basemaps[this.currentBasemap];
-    const newBasemapLayer = basemaps[newBasemap];
-
-    this.map.addLayer(newBasemapLayer);
-    this.map.removeLayer(oldBasemapLayer);
-    this.currentBasemap = newBasemap;
-    newBasemapLayer.setZIndex(-1);
   }
 
   // MAP FUNCTIONS

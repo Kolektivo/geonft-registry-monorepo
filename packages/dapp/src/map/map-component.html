@@ -21,7 +21,7 @@
           <input type="text" placeholder="Name">
           <textarea name="description" id="description" cols="30" rows="10"></textarea>
           <button click.trigger="cancelMetadata()">Cancel</button>
-          <button click.trigger="startEdition()" type="submit">Continue</button>
+          <button click.trigger="submitMetadata()" type="submit">Continue</button>
         </div>
       </div>
     </div>
@@ -33,13 +33,13 @@
         Draw
       </button>
       <button 
-        click.trigger="editFeatures()" 
+        click.trigger="modifyFeatures()" 
         disabled.bind="isModifyState"
       >
         Modify
       </button>
       <button
-        click.trigger="setDeleteMode()"
+        click.trigger="deleteFeatures()"
         disabled.bind="!isModifyState"
       >
         Delete
