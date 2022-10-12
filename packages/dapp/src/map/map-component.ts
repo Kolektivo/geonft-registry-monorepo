@@ -1,12 +1,6 @@
 import { inject, computedFrom } from "aurelia-framework";
-import { createMachine, interpret, Interpreter } from "xstate";
-import { StateMachine } from "xstate/lib/types";
-import { ResolveTypegenMeta } from "xstate";
-import { State } from "xstate/lib/State";
 import { Draw, Modify } from "ol/interaction";
 import GeoJSON from "ol/format/GeoJSON";
-import Circle from "ol/geom/Circle";
-import FeatureOl from "ol/Feature";
 import { fromLonLat } from "ol/proj";
 import Map from "ol/Map";
 import OSM from "ol/source/OSM";
@@ -16,18 +10,12 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import View from "ol/View";
 import { Fill, Stroke, Style } from "ol/style";
-import { TypegenDisabled, BaseActionObject, ServiceMap } from "xstate";
-import "ol/ol.css";
-import {
-  weatherStationsGeoJSON,
-  foodforestsGeoJSON,
-  testGeoJSON,
-} from "./map-component.data";
-import "./map-component.scss";
-import { Feature, FeatureCollection } from "geojson";
 import TileLayer from "ol/layer/Tile";
-import { Geometry, MultiPolygon, Polygon, SimpleGeometry } from "ol/geom";
-import { Interpretation } from "@aurelia/runtime-html";
+import { Geometry, MultiPolygon } from "ol/geom";
+import { testGeoJSON } from "./map-component.data";
+import { machine, machineInterpreter, MachineEventsType } from "./machine";
+import "ol/ol.css";
+import "./map-component.scss";
 
 type Basemap = "cartographic" | "satellite";
 
@@ -53,70 +41,13 @@ const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
   cartographic: cartographicBasemap,
   satellite: satelliteBasemap,
 };
-// State machine
-type MachineEventsType =
-  | "CREATE_FOODFOREST"
-  | "CANCEL_METADATA"
-  | "SUBMIT_METADATA"
-  | "EDIT_MODE"
-  | "START_DRAWING"
-  | "DELETE_FEATURE"
-  | "EDIT_FEATURES"
-  | "CANCEL_EDITION";
-
-type MachineEvents = { type: MachineEventsType };
-
-const mapMachine = createMachine<null, MachineEvents>({
-  initial: "idle",
-  predictableActionArguments: true,
-  states: {
-    idle: {
-      on: {
-        CREATE_FOODFOREST: "metadata",
-      },
-    },
-    metadata: {
-      id: "metadata",
-      on: {
-        SUBMIT_METADATA: "edition",
-        CANCEL_METADATA: "idle",
-      },
-    },
-    edition: {
-      initial: "draw",
-      states: {
-        draw: {
-          on: {
-            EDIT_MODE: "modify",
-          },
-        },
-        modify: {
-          entry: ["startModifying"],
-          exit: ["stopModifying"],
-          on: {
-            START_DRAWING: "draw",
-            DELETE_FEATURE: "delete",
-            CANCEL_EDITION: "#metadata",
-          },
-        },
-        delete: {
-          on: {
-            EDIT_MODE: "modify",
-          },
-        },
-      },
-    },
-    preview: {},
-  },
-});
-const service = interpret(mapMachine);
 
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
   map: Map;
-  service = service;
-  state = service.initialState;
+  service = machineInterpreter;
+  state = machineInterpreter.initialState;
   sidebar = true;
   sidebarButton = true;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
@@ -128,10 +59,11 @@ export class MapComponent {
   currentBasemap: Basemap = "cartographic";
 
   public attached(): void {
-    const newMachine = mapMachine.withConfig({
+    // Machine setup
+    const newMachine = machine.withConfig({
       actions: {
-        startModifying: () => this.enableModifyFeature(),
-        stopModifying: () => this.disableModifyFeature(),
+        enterModify: () => this.enableModifyFeature(),
+        exitModify: () => this.disableModifyFeature(),
       },
     });
     this.service.machine = newMachine;
