@@ -61,7 +61,8 @@ type MachineEventsType =
   | "EDIT_MODE"
   | "START_DRAWING"
   | "DELETE_FEATURE"
-  | "EDIT_FEATURES";
+  | "EDIT_FEATURES"
+  | "CANCEL_EDITION";
 
 type MachineEvents = { type: MachineEventsType };
 
@@ -75,6 +76,7 @@ const mapMachine = createMachine<null, MachineEvents>({
       },
     },
     metadata: {
+      id: "metadata",
       on: {
         SUBMIT_METADATA: "edition",
         CANCEL_METADATA: "idle",
@@ -94,6 +96,7 @@ const mapMachine = createMachine<null, MachineEvents>({
           on: {
             START_DRAWING: "draw",
             DELETE_FEATURE: "delete",
+            CANCEL_EDITION: "#metadata",
           },
         },
         delete: {
@@ -236,6 +239,7 @@ export class MapComponent {
     this.previewLayer = previewLayer;
   }
 
+  // HELPERS
   private makeStrippedPattern() {
     const cnv = document.createElement("canvas");
     const ctx = cnv.getContext("2d");
@@ -254,6 +258,12 @@ export class MapComponent {
   private stateTransition(newStateEvent: MachineEventsType): void {
     const newState = this.service.send(newStateEvent);
     this.state = newState;
+  }
+
+  private confirmAction(text: string, callback: () => void) {
+    if (confirm(text)) {
+      callback();
+    }
   }
 
   // UI FUNCTIONS
@@ -287,11 +297,23 @@ export class MapComponent {
   public modifyFeatures(): void {
     this.stateTransition("EDIT_MODE");
     this.stopDrawing();
-    console.log(this.state.value);
   }
 
   public deleteFeatures(): void {
     this.stateTransition("DELETE_FEATURE");
+  }
+
+  public returnToMetadata(): void {
+    this.confirmAction(
+      "Are you sure you want to return? Edited features will be deleted",
+      () => {
+        this.stopDrawing();
+        this.clearEditLayer();
+        this.stateTransition("CANCEL_EDITION");
+        this.sidebar = true;
+        this.sidebarButton = true;
+      }
+    );
   }
 
   // MAP FUNCTIONS
@@ -310,6 +332,10 @@ export class MapComponent {
 
   private disableModifyFeature(): void {
     this.modify.setActive(false);
+  }
+
+  private clearEditLayer(): void {
+    this.editLayer.getSource().clear();
   }
 
   private undo(): void {

@@ -44,7 +44,10 @@
       >
         Delete
       </button>
-      <button>
+      <button 
+        click.trigger="returnToMetadata()"
+        disabled.bind="!isModifyState"
+      >
         Return
       </button>
       <button>
