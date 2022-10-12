@@ -1,15 +1,12 @@
-import Map from "ol/Map";
-import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
 import VectorSource from "ol/source/Vector";
+import { Fill, Stroke, Style, Circle as CircleStyle } from "ol/style";
 import { Select, Draw, Modify } from "ol/interaction";
 import GeoJSON from "ol/format/GeoJSON";
 import { MultiPolygon } from "ol/geom";
-import { fromLonLat } from "ol/proj";
-import { Fill, Stroke, Style } from "ol/style";
 import { testGeoJSON } from "./map-component.data";
 
 export type Basemap = "cartographic" | "satellite";
@@ -91,19 +88,19 @@ export const draw = new Draw({
 
 draw.setActive(false);
 
-export const modify = new Modify({ source: editLayer.getSource() });
-
-// const makeStrippedPattern = () => {
-//   const cnv = document.createElement("canvas");
-//   const ctx = cnv.getContext("2d");
-//   cnv.width = 8;
-//   cnv.height = 8;
-//   ctx.lineWidth = 600;
-//   ctx.fillStyle = "#4287f5"; // light blue
-
-//   for (let i = 0; i < 6; ++i) {
-//     ctx.fillRect(i, i, 1, 1);
-//   }
-
-//   return ctx.createPattern(cnv, "repeat");
-// }
+const modifyStyleWidth = 3;
+export const modify = new Modify({
+  source: editLayer.getSource(),
+  style: new Style({
+    image: new CircleStyle({
+      radius: modifyStyleWidth * 2,
+      fill: new Fill({
+        color: "orange",
+      }),
+      stroke: new Stroke({
+        color: "white",
+        width: modifyStyleWidth / 2,
+      }),
+    }),
+  }),
+});

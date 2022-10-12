@@ -4,7 +4,7 @@ export type MachineEventsType =
   | "CREATE_FOODFOREST"
   | "CANCEL_METADATA"
   | "SUBMIT_METADATA"
-  | "EDIT_MODE"
+  | "MODIFY_MODE"
   | "START_DRAWING"
   | "DELETE_FEATURE"
   | "EDIT_FEATURES"
@@ -20,7 +20,6 @@ export const machine = createMachine(
       events: {} as MachineEvents,
     },
     initial: "idle",
-    predictableActionArguments: true,
     states: {
       idle: {
         on: {
@@ -36,10 +35,13 @@ export const machine = createMachine(
       },
       edition: {
         initial: "draw",
+        entry: ["enterEdition"],
         states: {
           draw: {
+            entry: ["enterDraw"],
+            exit: ["exitDraw"],
             on: {
-              EDIT_MODE: "modify",
+              MODIFY_MODE: "modify",
             },
           },
           modify: {
@@ -53,16 +55,20 @@ export const machine = createMachine(
           },
           delete: {
             on: {
-              EDIT_MODE: "modify",
+              MODIFY_MODE: "modify",
             },
           },
         },
       },
       preview: {},
     },
+    predictableActionArguments: true,
   },
   {
     actions: {
+      enterEdition: () => null,
+      enterDraw: () => null,
+      exitDraw: () => null,
       enterModify: () => null,
       exitModify: () => null,
     },

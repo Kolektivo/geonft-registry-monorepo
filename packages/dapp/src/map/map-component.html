@@ -1,61 +1,64 @@
 <template>
-  <div class="page mapContainer">
+  <div class="page">
     <p>${state.value}</p>
-    <div id="sidebar" class="sidebar" class.bind="sidebar ? '' : 'closed'">
-      <button 
-        click.trigger="toggleSidebar()" 
-        if.bind="sidebarButton"
-        class="sidebar-button"
-      >
-        ${sidebar ? "X" : "-"}
-      </button>
-      <div class="sidebar-content">
-        <div class="idle" if.bind="isIdleState">
-          <h2>GeoNFT's</h2>
-          <button click.trigger="createFoodforest()">Add Foodforest</button>
-          <button>Add Weather station</button>
-        </div>
-        <div class="metadata" if.bind="isMetadataState">
-          <h2>Enter metadata</h2>
-          <h3>Basic information</h3>
-          <input type="text" placeholder="Name">
-          <textarea name="description" id="description" cols="30" rows="10"></textarea>
-          <button click.trigger="cancelMetadata()">Cancel</button>
-          <button click.trigger="submitMetadata()" type="submit">Continue</button>
+    <div class="map-wrap">
+      <div class="edition-tools" if.bind="isEditionState">
+        <button
+          click.trigger="drawFeature()"
+          disabled.bind="!isModifyState"
+        >
+          Draw
+        </button>
+        <button 
+          click.trigger="modifyFeatures()" 
+          disabled.bind="isModifyState"
+        >
+          Modify
+        </button>
+        <button
+          click.trigger="deleteFeatures()"
+          disabled.bind="!isModifyState"
+        >
+          Delete
+        </button>
+        <button 
+          click.trigger="returnToMetadata()"
+          disabled.bind="!isModifyState"
+        >
+          Return
+        </button>
+        <button>
+          Finish
+        </button>
+      </div>
+      <div class="draw-help" if.bind="isModifyState">
+        <p>Alt + Click to delete a vertex</p>
+      </div>
+      <div id="sidebar" class="sidebar" class.bind="sidebar ? '' : 'closed'">
+        <button 
+          click.trigger="toggleSidebar()" 
+          if.bind="sidebarButton"
+          class="sidebar-button"
+        >
+          ${sidebar ? "X" : "-"}
+        </button>
+        <div class="sidebar-content">
+          <div class="idle" if.bind="isIdleState">
+            <h2>GeoNFT's</h2>
+            <button click.trigger="createFoodforest()">Add Foodforest</button>
+            <button>Add Weather station</button>
+          </div>
+          <div class="metadata" if.bind="isMetadataState">
+            <h2>Enter metadata</h2>
+            <h3>Basic information</h3>
+            <input type="text" placeholder="Name">
+            <textarea name="description" id="description" cols="30" rows="10"></textarea>
+            <button click.trigger="cancelMetadata()">Cancel</button>
+            <button click.trigger="submitMetadata()" type="submit">Continue</button>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="edition-tools" if.bind="isEditionState">
-      <button
-        click.trigger="drawFeature()"
-        disabled.bind="!isModifyState"
-      >
-        Draw
-      </button>
-      <button 
-        click.trigger="modifyFeatures()" 
-        disabled.bind="isModifyState"
-      >
-        Modify
-      </button>
-      <button
-        click.trigger="deleteFeatures()"
-        disabled.bind="!isModifyState"
-      >
-        Delete
-      </button>
-      <button 
-        click.trigger="returnToMetadata()"
-        disabled.bind="!isModifyState"
-      >
-        Return
-      </button>
-      <button>
-        Finish
-      </button>
-    </div>
-    <div class="map-wrap" ref="mapWrap">
-      <div id="map" class="map" ref="mapDiv">
+      <div id="map" class="map">
       </div>
     </div>
   </div>

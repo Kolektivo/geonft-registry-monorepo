@@ -14,7 +14,10 @@ export interface Typegen0 {
     delays: never;
   };
   eventsCausingActions: {
-    enterModify: "EDIT_MODE";
+    enterDraw: "START_DRAWING" | "SUBMIT_METADATA";
+    enterEdition: "SUBMIT_METADATA";
+    enterModify: "MODIFY_MODE";
+    exitDraw: "MODIFY_MODE" | "xstate.stop";
     exitModify:
       | "CANCEL_EDITION"
       | "DELETE_FEATURE"

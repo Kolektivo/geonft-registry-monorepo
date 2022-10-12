@@ -4,7 +4,12 @@ import View from "ol/View";
 import { fromLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import { Select, Draw, Modify } from "ol/interaction";
+import {
+  Select,
+  Draw,
+  Modify,
+  defaults as defaultInteractions,
+} from "ol/interaction";
 import { Geometry, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
@@ -38,10 +43,15 @@ export class MapComponent {
     // Machine setup
     const newMachine = machine.withConfig({
       actions: {
-        enterModify: () => this.enableModifyFeature(),
-        exitModify: () => this.disableModifyFeature(),
+        enterEdition: () => this.enterEdition(),
+        enterDraw: () => this.enterDraw(),
+        exitDraw: () => this.exitDraw(),
+        enterModify: () => this.enterModify(),
+        exitModify: () => this.exitModify(),
       },
     });
+    // Update machine with the new actions
+    // They cannot be defined before because they access class variables and methods
     this.service.machine = newMachine;
     this.service.onTransition((state) => console.log(state.value));
     this.service.start();
@@ -57,16 +67,13 @@ export class MapComponent {
         center: fromLonLat(initialCenter),
         zoom: initialZoom,
       }),
+      interactions: defaultInteractions().extend([select, draw, modify]),
     });
 
-    map.addInteraction(select);
-    map.addInteraction(draw);
-    map.addInteraction(modify);
-
+    // When finish drawing a feature, enter on modify mode
     draw.on("drawend", () => {
       if (this.state.matches("edition")) {
-        draw.setActive(false);
-        this.stateTransition("EDIT_MODE");
+        this.stateTransition("MODIFY_MODE");
       }
     });
 
@@ -75,18 +82,6 @@ export class MapComponent {
     this.select = select;
     this.draw = draw;
     this.modify = modify;
-  }
-
-  // Helpers
-  private stateTransition(newStateEvent: MachineEventsType): void {
-    const newState = this.service.send(newStateEvent);
-    this.state = newState;
-  }
-
-  private confirmAction(text: string, callback: () => void) {
-    if (confirm(text)) {
-      callback();
-    }
   }
 
   // UI FUNCTIONS
@@ -106,23 +101,18 @@ export class MapComponent {
 
   public submitMetadata(): void {
     this.stateTransition("SUBMIT_METADATA");
-    this.sidebar = false;
-    this.sidebarButton = false;
-    this.drawFeature();
   }
 
   // EDITION FUNCTIONS
   public drawFeature(): void {
     this.stateTransition("START_DRAWING");
-    this.startDrawing();
   }
 
   public modifyFeatures(): void {
-    this.stateTransition("EDIT_MODE");
-    this.stopDrawing();
+    this.stateTransition("MODIFY_MODE");
   }
 
-  public deleteFeatures(): void {
+  public deleteFeature(): void {
     this.stateTransition("DELETE_FEATURE");
   }
 
@@ -139,6 +129,28 @@ export class MapComponent {
     );
   }
 
+  // ACTIONS
+  private enterEdition(): void {
+    this.sidebar = false;
+    this.sidebarButton = false;
+  }
+
+  private enterDraw(): void {
+    this.startDrawing();
+  }
+
+  private exitDraw(): void {
+    this.stopDrawing();
+  }
+
+  private enterModify(): void {
+    this.modify.setActive(true);
+  }
+
+  private exitModify(): void {
+    this.modify.setActive(false);
+  }
+
   // MAP FUNCTIONS
   private startDrawing(): void {
     this.draw.setActive(true);
@@ -149,38 +161,42 @@ export class MapComponent {
     this.draw.setActive(false);
   }
 
-  private enableModifyFeature(): void {
-    this.modify.setActive(true);
-  }
-
-  private disableModifyFeature(): void {
-    this.modify.setActive(false);
-  }
-
   private clearEditLayer(): void {
     this.editLayer.getSource().clear();
   }
 
-  private undo(): void {
-    this.draw.removeLastPoint();
+  // private undo(): void {
+  //   this.draw.removeLastPoint();
+  // }
+
+  // private finishDrawing(): void {
+  //   this.draw.setActive(false);
+  // }
+
+  // private cancelDrawing(): void {
+  //   this.draw.abortDrawing();
+  //   this.map.addInteraction(this.select);
+  //   this.editLayer.getSource().clear();
+  // }
+
+  // private applyDrawnFeaturesToLayer(
+  //   targetLayer: VectorLayer<VectorSource<Geometry>>
+  // ): void {
+  //   const drawnFeatures = this.editLayer.getSource().getFeatures();
+  //   this.editLayer.getSource().clear();
+  //   targetLayer.getSource().addFeatures(drawnFeatures);
+  // }
+
+  // HELPERS
+  private stateTransition(newStateEvent: MachineEventsType): void {
+    const newState = this.service.send(newStateEvent);
+    this.state = newState;
   }
 
-  private finishDrawing(): void {
-    this.draw.setActive(false);
-  }
-
-  private cancelDrawing(): void {
-    this.draw.abortDrawing();
-    this.map.addInteraction(this.select);
-    this.editLayer.getSource().clear();
-  }
-
-  private applyDrawnFeaturesToLayer(
-    targetLayer: VectorLayer<VectorSource<Geometry>>
-  ): void {
-    const drawnFeatures = this.editLayer.getSource().getFeatures();
-    this.editLayer.getSource().clear();
-    targetLayer.getSource().addFeatures(drawnFeatures);
+  private confirmAction(text: string, callback: () => void) {
+    if (confirm(text)) {
+      callback();
+    }
   }
 
   // GETTERS

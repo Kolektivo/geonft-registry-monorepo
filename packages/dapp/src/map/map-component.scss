@@ -1,6 +1,6 @@
 @import "styles/styles.scss";
 
-.page.mapContainer {
+.page {
   position: relative;
 
   .sidebar {
@@ -35,28 +35,42 @@
     }
   }
 
-  .edition-tools {
-    position: absolute;
-    top: 100px;
-    left: 20px;
-    background-color: lightgray;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    z-index: 999;
-  }
-
   .map-wrap {
     position: relative;
     width: 100%;
     height: 650px; /* calculate height of the screen minus the heading */
-  }
 
-  .map {
-    // position: absolute;
-    width: 100%;
-    height: 100%;
+    .edition-tools {
+      position: absolute;
+      top: 100px;
+      left: 20px;
+      background-color: lightgray;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 99;
+    }
+
+    .draw-help {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background-color: lightgray;
+      color: black;
+      z-index: 99;
+
+      p {
+        margin: 0;
+      }
+    }
+
+    .map {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   #undo-button {
