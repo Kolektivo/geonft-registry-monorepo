@@ -31,9 +31,9 @@ library GeohashUtils {
         uint8 _precision
     ) public pure returns (string memory) {
         bytes memory hashBytes = new bytes(_precision);
-        int8 bits = 0;
-        int8 bitsTotal = 0;
-        int8 hashValue = 0;
+        int8 bits;
+        int8 bitsTotal;
+        int8 hashValue;
         int64 maxLat = MAX_LAT;
         int64 minLat = MIN_LAT;
         int64 maxLon = MAX_LON;

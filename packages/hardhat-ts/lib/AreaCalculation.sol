@@ -24,7 +24,7 @@ library AreaCalculation {
         pure
         returns (uint256)
     {
-        uint256 total = 0;
+        uint256 total;
 
         for (uint256 i; i < _coordinates.length; ++i) {
             total += polygonArea(_coordinates[i]);
@@ -43,7 +43,7 @@ library AreaCalculation {
         pure
         returns (uint256)
     {
-        int256 total = 0;
+        int256 total;
         uint256 coordinatesLength = _coordinates.length;
         if (coordinatesLength > 0) {
             total += abs(ringArea(_coordinates[0]));
@@ -76,7 +76,7 @@ library AreaCalculation {
         uint256 lowerIndex;
         uint256 middleIndex;
         uint256 upperIndex;
-        int256 total = 0;
+        int256 total;
 
         if (coordsLength > 2) {
             for (uint256 i; i < coordsLength; ++i) {
