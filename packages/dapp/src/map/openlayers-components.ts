@@ -5,6 +5,7 @@ import XYZ from "ol/source/XYZ";
 import VectorSource from "ol/source/Vector";
 import { Fill, Stroke, Style, Circle as CircleStyle } from "ol/style";
 import { Select, Draw, Modify } from "ol/interaction";
+import { shiftKeyOnly, singleClick } from "ol/events/condition";
 import GeoJSON from "ol/format/GeoJSON";
 import { MultiPolygon } from "ol/geom";
 import { testGeoJSON } from "./map-component.data";
@@ -103,4 +104,7 @@ export const modify = new Modify({
       }),
     }),
   }),
+  deleteCondition: (event) => {
+    return singleClick(event) && event.originalEvent.ctrlKey;
+  },
 });
