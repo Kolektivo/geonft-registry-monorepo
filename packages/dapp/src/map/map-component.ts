@@ -35,8 +35,10 @@ const metadataDefaultValues = {
   email: "",
   phoneNumber: undefined,
   numberManagers: undefined,
-  dateEstablished: Date.now(),
+  date: new Date().toISOString().split("T")[0], // To get yyyy-mm-dd format
 };
+
+console.log("METADATA INIT: ", metadataDefaultValues);
 
 @inject(Element)
 export class MapComponent {
@@ -213,6 +215,37 @@ export class MapComponent {
   }
 
   // PREVIEW FUNCTIONS
+  public getFormattedMetadata(): Array<{ label: string; value: string }> {
+    const NOT_DEFINED = "Not defined";
+
+    return [
+      {
+        label: "Name",
+        value: this.metadata.name || NOT_DEFINED,
+      },
+      {
+        label: "Description",
+        value: this.metadata.description || NOT_DEFINED,
+      },
+      {
+        label: "Location address",
+        value: this.metadata.locationAddress || NOT_DEFINED,
+      },
+      {
+        label: "Phone number",
+        value: this.metadata.phoneNumber?.toString() || NOT_DEFINED,
+      },
+      {
+        label: "Number of managers",
+        value: this.metadata.numberManagers?.toString() || NOT_DEFINED,
+      },
+      {
+        label: "Date established",
+        value: new Date(this.metadata.date).toLocaleDateString("en-US"),
+      },
+    ];
+  }
+
   public cancelPreview(): void {
     this.stateTransition("CANCEL_PREVIEW");
   }

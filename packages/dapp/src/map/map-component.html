@@ -86,8 +86,8 @@
               <label for="metadata-number-managers">Number of managers</label>
               <input id="metadata-number-managers" type="number" value.bind="metadata.numberManagers">
 
-              <label for="metadata-date-established">Date established</label>
-              <input id="metadata-date-established" type="date" value.bind="metadata.dateEstablished">
+              <label for="metadata-date">Date established</label>
+              <input id="metadata-date" type="date" value="metadata.date" value.bind="metadata.date">
               <br />
               <div class="buttons">
                 <button click.trigger="cancelMetadata()">Cancel</button>
@@ -97,6 +97,9 @@
           </div>
           <div class="preview" if.bind="isPreviewState">
             <h2>PREVIEW</h2>
+            <p repeat.for="item of getFormattedMetadata()">
+              ${item.label}: ${item.value}
+            </p>
             <button click.trigger="cancelPreview()">
               Return
             </button>
