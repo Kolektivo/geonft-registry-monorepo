@@ -44,7 +44,9 @@ export const machine = createMachine(
             entry: ["enterDraw"],
             exit: ["exitDraw"],
             on: {
+              DELETE_FEATURE: "delete",
               MODIFY_MODE: "modify",
+              CANCEL_EDITION: "#metadata",
               FINISH_EDITION: "#preview",
             },
           },
@@ -60,6 +62,7 @@ export const machine = createMachine(
           },
           delete: {
             on: {
+              START_DRAWING: "draw",
               MODIFY_MODE: "modify",
               FINISH_EDITION: "#preview",
             },

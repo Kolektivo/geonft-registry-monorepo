@@ -110,7 +110,7 @@ export class MapComponent {
                 this.drawnFeaturesCount--;
 
                 if (this.editLayerIsEmpty) {
-                  this.stateTransition("MODIFY_MODE");
+                  this.stateTransition("START_DRAWING");
                 }
               }
             );
@@ -147,11 +147,10 @@ export class MapComponent {
             .map((feature) => feature.setStyle(editLayerStyle));
     });
 
-    // When finish drawing a feature, enter on modify mode
-    draw.on("drawend", (e) => {
+    // Increase the drawn features counter on draw end
+    draw.on("drawend", () => {
       if (this.state.matches("edition")) {
         this.drawnFeaturesCount++;
-        this.stateTransition("MODIFY_MODE");
       }
     });
 
@@ -180,7 +179,6 @@ export class MapComponent {
   }
 
   public submitMetadata(): void {
-    console.log("METADATA: ", this.metadata);
     this.stateTransition("SUBMIT_METADATA");
   }
 
@@ -288,6 +286,7 @@ export class MapComponent {
   // MAP FUNCTIONS
   private startDrawing(): void {
     this.draw.setActive(true);
+    this.modify.setActive(false);
     this.map.removeInteraction(this.select);
   }
 
@@ -301,16 +300,6 @@ export class MapComponent {
 
   // private undo(): void {
   //   this.draw.removeLastPoint();
-  // }
-
-  // private finishDrawing(): void {
-  //   this.draw.setActive(false);
-  // }
-
-  // private cancelDrawing(): void {
-  //   this.draw.abortDrawing();
-  //   this.map.addInteraction(this.select);
-  //   this.editLayer.getSource().clear();
   // }
 
   private applyDrawnFeaturesToLayer(

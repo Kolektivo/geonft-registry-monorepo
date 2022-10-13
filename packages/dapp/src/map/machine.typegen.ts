@@ -18,7 +18,12 @@ export interface Typegen0 {
     enterEdition: "CANCEL_PREVIEW" | "SUBMIT_METADATA";
     enterModify: "CANCEL_PREVIEW" | "MODIFY_MODE";
     enterPreview: "FINISH_EDITION";
-    exitDraw: "FINISH_EDITION" | "MODIFY_MODE" | "xstate.stop";
+    exitDraw:
+      | "CANCEL_EDITION"
+      | "DELETE_FEATURE"
+      | "FINISH_EDITION"
+      | "MODIFY_MODE"
+      | "xstate.stop";
     exitModify:
       | "CANCEL_EDITION"
       | "DELETE_FEATURE"

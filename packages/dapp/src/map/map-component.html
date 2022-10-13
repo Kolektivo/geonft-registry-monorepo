@@ -6,26 +6,26 @@
       <div class="edition-tools" if.bind="isEditionState">
         <button
           click.trigger="drawFeature()"
-          disabled.bind="!isModifyState"
+          disabled.bind="isDrawState"
+          class.bind="isDrawState && 'draw-enabled'"
         >
           Draw
         </button>
         <button 
           click.trigger="modifyFeatures()" 
           disabled.bind="isModifyState"
+          class.bind="isModifyState && 'modify-enabled'"
         >
           Modify
         </button>
         <button
           click.trigger="deleteFeature()"
-          disabled.bind="!isModifyState"
+          disabled.bind="isDeleteState || editLayerIsEmpty"
+          class.bind="isDeleteState && 'delete-enabled'"
         >
           Delete
         </button>
-        <button 
-          click.trigger="returnToMetadata()"
-          disabled.bind="!isModifyState"
-        >
+        <button click.trigger="returnToMetadata()">
           Return
         </button>
         <button
@@ -51,8 +51,10 @@
         <div class="sidebar-content">
           <div class="idle" if.bind="isIdleState">
             <h2>GeoNFT's</h2>
-            <button click.trigger="createFoodforest()">Add Foodforest</button>
-            <button>Add Weather station</button>
+            <div class="buttons">
+              <button click.trigger="createFoodforest()">Add Foodforest</button>
+              <button>Add Weather station</button>
+            </div>
           </div>
           <div class="metadata" if.bind="isMetadataState">
             <h2>Enter metadata</h2>
@@ -96,7 +98,7 @@
 
               <label for="metadata-date">Date established</label>
               <input id="metadata-date" type="date" value="metadata.date" value.bind="metadata.date">
-              
+
               <div class="buttons">
                 <button click.trigger="cancelMetadata()">Cancel</button>
                 <button click.trigger="submitMetadata()" type="submit">Continue</button>
