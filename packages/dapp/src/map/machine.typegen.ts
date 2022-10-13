@@ -14,21 +14,21 @@ export interface Typegen0 {
     delays: never;
   };
   eventsCausingActions: {
-    enterDraw: "CANCEL_PREVIEW" | "START_DRAWING" | "SUBMIT_METADATA";
+    enterDraw: "CANCEL_PREVIEW" | "DRAW_FEATURE" | "SUBMIT_METADATA";
     enterEdition: "CANCEL_PREVIEW" | "SUBMIT_METADATA";
-    enterModify: "CANCEL_PREVIEW" | "MODIFY_MODE";
+    enterModify: "CANCEL_PREVIEW" | "MODIFY_FEATURE";
     enterPreview: "FINISH_EDITION";
     exitDraw:
       | "CANCEL_EDITION"
       | "DELETE_FEATURE"
       | "FINISH_EDITION"
-      | "MODIFY_MODE"
+      | "MODIFY_FEATURE"
       | "xstate.stop";
     exitModify:
       | "CANCEL_EDITION"
       | "DELETE_FEATURE"
+      | "DRAW_FEATURE"
       | "FINISH_EDITION"
-      | "START_DRAWING"
       | "xstate.stop";
   };
   eventsCausingServices: {};

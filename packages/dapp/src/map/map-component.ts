@@ -110,7 +110,7 @@ export class MapComponent {
                 this.drawnFeaturesCount--;
 
                 if (this.editLayerIsEmpty) {
-                  this.stateTransition("START_DRAWING");
+                  this.stateTransition("DRAW_FEATURE");
                 }
               }
             );
@@ -184,11 +184,11 @@ export class MapComponent {
 
   // EDITION FUNCTIONS
   public drawFeature(): void {
-    this.stateTransition("START_DRAWING");
+    this.stateTransition("DRAW_FEATURE");
   }
 
   public modifyFeatures(): void {
-    this.stateTransition("MODIFY_MODE");
+    this.stateTransition("MODIFY_FEATURE");
   }
 
   public deleteFeature(): void {

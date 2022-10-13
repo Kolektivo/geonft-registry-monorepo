@@ -4,8 +4,8 @@ export type MachineEventsType =
   | "CREATE_FOODFOREST"
   | "CANCEL_METADATA"
   | "SUBMIT_METADATA"
-  | "MODIFY_MODE"
-  | "START_DRAWING"
+  | "MODIFY_FEATURE"
+  | "DRAW_FEATURE"
   | "DELETE_FEATURE"
   | "EDIT_FEATURES"
   | "CANCEL_EDITION"
@@ -45,7 +45,7 @@ export const machine = createMachine(
             exit: ["exitDraw"],
             on: {
               DELETE_FEATURE: "delete",
-              MODIFY_MODE: "modify",
+              MODIFY_FEATURE: "modify",
               CANCEL_EDITION: "#metadata",
               FINISH_EDITION: "#preview",
             },
@@ -54,7 +54,7 @@ export const machine = createMachine(
             entry: ["enterModify"],
             exit: ["exitModify"],
             on: {
-              START_DRAWING: "draw",
+              DRAW_FEATURE: "draw",
               DELETE_FEATURE: "delete",
               CANCEL_EDITION: "#metadata",
               FINISH_EDITION: "#preview",
@@ -62,8 +62,8 @@ export const machine = createMachine(
           },
           delete: {
             on: {
-              START_DRAWING: "draw",
-              MODIFY_MODE: "modify",
+              DRAW_FEATURE: "draw",
+              MODIFY_FEATURE: "modify",
               FINISH_EDITION: "#preview",
             },
           },
