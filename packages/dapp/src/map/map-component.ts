@@ -1,6 +1,7 @@
 import { inject, computedFrom } from "aurelia-framework";
 import Map from "ol/Map";
 import View from "ol/View";
+import Feature from "ol/Feature";
 import { fromLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -19,6 +20,8 @@ import {
   select,
   draw,
   modify,
+  editLayerStyle,
+  deleteHoverStyle,
   Basemap,
 } from "./openlayers-components";
 import "ol/ol.css";
@@ -68,6 +71,55 @@ export class MapComponent {
         zoom: initialZoom,
       }),
       interactions: defaultInteractions().extend([select, draw, modify]),
+    });
+
+    // EVENTS
+    // Deletes feature on click when delete mode is active
+    map.on("click", (e) => {
+      if (!this.isDeleteState) return;
+
+      // Iterate over all layers intersecting the clicked pixel
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (feature: Feature<MultiPolygon>, layer) => {
+          const layerId = layer.get("id");
+
+          // Delete the feature only if the layer is the edit layer
+          if (layerId === "edit-layer") {
+            this.confirmAction("Delete feature? This action is permanent", () =>
+              editLayer.getSource().removeFeature(feature)
+            );
+          }
+        }
+      );
+    });
+
+    // Highlight feature on hover when delete mode is active
+    map.on("pointermove", (e) => {
+      if (!this.isDeleteState) return;
+
+      let foundLayer;
+      let foundFeature;
+
+      // Check if mouse is over a edit layer feature
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        const layerId = layer.get("id");
+
+        if (layerId === "edit-layer") {
+          foundLayer = layer;
+          foundFeature = feature;
+          return;
+        }
+      });
+
+      // If mouse is over a edit layer feature, set its style to delete hover style
+      // Otherwise, reset all edit layer features
+      foundLayer
+        ? foundFeature.setStyle(deleteHoverStyle)
+        : editLayer
+            .getSource()
+            .getFeatures()
+            .map((feature) => feature.setStyle(editLayerStyle));
     });
 
     // When finish drawing a feature, enter on modify mode

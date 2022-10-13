@@ -36,20 +36,28 @@ export const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
 };
 
 // Layers setup
-export const editLayer = new VectorLayer({
-  source: new VectorSource<MultiPolygon>(),
-  style: new Style({
-    fill: new Fill({
-      color: [245, 203, 66, 0.3],
-    }),
-    stroke: new Stroke({
-      color: [189, 147, 9],
-      width: 2,
-    }),
+export const editLayerStyle = new Style({
+  fill: new Fill({
+    color: [245, 203, 66, 0.3],
+  }),
+  stroke: new Stroke({
+    color: [189, 147, 9],
+    width: 2,
   }),
 });
 
+export const editLayer = new VectorLayer({
+  properties: {
+    id: "edit-layer",
+  },
+  source: new VectorSource<MultiPolygon>(),
+  style: editLayerStyle,
+});
+
 export const testLayer = new VectorLayer({
+  properties: {
+    id: "test-layer",
+  },
   source: new VectorSource({
     features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(
       testGeoJSON
@@ -77,7 +85,7 @@ export const select = new Select({
       width: 2,
     }),
   }),
-  layers: [testLayer],
+  layers: [],
 });
 
 export const draw = new Draw({
@@ -107,4 +115,15 @@ export const modify = new Modify({
   deleteCondition: (event) => {
     return singleClick(event) && event.originalEvent.ctrlKey;
   },
+});
+
+// Styles
+export const deleteHoverStyle = new Style({
+  fill: new Fill({
+    color: [255, 0, 0, 0.3],
+  }),
+  stroke: new Stroke({
+    color: "red",
+    width: 2,
+  }),
 });
