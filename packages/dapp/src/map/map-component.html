@@ -2,6 +2,7 @@
   <div class="page">
     <p>${state.value}</p>
     <div class="map-wrap">
+      <!------ EDIT TOOLS ------>
       <div class="edition-tools" if.bind="isEditionState">
         <button
           click.trigger="drawFeature()"
@@ -27,13 +28,18 @@
         >
           Return
         </button>
-        <button disabled.bind="editLayerIsEmpty">
+        <button
+          click.trigger="finishEdition()"
+          disabled.bind="editLayerIsEmpty"
+        >
           Finish
         </button>
       </div>
-      <div class="draw-help" if.bind="isModifyState">
+      <!------ MODIFY HELP PANEL ------>
+      <div class="modify-help" if.bind="isModifyState">
         <p>Ctrl + Click to delete a vertex</p>
       </div>
+      <!------ SIDEBAR ------>
       <div id="sidebar" class="sidebar" class.bind="sidebar ? '' : 'closed'">
         <button 
           click.trigger="toggleSidebar()" 
@@ -56,8 +62,18 @@
             <button click.trigger="cancelMetadata()">Cancel</button>
             <button click.trigger="submitMetadata()" type="submit">Continue</button>
           </div>
+          <div class="preview" if.bind="isPreviewState">
+            <h2>PREVIEW</h2>
+            <button click.trigger="cancelPreview()">
+              Return
+            </button>
+            <button click.trigger="mintGeoNFT()">
+              Mint GeoNFT
+            </button>
+          </div>
         </div>
       </div>
+      <!------ MAP ------>
       <div id="map" class="map">
       </div>
     </div>

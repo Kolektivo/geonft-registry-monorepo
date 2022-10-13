@@ -35,6 +35,32 @@ export const basemaps: Record<Basemap, TileLayer<OSM | XYZ>> = {
   satellite: satelliteBasemap,
 };
 
+// Styles
+export const deleteHoverStyle = new Style({
+  fill: new Fill({
+    color: [255, 0, 0, 0.3],
+  }),
+  stroke: new Stroke({
+    color: "red",
+    width: 2,
+  }),
+});
+
+const makeStrippedPattern = () => {
+  const cnv = document.createElement("canvas");
+  const ctx = cnv.getContext("2d");
+  cnv.width = 8;
+  cnv.height = 8;
+  ctx.lineWidth = 600;
+  ctx.fillStyle = "#4287f5"; // light blue
+
+  for (let i = 0; i < 6; ++i) {
+    ctx.fillRect(i, i, 1, 1);
+  }
+
+  return ctx.createPattern(cnv, "repeat");
+};
+
 // Layers setup
 export const editLayerStyle = new Style({
   fill: new Fill({
@@ -52,6 +78,22 @@ export const editLayer = new VectorLayer({
   },
   source: new VectorSource<MultiPolygon>(),
   style: editLayerStyle,
+});
+
+export const previewLayer = new VectorLayer({
+  properties: {
+    id: "preview-layer",
+  },
+  source: new VectorSource<MultiPolygon>(),
+  style: new Style({
+    fill: new Fill({
+      color: makeStrippedPattern(),
+    }),
+    stroke: new Stroke({
+      color: "blue",
+      width: 2,
+    }),
+  }),
 });
 
 export const testLayer = new VectorLayer({
@@ -115,15 +157,4 @@ export const modify = new Modify({
   deleteCondition: (event) => {
     return singleClick(event) && event.originalEvent.ctrlKey;
   },
-});
-
-// Styles
-export const deleteHoverStyle = new Style({
-  fill: new Fill({
-    color: [255, 0, 0, 0.3],
-  }),
-  stroke: new Stroke({
-    color: "red",
-    width: 2,
-  }),
 });

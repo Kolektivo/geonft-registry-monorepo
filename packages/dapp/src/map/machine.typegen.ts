@@ -14,13 +14,15 @@ export interface Typegen0 {
     delays: never;
   };
   eventsCausingActions: {
-    enterDraw: "START_DRAWING" | "SUBMIT_METADATA";
-    enterEdition: "SUBMIT_METADATA";
-    enterModify: "MODIFY_MODE";
-    exitDraw: "MODIFY_MODE" | "xstate.stop";
+    enterDraw: "CANCEL_PREVIEW" | "START_DRAWING" | "SUBMIT_METADATA";
+    enterEdition: "CANCEL_PREVIEW" | "SUBMIT_METADATA";
+    enterModify: "CANCEL_PREVIEW" | "MODIFY_MODE";
+    enterPreview: "FINISH_EDITION";
+    exitDraw: "FINISH_EDITION" | "MODIFY_MODE" | "xstate.stop";
     exitModify:
       | "CANCEL_EDITION"
       | "DELETE_FEATURE"
+      | "FINISH_EDITION"
       | "START_DRAWING"
       | "xstate.stop";
   };

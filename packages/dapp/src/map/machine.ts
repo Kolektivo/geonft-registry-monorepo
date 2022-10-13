@@ -8,7 +8,10 @@ export type MachineEventsType =
   | "START_DRAWING"
   | "DELETE_FEATURE"
   | "EDIT_FEATURES"
-  | "CANCEL_EDITION";
+  | "CANCEL_EDITION"
+  | "FINISH_EDITION"
+  | "CANCEL_PREVIEW"
+  | "MINT_GEONFT";
 
 type MachineEvents = { type: MachineEventsType };
 
@@ -42,6 +45,7 @@ export const machine = createMachine(
             exit: ["exitDraw"],
             on: {
               MODIFY_MODE: "modify",
+              FINISH_EDITION: "#preview",
             },
           },
           modify: {
@@ -51,16 +55,25 @@ export const machine = createMachine(
               START_DRAWING: "draw",
               DELETE_FEATURE: "delete",
               CANCEL_EDITION: "#metadata",
+              FINISH_EDITION: "#preview",
             },
           },
           delete: {
             on: {
               MODIFY_MODE: "modify",
+              FINISH_EDITION: "#preview",
             },
           },
         },
       },
-      preview: {},
+      preview: {
+        id: "preview",
+        entry: ["enterPreview"],
+        on: {
+          CANCEL_PREVIEW: "edition.modify",
+          MINT_GEONFT: "idle",
+        },
+      },
     },
     predictableActionArguments: true,
   },
@@ -71,6 +84,7 @@ export const machine = createMachine(
       exitDraw: () => null,
       enterModify: () => null,
       exitModify: () => null,
+      enterPreview: () => null,
     },
   }
 );

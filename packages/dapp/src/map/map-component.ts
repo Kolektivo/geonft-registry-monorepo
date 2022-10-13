@@ -17,6 +17,7 @@ import {
   basemaps,
   testLayer,
   editLayer,
+  previewLayer,
   select,
   draw,
   modify,
@@ -36,6 +37,7 @@ export class MapComponent {
   sidebar = true;
   sidebarButton = true;
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
   select: Select;
   draw: Draw;
@@ -52,6 +54,7 @@ export class MapComponent {
         exitDraw: () => this.exitDraw(),
         enterModify: () => this.enterModify(),
         exitModify: () => this.exitModify(),
+        enterPreview: () => this.enterPreview(),
       },
     });
     // Update machine with the new actions
@@ -65,7 +68,7 @@ export class MapComponent {
     const initialZoom = 7;
     const initialBasemap = basemaps[this.currentBasemap];
     const map = new Map({
-      layers: [initialBasemap, editLayer, testLayer],
+      layers: [initialBasemap, editLayer, previewLayer, testLayer],
       target: "map",
       view: new View({
         center: fromLonLat(initialCenter),
@@ -141,6 +144,7 @@ export class MapComponent {
 
     this.map = map;
     this.editLayer = editLayer;
+    this.previewLayer = previewLayer;
     this.select = select;
     this.draw = draw;
     this.modify = modify;
@@ -191,6 +195,20 @@ export class MapComponent {
     );
   }
 
+  public finishEdition(): void {
+    this.stateTransition("FINISH_EDITION");
+  }
+
+  // PREVIEW FUNCTIONS
+  public cancelPreview(): void {
+    this.stateTransition("CANCEL_PREVIEW");
+  }
+
+  public mintGeoNFT(): void {
+    this.stateTransition("MINT_GEONFT");
+    this.applyDrawnFeaturesToLayer(this.previewLayer);
+  }
+
   // ACTIONS
   private enterEdition(): void {
     this.sidebar = false;
@@ -211,6 +229,12 @@ export class MapComponent {
 
   private exitModify(): void {
     this.modify.setActive(false);
+  }
+
+  private enterPreview(): void {
+    this.sidebar = true;
+    this.sidebarButton = true;
+    // Focus view on editLayer?
   }
 
   // MAP FUNCTIONS
@@ -241,13 +265,15 @@ export class MapComponent {
   //   this.editLayer.getSource().clear();
   // }
 
-  // private applyDrawnFeaturesToLayer(
-  //   targetLayer: VectorLayer<VectorSource<Geometry>>
-  // ): void {
-  //   const drawnFeatures = this.editLayer.getSource().getFeatures();
-  //   this.editLayer.getSource().clear();
-  //   targetLayer.getSource().addFeatures(drawnFeatures);
-  // }
+  private applyDrawnFeaturesToLayer(
+    targetLayer: VectorLayer<VectorSource<Geometry>>
+  ): void {
+    const targetStyle = targetLayer.getStyle();
+    const drawnFeatures = this.editLayer.getSource().getFeatures();
+    this.editLayer.getSource().clear();
+    drawnFeatures.map((feature) => feature.setStyle(targetStyle));
+    targetLayer.getSource().addFeatures(drawnFeatures);
+  }
 
   // HELPERS
   private stateTransition(newStateEvent: MachineEventsType): void {
@@ -295,5 +321,10 @@ export class MapComponent {
   @computedFrom("drawnFeaturesCount")
   public get editLayerIsEmpty(): boolean {
     return this.editLayer.getSource().isEmpty();
+  }
+
+  @computedFrom("state.value")
+  public get isPreviewState(): boolean {
+    return this.state.value === "preview";
   }
 }
