@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <p>${state.value}</p>
+    <!-- <p>${state.value}</p> -->
     <div class="map-wrap">
       <!------ EDIT TOOLS ------>
       <div class="edition-tools" if.bind="isEditionState">
@@ -57,10 +57,43 @@
           <div class="metadata" if.bind="isMetadataState">
             <h2>Enter metadata</h2>
             <h3>Basic information</h3>
-            <input type="text" placeholder="Name">
-            <textarea name="description" id="description" cols="30" rows="10"></textarea>
-            <button click.trigger="cancelMetadata()">Cancel</button>
-            <button click.trigger="submitMetadata()" type="submit">Continue</button>
+
+            <form role="form">
+              <label for="metadata-name">Name</label>
+              <input id="metadata-name" type="text" value.bind="metadata.name">
+
+              <label for="metadata-description">Description</label>
+              <textarea 
+                id="metadata-description" 
+                value.bind="metadata.description" 
+                cols="30" 
+                rows="10"
+              /></textarea>
+
+              <label for="metadata-location-address">Location address</label>
+              <input id="metadata-location-address" type="text" value.bind="metadata.locationAddress">
+
+              <h3>Contact info</h3>
+
+              <label for="metadata-email">Email</label>
+              <input id="metadata-email" type="email" value.bind="metadata.email">
+
+              <label for="metadata-phone-number">Phone number</label>
+              <input id="metadata-phone-number" type="number" value.bind="phoneNumber">
+
+              <h3>Food forest information</h3>
+
+              <label for="metadata-number-managers">Number of managers</label>
+              <input id="metadata-number-managers" type="number" value.bind="metadata.numberManagers">
+
+              <label for="metadata-date-established">Date established</label>
+              <input id="metadata-date-established" type="date" value.bind="metadata.dateEstablished">
+              <br />
+              <div class="buttons">
+                <button click.trigger="cancelMetadata()">Cancel</button>
+                <button click.trigger="submitMetadata()" type="submit">Continue</button>
+              </div>
+            </form>
           </div>
           <div class="preview" if.bind="isPreviewState">
             <h2>PREVIEW</h2>

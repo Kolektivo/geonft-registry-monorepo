@@ -28,6 +28,16 @@ import {
 import "ol/ol.css";
 import "./map-component.scss";
 
+const metadataDefaultValues = {
+  name: "",
+  description: "",
+  locationAddress: "",
+  email: "",
+  phoneNumber: undefined,
+  numberManagers: undefined,
+  dateEstablished: Date.now(),
+};
+
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
@@ -36,6 +46,7 @@ export class MapComponent {
   state = machineInterpreter.initialState;
   sidebar = true;
   sidebarButton = true;
+  metadata = { ...metadataDefaultValues };
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
@@ -162,10 +173,12 @@ export class MapComponent {
 
   // METADATA FUNCTIONS
   public cancelMetadata(): void {
+    this.metadata = metadataDefaultValues;
     this.stateTransition("CANCEL_METADATA");
   }
 
   public submitMetadata(): void {
+    console.log("METADATA: ", this.metadata);
     this.stateTransition("SUBMIT_METADATA");
   }
 
@@ -207,6 +220,8 @@ export class MapComponent {
   public mintGeoNFT(): void {
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
+    this.metadata = { ...metadataDefaultValues };
+    console.log(this.metadata);
   }
 
   // ACTIONS
