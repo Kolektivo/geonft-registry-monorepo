@@ -56,9 +56,9 @@
           </div>
           <div class="metadata" if.bind="isMetadataState">
             <h2>Enter metadata</h2>
-            <h3>Basic information</h3>
 
             <form role="form">
+              <h3>Basic information</h3>
               <label for="metadata-name">Name</label>
               <input id="metadata-name" type="text" value.bind="metadata.name">
 
@@ -66,8 +66,8 @@
               <textarea 
                 id="metadata-description" 
                 value.bind="metadata.description" 
-                cols="30" 
-                rows="10"
+                cols="20" 
+                rows="5"
               /></textarea>
 
               <label for="metadata-location-address">Location address</label>
@@ -84,11 +84,19 @@
               <h3>Food forest information</h3>
 
               <label for="metadata-number-managers">Number of managers</label>
-              <input id="metadata-number-managers" type="number" value.bind="metadata.numberManagers">
+              <input 
+                id="metadata-number-managers" 
+                type="number"
+                pattern="\d*"
+                inputmode="numeric"
+                min="0"
+                required
+                value.bind="metadata.numberManagers"
+              >
 
               <label for="metadata-date">Date established</label>
               <input id="metadata-date" type="date" value="metadata.date" value.bind="metadata.date">
-              <br />
+              
               <div class="buttons">
                 <button click.trigger="cancelMetadata()">Cancel</button>
                 <button click.trigger="submitMetadata()" type="submit">Continue</button>

@@ -22,7 +22,7 @@ export const machine = createMachine(
       context: {} as { value: string },
       events: {} as MachineEvents,
     },
-    initial: "idle",
+    initial: "metadata",
     states: {
       idle: {
         on: {
