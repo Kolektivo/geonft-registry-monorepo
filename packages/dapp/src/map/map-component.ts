@@ -41,6 +41,7 @@ export class MapComponent {
   draw: Draw;
   modify: Modify;
   currentBasemap: Basemap = "cartographic";
+  drawnFeaturesCount = 0;
 
   public attached(): void {
     // Machine setup
@@ -86,8 +87,16 @@ export class MapComponent {
 
           // Delete the feature only if the layer is the edit layer
           if (layerId === "edit-layer") {
-            this.confirmAction("Delete feature? This action is permanent", () =>
-              editLayer.getSource().removeFeature(feature)
+            this.confirmAction(
+              "Delete feature? This action is permanent",
+              () => {
+                editLayer.getSource().removeFeature(feature);
+                this.drawnFeaturesCount--;
+
+                if (this.editLayerIsEmpty) {
+                  this.stateTransition("MODIFY_MODE");
+                }
+              }
             );
           }
         }
@@ -123,8 +132,9 @@ export class MapComponent {
     });
 
     // When finish drawing a feature, enter on modify mode
-    draw.on("drawend", () => {
+    draw.on("drawend", (e) => {
       if (this.state.matches("edition")) {
+        this.drawnFeaturesCount++;
         this.stateTransition("MODIFY_MODE");
       }
     });
@@ -280,5 +290,10 @@ export class MapComponent {
   @computedFrom("state.value")
   public get isDeleteState(): boolean {
     return this.state.matches("edition.delete");
+  }
+
+  @computedFrom("drawnFeaturesCount")
+  public get editLayerIsEmpty(): boolean {
+    return this.editLayer.getSource().isEmpty();
   }
 }
