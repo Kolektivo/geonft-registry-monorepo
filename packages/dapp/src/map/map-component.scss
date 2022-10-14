@@ -40,6 +40,16 @@ $font-primary: "Poppins", sans-serif;
       position: absolute;
       margin-left: -50px;
       margin-top: 70px;
+      padding: 4px 8px;
+      background-color: $grey-200;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+
+      &:hover {
+        background-color: darken($color: $grey-200, $amount: 10);
+      }
     }
 
     .sidebar-content {
@@ -219,8 +229,7 @@ $font-primary: "Poppins", sans-serif;
         position: absolute;
         top: $box-padding;
         right: -100%;
-        // Double spacing to compensate 20px buttons padding and then add another 10px as margin
-        margin-right: -#{$box-padding + 10px};
+        margin-right: 40px;
         height: fit-content;
 
         button {

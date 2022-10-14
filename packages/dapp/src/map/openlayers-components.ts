@@ -63,12 +63,22 @@ const makeStrippedPattern = () => {
 };
 
 // Layers setup
+// export const editLayerStyle = new Style({
+//   fill: new Fill({
+//     color: [50, 168, 82, 0.3],
+//   }),
+//   stroke: new Stroke({
+//     color: [26, 97, 45],
+//     width: 2,
+//   }),
+// });
+
 export const editLayerStyle = new Style({
   fill: new Fill({
-    color: [245, 203, 66, 0.3],
+    color: [0, 153, 255, 0.3],
   }),
   stroke: new Stroke({
-    color: [189, 147, 9],
+    color: [4, 65, 106],
     width: 2,
   }),
 });
@@ -91,7 +101,7 @@ export const previewLayer = new VectorLayer({
       color: makeStrippedPattern(),
     }),
     stroke: new Stroke({
-      color: "blue",
+      color: [4, 65, 106],
       width: 2,
     }),
   }),
