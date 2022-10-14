@@ -11,11 +11,13 @@ import {
   Modify,
   defaults as defaultInteractions,
 } from "ol/interaction";
+import { defaults as defaultControls } from "ol/control";
 import { Geometry, Polygon, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
   basemaps,
   testLayer,
+  testLayerCentroids,
   editLayer,
   previewLayer,
   select,
@@ -73,21 +75,30 @@ export class MapComponent {
       },
     });
     this.service.machine = newMachine;
-    this.service.onTransition((state) => console.log(state.value));
+    // Uncomment to log every state transition
+    // this.service.onTransition((state) => console.log(state.value));
     this.service.start();
 
     // Map setup
-    const initialCenter = [-68.95, 12.138];
+    const initialCenter = [-68.95, 12.208];
     const initialZoom = 7;
+    const showAttribution = true;
     const initialBasemap = basemaps[this.currentBasemap];
     const map = new Map({
-      layers: [initialBasemap, editLayer, previewLayer, testLayer],
+      layers: [
+        initialBasemap,
+        editLayer,
+        previewLayer,
+        testLayer,
+        testLayerCentroids,
+      ],
       target: "map",
       view: new View({
         center: fromLonLat(initialCenter),
         zoom: initialZoom,
       }),
       interactions: defaultInteractions().extend([select, draw, modify]),
+      controls: defaultControls({ attribution: showAttribution }),
     });
 
     // EVENTS
@@ -146,8 +157,6 @@ export class MapComponent {
 
     // Increase the drawn features counter on draw end
     draw.on("drawend", (e) => {
-      console.log("DRAW CHANGE E: ", e);
-      console.log(draw["sketchLineCoords_"]);
       if (this.state.matches("edition")) {
         this.drawnFeaturesCount++;
       }

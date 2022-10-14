@@ -3,12 +3,13 @@ import VectorLayer from "ol/layer/Vector";
 import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
 import VectorSource from "ol/source/Vector";
-import { Fill, Stroke, Style, Circle as CircleStyle } from "ol/style";
+import { Fill, Stroke, Style, Circle as CircleStyle, Icon } from "ol/style";
 import { Select, Draw, Modify } from "ol/interaction";
 import { singleClick } from "ol/events/condition";
-import { GeometryFunction } from "ol/style/Style";
 import GeoJSON from "ol/format/GeoJSON";
-import { Polygon, MultiPolygon } from "ol/geom";
+import Feature from "ol/Feature";
+import { Point, Polygon, MultiPolygon } from "ol/geom";
+import { getCenter } from "ol/extent";
 import { testGeoJSON } from "./map-component.data";
 
 export type Basemap = "cartographic" | "satellite";
@@ -63,16 +64,6 @@ const makeStrippedPattern = () => {
 };
 
 // Layers setup
-// export const editLayerStyle = new Style({
-//   fill: new Fill({
-//     color: [50, 168, 82, 0.3],
-//   }),
-//   stroke: new Stroke({
-//     color: [26, 97, 45],
-//     width: 2,
-//   }),
-// });
-
 export const editLayerStyle = new Style({
   fill: new Fill({
     color: [0, 153, 255, 0.3],
@@ -123,6 +114,30 @@ export const testLayer = new VectorLayer({
     stroke: new Stroke({
       color: [26, 97, 45],
       width: 2,
+    }),
+  }),
+});
+
+export const testLayerCentroids = new VectorLayer({
+  source: new VectorSource<Point>({
+    features: testLayer
+      .getSource()
+      .getFeatures()
+      .map((feature) => {
+        const extent = feature.getGeometry().getExtent();
+        const centroid = getCenter(extent);
+        return new Feature({
+          geometry: new Point(centroid),
+        });
+      }),
+  }),
+  style: new Style({
+    image: new Icon({
+      scale: 0.5,
+      displacement: [-16, 43],
+      anchorXUnits: "pixels",
+      anchorYUnits: "pixels",
+      src: "kolektivo_tree_green.png",
     }),
   }),
 });
