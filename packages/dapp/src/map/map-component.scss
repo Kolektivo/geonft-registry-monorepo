@@ -71,11 +71,50 @@ $font-primary: "Poppins", sans-serif;
         }
       }
 
-      .idle .buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        margin-top: 24px;
+      .idle {
+        .buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          margin-top: 24px;
+          margin-bottom: 48px;
+        }
+
+        .no-nfts-found {
+          text-align: center;
+        }
+
+        .minted-geonfts {
+          list-style: none;
+          padding-left: 0;
+
+          .minted-geonft {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+
+            &:not(:last-child) {
+              margin-bottom: 36px;
+            }
+
+            .geonft-data span {
+              display: block;
+
+              &:first-child {
+                font-weight: bold;
+              }
+
+              &:last-child {
+                font-size: 14px;
+                font-style: italic;
+              }
+            }
+
+            button {
+              padding: 6px 12px;
+            }
+          }
+        }
       }
 
       .metadata form {

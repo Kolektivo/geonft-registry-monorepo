@@ -63,6 +63,18 @@
               <button click.trigger="createFoodforest()">Add Foodforest</button>
               <button>Add Weather station</button>
             </div>
+            <p if.bind="mintedGeoNfts.length === 0" class="no-nfts-found">
+              <i>No GeoNFTs minted yet</i>
+            </p>
+            <ul if.bind="mintedGeoNfts.length >= 0" class="minted-geonfts">
+              <li class="minted-geonft" repeat.for="geoNft of mintedGeoNfts">
+                <div class="geonft-data">
+                  <span>${geoNft.name}</span>
+                  <span>${geoNft.date}</span>
+                </div>
+                <button>Register</button>
+              </li>
+            </ul>
           </div>
           <div class="metadata" if.bind="isMetadataState">
             <h2>Enter metadata</h2>

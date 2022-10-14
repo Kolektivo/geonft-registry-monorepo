@@ -57,6 +57,7 @@ export class MapComponent {
   drawnFeaturesCount = 0;
   lastDeleteHighlightedFeature: Feature;
   bufferEdition: Array<[number, number]> = [];
+  mintedGeoNfts: Array<Record<string, unknown>> = [];
 
   public attached(): void {
     // Update machine with the new actions
@@ -249,6 +250,7 @@ export class MapComponent {
   public mintGeoNFT(): void {
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
+    this.mintedGeoNfts.push(this.metadata);
     this.metadata = { ...metadataDefaultValues };
   }
 
