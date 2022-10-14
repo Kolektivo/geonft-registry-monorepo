@@ -11,7 +11,7 @@ import {
   Modify,
   defaults as defaultInteractions,
 } from "ol/interaction";
-import { Geometry, MultiPolygon } from "ol/geom";
+import { Geometry, Polygon, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
   basemaps,
@@ -38,8 +38,6 @@ const metadataDefaultValues = {
   date: new Date().toISOString().split("T")[0], // To get yyyy-mm-dd format
 };
 
-console.log("METADATA INIT: ", metadataDefaultValues);
-
 @inject(Element)
 export class MapComponent {
   public mapDiv: HTMLDivElement;
@@ -49,7 +47,7 @@ export class MapComponent {
   sidebar = true;
   sidebarButton = true;
   metadata = { ...metadataDefaultValues };
-  editLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  editLayer: VectorLayer<VectorSource<Polygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   testLayer: VectorLayer<VectorSource<Geometry>>;
   select: Select;
@@ -57,9 +55,12 @@ export class MapComponent {
   modify: Modify;
   currentBasemap: Basemap = "cartographic";
   drawnFeaturesCount = 0;
+  lastDeleteHighlightedFeature: Feature;
+  bufferEdition: Array<[number, number]> = [];
 
   public attached(): void {
-    // Machine setup
+    // Update machine with the new actions
+    // They cannot be defined before because they access class variables and methods
     const newMachine = machine.withConfig({
       actions: {
         enterEdition: () => this.enterEdition(),
@@ -70,8 +71,6 @@ export class MapComponent {
         enterPreview: () => this.enterPreview(),
       },
     });
-    // Update machine with the new actions
-    // They cannot be defined before because they access class variables and methods
     this.service.machine = newMachine;
     this.service.onTransition((state) => console.log(state.value));
     this.service.start();
@@ -96,27 +95,21 @@ export class MapComponent {
       if (!this.isDeleteState) return;
 
       // Iterate over all layers intersecting the clicked pixel
-      map.forEachFeatureAtPixel(
-        e.pixel,
-        (feature: Feature<MultiPolygon>, layer) => {
-          const layerId = layer.get("id");
+      map.forEachFeatureAtPixel(e.pixel, (feature: Feature<Polygon>, layer) => {
+        const layerId = layer.get("id");
 
-          // Delete the feature only if the layer is the edit layer
-          if (layerId === "edit-layer") {
-            this.confirmAction(
-              "Delete feature? This action is permanent",
-              () => {
-                editLayer.getSource().removeFeature(feature);
-                this.drawnFeaturesCount--;
+        // Delete the feature only if the layer is the edit layer
+        if (layerId === "edit-layer") {
+          this.confirmAction("Delete feature? This action is permanent", () => {
+            editLayer.getSource().removeFeature(feature);
+            this.drawnFeaturesCount--;
 
-                if (this.editLayerIsEmpty) {
-                  this.stateTransition("DRAW_FEATURE");
-                }
-              }
-            );
-          }
+            if (this.editLayerIsEmpty) {
+              this.stateTransition("DRAW_FEATURE");
+            }
+          });
         }
-      );
+      });
     });
 
     // Highlight feature on hover when delete mode is active
@@ -137,18 +130,23 @@ export class MapComponent {
         }
       });
 
-      // If mouse is over a edit layer feature, set its style to delete hover style
-      // Otherwise, reset all edit layer features
-      foundLayer
-        ? foundFeature.setStyle(deleteHoverStyle)
-        : editLayer
-            .getSource()
-            .getFeatures()
-            .map((feature) => feature.setStyle(editLayerStyle));
+      // If mouse is over an edit layer feature, set its style to delete hover style and set it
+      // as the last delete highlighted feature. Otherwise, reset last delete highlighted feature
+      // to its default style
+      if (foundLayer) {
+        foundFeature.setStyle(deleteHoverStyle);
+        this.lastDeleteHighlightedFeature = foundFeature;
+      } else {
+        this.lastDeleteHighlightedFeature
+          ? this.lastDeleteHighlightedFeature.setStyle(editLayerStyle)
+          : (this.lastDeleteHighlightedFeature = undefined);
+      }
     });
 
     // Increase the drawn features counter on draw end
-    draw.on("drawend", () => {
+    draw.on("drawend", (e) => {
+      console.log("DRAW CHANGE E: ", e);
+      console.log(draw["sketchLineCoords_"]);
       if (this.state.matches("edition")) {
         this.drawnFeaturesCount++;
       }
@@ -252,7 +250,6 @@ export class MapComponent {
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
     this.metadata = { ...metadataDefaultValues };
-    console.log(this.metadata);
   }
 
   // ACTIONS
@@ -298,9 +295,21 @@ export class MapComponent {
     this.editLayer.getSource().clear();
   }
 
-  // private undo(): void {
-  //   this.draw.removeLastPoint();
-  // }
+  public undo(): void {
+    const sketchLineCoords = this.draw["sketchLineCoords_"];
+    const lastPoint = sketchLineCoords.slice(-1);
+    this.bufferEdition.push(lastPoint);
+    this.draw.removeLastPoint();
+  }
+
+  // NOTE: Experimental
+  public redo(): void {
+    const lastUndoPoint = this.bufferEdition.pop();
+    if (lastUndoPoint) {
+      this.draw["sketchLineCoords_"].push(lastUndoPoint[0]);
+      // TODO: Refresh render to show changes
+    }
+  }
 
   private applyDrawnFeaturesToLayer(
     targetLayer: VectorLayer<VectorSource<Geometry>>
@@ -363,5 +372,10 @@ export class MapComponent {
   @computedFrom("state.value")
   public get isPreviewState(): boolean {
     return this.state.value === "preview";
+  }
+
+  @computedFrom("bufferEdition.length")
+  public get isBufferEditionEmpty(): boolean {
+    return this.bufferEdition.length === 0;
   }
 }

@@ -4,6 +4,14 @@
     <div class="map-wrap">
       <!------ EDIT TOOLS ------>
       <div class="edition-tools" if.bind="isEditionState">
+        <div class="draw-options" if.bind="isDrawState">
+          <button click.trigger="undo()">
+            Undo
+          </button>
+          <!-- <button click.trigger="redo()" disabled.bind="isBufferEditionEmpty">
+            Redo
+          </button> -->
+        </div>
         <button
           click.trigger="drawFeature()"
           disabled.bind="isDrawState"

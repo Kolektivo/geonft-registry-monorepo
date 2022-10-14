@@ -5,9 +5,10 @@ import XYZ from "ol/source/XYZ";
 import VectorSource from "ol/source/Vector";
 import { Fill, Stroke, Style, Circle as CircleStyle } from "ol/style";
 import { Select, Draw, Modify } from "ol/interaction";
-import { shiftKeyOnly, singleClick } from "ol/events/condition";
+import { singleClick } from "ol/events/condition";
+import { GeometryFunction } from "ol/style/Style";
 import GeoJSON from "ol/format/GeoJSON";
-import { MultiPolygon } from "ol/geom";
+import { Polygon, MultiPolygon } from "ol/geom";
 import { testGeoJSON } from "./map-component.data";
 
 export type Basemap = "cartographic" | "satellite";
@@ -76,7 +77,7 @@ export const editLayer = new VectorLayer({
   properties: {
     id: "edit-layer",
   },
-  source: new VectorSource<MultiPolygon>(),
+  source: new VectorSource<Polygon>(),
   style: editLayerStyle,
 });
 

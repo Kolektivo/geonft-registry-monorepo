@@ -130,16 +130,19 @@ $font-primary: "Poppins", sans-serif;
     width: 100%;
     height: 650px; /* calculate height of the screen minus the heading */
 
+    $box-padding: 20px;
+
     .edition-tools {
       position: absolute;
       top: 100px;
       left: 20px;
-      background-color: $grey-100;
-      border-radius: 6px;
-      padding: 20px;
       display: flex;
       flex-direction: column;
+      background-color: $grey-100;
       gap: 16px;
+      padding: $box-padding;
+      box-sizing: border-box;
+      border-radius: 6px;
       z-index: 99;
 
       button {
@@ -171,6 +174,23 @@ $font-primary: "Poppins", sans-serif;
       .delete-enabled {
         color: black;
         background-color: rgba(252, 22, 22, 0.4);
+      }
+
+      .draw-options {
+        position: absolute;
+        top: $box-padding;
+        right: -100%;
+        // Double spacing to compensate 20px buttons padding and then add another 10px as margin
+        margin-right: -#{$box-padding + 10px};
+        height: fit-content;
+
+        button {
+          background-color: rgba(white, 0.7);
+
+          &:hover {
+            background-color: white;
+          }
+        }
       }
     }
 
