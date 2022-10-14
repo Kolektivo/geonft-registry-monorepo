@@ -13,7 +13,7 @@
         </button>
         <button 
           click.trigger="modifyFeatures()" 
-          disabled.bind="isModifyState"
+          disabled.bind="isModifyState || editLayerIsEmpty"
           class.bind="isModifyState && 'modify-enabled'"
         >
           Modify
@@ -108,14 +108,16 @@
           <div class="preview" if.bind="isPreviewState">
             <h2>PREVIEW</h2>
             <p repeat.for="item of getFormattedMetadata()">
-              ${item.label}: ${item.value}
+              ${item.label}: <b>${item.value}</b>
             </p>
-            <button click.trigger="cancelPreview()">
-              Return
-            </button>
-            <button click.trigger="mintGeoNFT()">
-              Mint GeoNFT
-            </button>
+            <div class="buttons">
+              <button click.trigger="cancelPreview()">
+                Return
+              </button>
+              <button click.trigger="mintGeoNFT()">
+                Mint GeoNFT
+              </button>
+            </div>
           </div>
         </div>
       </div>

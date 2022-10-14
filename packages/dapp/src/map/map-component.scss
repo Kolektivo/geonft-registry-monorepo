@@ -109,7 +109,16 @@ $font-primary: "Poppins", sans-serif;
         .buttons {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 48px;
+          gap: 24px;
+          margin-top: 48px;
+        }
+      }
+
+      .preview {
+        .buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
           margin-top: 48px;
         }
       }
@@ -161,7 +170,7 @@ $font-primary: "Poppins", sans-serif;
 
       .delete-enabled {
         color: black;
-        background-color: rgb(230, 72, 72);
+        background-color: rgba(252, 22, 22, 0.4);
       }
     }
 
