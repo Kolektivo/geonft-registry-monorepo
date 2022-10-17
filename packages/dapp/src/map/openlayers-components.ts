@@ -10,7 +10,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import Feature from "ol/Feature";
 import { Point, Polygon, MultiPolygon } from "ol/geom";
 import { getCenter } from "ol/extent";
-import { testGeoJSON } from "./map-component.data";
+import { ecologicalAssetsGeoJSON } from "./data";
 
 export type Basemap = "cartographic" | "satellite";
 
@@ -98,13 +98,13 @@ export const previewLayer = new VectorLayer({
   }),
 });
 
-export const testLayer = new VectorLayer({
+export const ecologicalAssets = new VectorLayer({
   properties: {
-    id: "test-layer",
+    id: "ecological-assets-layer",
   },
   source: new VectorSource({
     features: new GeoJSON({ featureProjection: "EPSG:3857" }).readFeatures(
-      testGeoJSON
+      ecologicalAssetsGeoJSON
     ),
   }),
   style: new Style({
@@ -118,9 +118,9 @@ export const testLayer = new VectorLayer({
   }),
 });
 
-export const testLayerCentroids = new VectorLayer({
+export const ecologicalAssetsCentroids = new VectorLayer({
   source: new VectorSource<Point>({
-    features: testLayer
+    features: ecologicalAssets
       .getSource()
       .getFeatures()
       .map((feature) => {
@@ -153,7 +153,7 @@ export const select = new Select({
       width: 2,
     }),
   }),
-  layers: [testLayer],
+  layers: [ecologicalAssets],
 });
 
 export const draw = new Draw({

@@ -16,8 +16,8 @@ import { Geometry, Polygon, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
   basemaps,
-  testLayer,
-  testLayerCentroids,
+  ecologicalAssets,
+  ecologicalAssetsCentroids,
   editLayer,
   previewLayer,
   select,
@@ -51,7 +51,7 @@ export class MapComponent {
   metadata = { ...metadataDefaultValues };
   editLayer: VectorLayer<VectorSource<Polygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
-  testLayer: VectorLayer<VectorSource<Geometry>>;
+  ecologicalAssets: VectorLayer<VectorSource<Geometry>>;
   select: Select;
   draw: Draw;
   modify: Modify;
@@ -82,7 +82,7 @@ export class MapComponent {
 
     // Map setup
     const initialCenter = [-68.95, 12.208];
-    const initialZoom = 7;
+    const initialZoom = 11;
     const showAttribution = true;
     const initialBasemap = basemaps[this.currentBasemap];
     const map = new Map({
@@ -90,8 +90,8 @@ export class MapComponent {
         initialBasemap,
         editLayer,
         previewLayer,
-        testLayer,
-        testLayerCentroids,
+        ecologicalAssets,
+        ecologicalAssetsCentroids,
       ],
       target: "map",
       view: new View({
@@ -171,7 +171,7 @@ export class MapComponent {
     this.map = map;
     this.editLayer = editLayer;
     this.previewLayer = previewLayer;
-    this.testLayer = testLayer;
+    this.ecologicalAssets = ecologicalAssets;
     this.select = select;
     this.draw = draw;
     this.modify = modify;
@@ -210,7 +210,7 @@ export class MapComponent {
     this.metadata =
       selectedFeature.getProperties() as typeof metadataDefaultValues;
     this.editLayer.getSource().addFeatures(selectedFeaturePolygons);
-    this.testLayer.getSource().removeFeature(selectedFeature);
+    this.ecologicalAssets.getSource().removeFeature(selectedFeature);
     this.stateTransition("UPDATE_FOODFOREST");
     this.sidebar = true;
     this.select.getFeatures().clear();
@@ -223,7 +223,7 @@ export class MapComponent {
     this.metadata = metadataDefaultValues;
 
     if (this.state.context.mode === "UPDATE") {
-      this.applyDrawnFeaturesToLayer(testLayer);
+      this.applyDrawnFeaturesToLayer(ecologicalAssets);
       this.editLayer.getSource().clear();
       this.select.setActive(true);
     }
