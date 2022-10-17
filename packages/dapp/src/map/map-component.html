@@ -1,6 +1,5 @@
 <template>
   <div class="page">
-    <!-- <p>${state.value}</p> -->
     <div class="map-wrap">
       <!-- UPDATE BUTTON -->
       <button 
@@ -78,9 +77,15 @@
               <li class="minted-geonft" repeat.for="geoNft of mintedGeoNfts">
                 <div class="geonft-data">
                   <span>${geoNft.name}</span>
-                  <span>${geoNft.date}</span>
+                  <span>${geoNft.date.toLocaleDateString("en-US")}</span>
                 </div>
-                <button>Register</button>
+                <button disabled.bind="geoNft.registered">
+                  ${
+                    geoNft.registered
+                      ? "Registered"
+                      : "Register"
+                  }
+                </button>
               </li>
             </ul>
           </div>

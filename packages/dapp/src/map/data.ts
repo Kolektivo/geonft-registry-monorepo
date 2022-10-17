@@ -1,18 +1,24 @@
-import { GeoJSON } from "geojson";
+import { FeatureCollection, MultiPolygon } from "geojson";
+import { v4 as uuidv4 } from "uuid";
 
-export const ecologicalAssetsGeoJSON: GeoJSON = {
+export const ecologicalAssetsGeoJSON: FeatureCollection<
+  MultiPolygon,
+  Properties
+> = {
   type: "FeatureCollection",
   features: [
     {
       type: "Feature",
       properties: {
+        id: uuidv4(),
+        registered: true,
         name: "Ecological asset 1",
         description: "his is the ecological assets of Curazao nº 1",
         locationAddress: "",
         email: "test@email.com",
         phoneNumber: 666777888,
         numberManagers: undefined,
-        date: new Date("2022-10-02").toISOString().split("T")[0], // To get yyyy-mm-dd format
+        date: new Date("2022-10-02"),
       },
       geometry: {
         type: "MultiPolygon",
@@ -51,13 +57,15 @@ export const ecologicalAssetsGeoJSON: GeoJSON = {
     {
       type: "Feature",
       properties: {
+        id: uuidv4(),
+        registered: true,
         name: "Ecological asset 2",
         description: "his is the ecological assets of Curazao nº 2",
         locationAddress: "",
         email: "test2@email.com",
         phoneNumber: 111222333,
         numberManagers: undefined,
-        date: new Date("2022-10-05").toISOString().split("T")[0], // To get yyyy-mm-dd format
+        date: new Date("2022-10-05"),
       },
       geometry: {
         type: "MultiPolygon",
@@ -79,13 +87,15 @@ export const ecologicalAssetsGeoJSON: GeoJSON = {
     {
       type: "Feature",
       properties: {
+        id: uuidv4(),
+        registered: false,
         name: "Ecological asset 3",
         description: "his is the ecological assets of Curazao nº 3",
         locationAddress: "",
         email: "test3@email.com",
         phoneNumber: 999888777,
         numberManagers: undefined,
-        date: new Date("2022-10-14").toISOString().split("T")[0], // To get yyyy-mm-dd format
+        date: new Date("2022-10-14"),
       },
       geometry: {
         type: "MultiPolygon",
@@ -141,3 +151,15 @@ export const ecologicalAssetsGeoJSON: GeoJSON = {
     },
   ],
 };
+
+export interface Properties {
+  id?: string;
+  registered: boolean;
+  name: string;
+  description: string;
+  locationAddress: string;
+  email: string;
+  phoneNumber: number;
+  numberManagers: number;
+  date: Date;
+}

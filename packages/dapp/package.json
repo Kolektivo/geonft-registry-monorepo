@@ -36,6 +36,7 @@
     "@types/node": "^17.0.35",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
+    "@xstate/cli": "^0.3.3",
     "app-settings-loader": "^2.0.4",
     "aurelia-cli": "^2.0.3",
     "aurelia-loader-nodejs": "^1.1.0",
@@ -76,12 +77,12 @@
     "ts-loader": "^9.3.0",
     "tslib": "^2.4.0",
     "typescript": "^4.6.4",
+    "uuid": "^9.0.0",
     "vercel": "^25.1.0",
     "webpack": "^5.72.1",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.9.0",
-    "@xstate/cli": "^0.3.3"
+    "webpack-dev-server": "^4.9.0"
   },
   "scripts": {
     "build": "webpack --env production",
@@ -90,8 +91,7 @@
     "analyze": "webpack --env production --analyze",
     "test": "au test",
     "lint": "eslint --ext .ts ./src ./test",
-    "tunnel": "C:/cloudflared.exe tunnel --url localhost:8080",
-    "xstate-typegen": "yarn xstate typegen ./src/map/machine.ts --watch"
+    "tunnel": "C:/cloudflared.exe tunnel --url localhost:8080"
   },
   "engines": {
     "node": ">=10.12.0"

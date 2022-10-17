@@ -1,4 +1,5 @@
 import { inject, computedFrom } from "aurelia-framework";
+import { v4 as uuidv4 } from "uuid";
 import Map from "ol/Map";
 import View from "ol/View";
 import Feature from "ol/Feature";
@@ -27,18 +28,25 @@ import {
   deleteHoverStyle,
   Basemap,
 } from "./openlayers-components";
+import { Properties } from "./data";
 import "ol/ol.css";
 import "./map-component.scss";
 
-const metadataDefaultValues = {
+const metadataDefaultValues: Properties = {
+  registered: false,
   name: "",
   description: "",
   locationAddress: "",
   email: "",
   phoneNumber: undefined,
   numberManagers: undefined,
-  date: new Date().toISOString().split("T")[0], // To get yyyy-mm-dd format
+  date: new Date(),
 };
+
+const initMintedGeoNfts: Array<Properties> = ecologicalAssets
+  .getSource()
+  .getFeatures()
+  .map((feature) => feature.getProperties() as Properties);
 
 @inject(Element)
 export class MapComponent {
@@ -46,9 +54,9 @@ export class MapComponent {
   map: Map;
   service = machineInterpreter;
   state = machineInterpreter.initialState;
-  sidebar = false;
+  sidebar = true;
   sidebarButton = true;
-  metadata = { ...metadataDefaultValues };
+  metadata: Properties = { ...metadataDefaultValues, id: uuidv4() };
   editLayer: VectorLayer<VectorSource<Polygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   ecologicalAssets: VectorLayer<VectorSource<Geometry>>;
@@ -58,8 +66,8 @@ export class MapComponent {
   currentBasemap: Basemap = "cartographic";
   drawnFeaturesCount = 0;
   lastDeleteHighlightedFeature: Feature;
-  bufferEdition: Array<[number, number]> = [];
-  mintedGeoNfts: Array<Record<string, unknown>> = [];
+  bufferEdition: Array<[number, number]> = []; // Array of coordinates
+  mintedGeoNfts: Array<Properties> = initMintedGeoNfts;
   isFeatureSelected = false;
 
   public attached(): void {
@@ -207,8 +215,7 @@ export class MapComponent {
         return polygonFeature;
       });
 
-    this.metadata =
-      selectedFeature.getProperties() as typeof metadataDefaultValues;
+    this.metadata = selectedFeature.getProperties() as Properties;
     this.editLayer.getSource().addFeatures(selectedFeaturePolygons);
     this.ecologicalAssets.getSource().removeFeature(selectedFeature);
     this.stateTransition("UPDATE_FOODFOREST");
@@ -302,6 +309,7 @@ export class MapComponent {
   }
 
   public mintGeoNFT(): void {
+    console.log("METADATA: ", this.metadata);
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
     this.select.setActive(true);
