@@ -143,7 +143,11 @@
                 Return
               </button>
               <button click.trigger="mintGeoNFT()">
-                Mint GeoNFT
+                ${
+                  state.context.mode === "CREATE"
+                    ? "Mint GeoNFT"
+                    : "Update GeoNFT"
+                }
               </button>
             </div>
           </div>
