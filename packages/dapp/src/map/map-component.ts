@@ -40,7 +40,7 @@ const metadataDefaultValues: Properties = {
   email: "",
   phoneNumber: undefined,
   numberManagers: undefined,
-  date: new Date(),
+  date: new Date().toISOString().split("T")[0],
 };
 
 const initMintedGeoNfts: Array<Properties> = ecologicalAssets
@@ -239,6 +239,7 @@ export class MapComponent {
   }
 
   public submitMetadata(): void {
+    console.log("METADATA: ", this.metadata);
     this.stateTransition("SUBMIT_METADATA");
   }
 
@@ -395,6 +396,14 @@ export class MapComponent {
     if (confirm(text)) {
       callback();
     }
+  }
+
+  public formatDate(stringDate: string): string {
+    return new Date(stringDate).toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   }
 
   // GETTERS

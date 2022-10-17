@@ -18,7 +18,7 @@ export const ecologicalAssetsGeoJSON: FeatureCollection<
         email: "test@email.com",
         phoneNumber: 666777888,
         numberManagers: undefined,
-        date: new Date("2022-10-02"),
+        date: new Date("2022-10-02").toISOString().split("T")[0],
       },
       geometry: {
         type: "MultiPolygon",
@@ -65,7 +65,7 @@ export const ecologicalAssetsGeoJSON: FeatureCollection<
         email: "test2@email.com",
         phoneNumber: 111222333,
         numberManagers: undefined,
-        date: new Date("2022-10-05"),
+        date: new Date("2022-10-05").toISOString().split("T")[0],
       },
       geometry: {
         type: "MultiPolygon",
@@ -95,7 +95,7 @@ export const ecologicalAssetsGeoJSON: FeatureCollection<
         email: "test3@email.com",
         phoneNumber: 999888777,
         numberManagers: undefined,
-        date: new Date("2022-10-14"),
+        date: new Date("2022-10-14").toISOString().split("T")[0],
       },
       geometry: {
         type: "MultiPolygon",
@@ -161,5 +161,5 @@ export interface Properties {
   email: string;
   phoneNumber: number;
   numberManagers: number;
-  date: Date;
+  date: string;
 }

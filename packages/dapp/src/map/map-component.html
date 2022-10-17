@@ -77,7 +77,7 @@
               <li class="minted-geonft" repeat.for="geoNft of mintedGeoNfts">
                 <div class="geonft-data">
                   <span>${geoNft.name}</span>
-                  <span>${geoNft.date.toLocaleDateString("en-US")}</span>
+                  <span>${formatDate(geoNft.date)}</span>
                 </div>
                 <button disabled.bind="geoNft.registered">
                   ${
