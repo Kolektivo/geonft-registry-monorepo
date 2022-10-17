@@ -41,7 +41,9 @@ export interface Typegen0 {
     | "edition.modify"
     | "idle"
     | "metadata"
+    | "metadataWs"
     | "preview"
+    | "previewWs"
     | { edition?: "delete" | "draw" | "modify" };
   tags: never;
 }

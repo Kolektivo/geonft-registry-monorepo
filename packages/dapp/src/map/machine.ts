@@ -1,10 +1,14 @@
 import { assign, createMachine, interpret } from "xstate";
 
+// EA = Ecological asset
+// WS = Weather station
 export type MachineEventsType =
-  | "CREATE_FOODFOREST"
-  | "UPDATE_FOODFOREST"
+  | "CREATE_ECOLOGICAL_ASSET"
+  | "UPDATE_ECOLOGICAL_ASSET"
+  | "CREATE_WEATHER_STATION"
   | "CANCEL_METADATA"
   | "SUBMIT_METADATA"
+  | "SUBMIT_METADATA_WS"
   | "MODIFY_FEATURE"
   | "DRAW_FEATURE"
   | "DELETE_FEATURE"
@@ -12,6 +16,7 @@ export type MachineEventsType =
   | "CANCEL_EDITION"
   | "FINISH_EDITION"
   | "CANCEL_PREVIEW"
+  | "CANCEL_PREVIEW_WS"
   | "MINT_GEONFT";
 
 type MachineContextValues = "CREATE" | "UPDATE";
@@ -33,17 +38,20 @@ export const machine = createMachine(
     states: {
       idle: {
         on: {
-          CREATE_FOODFOREST: {
+          CREATE_ECOLOGICAL_ASSET: {
             target: "metadata",
             actions: assign({
               mode: "CREATE",
             }),
           },
-          UPDATE_FOODFOREST: {
+          UPDATE_ECOLOGICAL_ASSET: {
             target: "metadata",
             actions: assign({
               mode: "UPDATE",
             }),
+          },
+          CREATE_WEATHER_STATION: {
+            target: "metadataWs",
           },
         },
       },
@@ -52,6 +60,11 @@ export const machine = createMachine(
         on: {
           SUBMIT_METADATA: "edition",
           CANCEL_METADATA: "idle",
+        },
+      },
+      metadataWs: {
+        on: {
+          SUBMIT_METADATA_WS: "previewWs",
         },
       },
       edition: {
@@ -92,6 +105,12 @@ export const machine = createMachine(
         entry: ["enterPreview"],
         on: {
           CANCEL_PREVIEW: "edition.modify",
+          MINT_GEONFT: "idle",
+        },
+      },
+      previewWs: {
+        on: {
+          CANCEL_PREVIEW_WS: "metadataWs",
           MINT_GEONFT: "idle",
         },
       },

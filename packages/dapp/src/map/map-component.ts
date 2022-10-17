@@ -85,7 +85,7 @@ export class MapComponent {
     });
     this.service.machine = newMachine;
     // Uncomment to log every state transition
-    // this.service.onTransition((state) => console.log(state.value));
+    this.service.onTransition((state) => console.log(state.value));
     this.service.start();
 
     // Map setup
@@ -191,8 +191,8 @@ export class MapComponent {
   }
 
   // IDLE FUNCTIONS
-  public createFoodforest(): void {
-    this.stateTransition("CREATE_FOODFOREST");
+  public createEcologicalAsset(): void {
+    this.stateTransition("CREATE_ECOLOGICAL_ASSET");
     this.select.getFeatures().clear();
     this.select.setActive(false);
   }
@@ -218,11 +218,15 @@ export class MapComponent {
     this.metadata = selectedFeature.getProperties() as Properties;
     this.editLayer.getSource().addFeatures(selectedFeaturePolygons);
     this.ecologicalAssets.getSource().removeFeature(selectedFeature);
-    this.stateTransition("UPDATE_FOODFOREST");
+    this.stateTransition("UPDATE_ECOLOGICAL_ASSET");
     this.sidebar = true;
     this.select.getFeatures().clear();
     this.select.setActive(false);
     this.isFeatureSelected = false;
+  }
+
+  public createWeatherStation(): void {
+    this.stateTransition("CREATE_WEATHER_STATION");
   }
 
   // METADATA FUNCTIONS
@@ -310,7 +314,6 @@ export class MapComponent {
   }
 
   public mintGeoNFT(): void {
-    console.log("METADATA: ", this.metadata);
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
     this.select.setActive(true);
@@ -415,6 +418,11 @@ export class MapComponent {
   @computedFrom("state.value")
   public get isMetadataState(): boolean {
     return this.state.value === "metadata";
+  }
+
+  @computedFrom("state.value")
+  public get isMetadataWsState(): boolean {
+    return this.state.value === "metadataWs";
   }
 
   @computedFrom("state.value")

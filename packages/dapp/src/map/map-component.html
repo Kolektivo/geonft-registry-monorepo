@@ -67,7 +67,8 @@
           <div class="idle" if.bind="isIdleState">
             <h2>GeoNFT's</h2>
             <div class="buttons">
-              <button click.trigger="createFoodforest()">Add Foodforest</button>
+              <button click.trigger="createEcologicalAsset()">Add Ecological asset</button>
+              <!-- click.trigger="createWeatherStation()" -->
               <button>Add Weather station</button>
             </div>
             <p if.bind="mintedGeoNfts.length === 0" class="no-nfts-found">
@@ -131,6 +132,26 @@
 
               <label for="metadata-date">Date established</label>
               <input id="metadata-date" type="date" value="metadata.date" value.bind="metadata.date">
+
+              <div class="buttons">
+                <button click.trigger="cancelMetadata()">Cancel</button>
+                <button click.trigger="submitMetadata()" type="submit">Continue</button>
+              </div>
+            </form>
+          </div>
+          <div class="metadata-ws" if.bind="isMetadataWsState">
+            <h2>Enter metadata</h2>
+
+            <form role="form">
+              <h3>Weather station information</h3>
+              <label for="metadata-name">Name</label>
+              <input id="metadata-name" type="text" value.bind="ws.name">
+
+              <label for="metadata-latitude">Latitude</label>
+              <input id="metadata-latitude" type="text" value.bind="ws.latitude">
+
+              <label for="metadata-latitude">Latitude</label>
+              <input id="metadata-latitude" type="text" value.bind="ws.longitude">
 
               <div class="buttons">
                 <button click.trigger="cancelMetadata()">Cancel</button>
