@@ -2,6 +2,14 @@
   <div class="page">
     <!-- <p>${state.value}</p> -->
     <div class="map-wrap">
+      <!-- UPDATE BUTTON -->
+      <button 
+        if.bind="isFeatureSelected"
+        class="update-feature-button" 
+        click.trigger="updateSelectedFeature()"
+      >
+        Update
+      </button>
       <!------ EDIT TOOLS ------>
       <div class="edition-tools" if.bind="isEditionState">
         <div class="draw-options" if.bind="isDrawState">

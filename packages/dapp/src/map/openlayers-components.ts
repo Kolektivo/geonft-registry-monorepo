@@ -153,7 +153,7 @@ export const select = new Select({
       width: 2,
     }),
   }),
-  layers: [],
+  layers: [testLayer],
 });
 
 export const draw = new Draw({

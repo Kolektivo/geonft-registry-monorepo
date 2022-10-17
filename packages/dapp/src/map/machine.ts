@@ -1,7 +1,8 @@
-import { createMachine, interpret } from "xstate";
+import { assign, createMachine, interpret } from "xstate";
 
 export type MachineEventsType =
   | "CREATE_FOODFOREST"
+  | "UPDATE_FOODFOREST"
   | "CANCEL_METADATA"
   | "SUBMIT_METADATA"
   | "MODIFY_FEATURE"
@@ -13,20 +14,37 @@ export type MachineEventsType =
   | "CANCEL_PREVIEW"
   | "MINT_GEONFT";
 
+type MachineContextValues = "CREATE" | "UPDATE";
+
 type MachineEvents = { type: MachineEventsType };
+type MachineContxt = { mode: MachineContextValues };
 
 export const machine = createMachine(
   {
     tsTypes: {} as import("./machine.typegen").Typegen0,
     schema: {
-      context: {} as { value: string },
+      context: {} as MachineContxt,
       events: {} as MachineEvents,
+    },
+    context: {
+      mode: "CREATE",
     },
     initial: "idle",
     states: {
       idle: {
         on: {
-          CREATE_FOODFOREST: "metadata",
+          CREATE_FOODFOREST: {
+            target: "metadata",
+            actions: assign({
+              mode: "CREATE",
+            }),
+          },
+          UPDATE_FOODFOREST: {
+            target: "metadata",
+            actions: assign({
+              mode: "UPDATE",
+            }),
+          },
         },
       },
       metadata: {

@@ -181,6 +181,26 @@ $font-primary: "Poppins", sans-serif;
 
     $box-padding: 20px;
 
+    .update-feature-button {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: $grey-200;
+      z-index: 99;
+
+      &:hover {
+        background-color: darken($color: $grey-100, $amount: 10);
+      }
+
+      &:enabled {
+        cursor: pointer;
+      }
+    }
+
     .edition-tools {
       position: absolute;
       top: 100px;

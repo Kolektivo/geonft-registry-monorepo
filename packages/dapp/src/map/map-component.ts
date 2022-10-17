@@ -46,7 +46,7 @@ export class MapComponent {
   map: Map;
   service = machineInterpreter;
   state = machineInterpreter.initialState;
-  sidebar = true;
+  sidebar = false;
   sidebarButton = true;
   metadata = { ...metadataDefaultValues };
   editLayer: VectorLayer<VectorSource<Polygon>>;
@@ -60,6 +60,7 @@ export class MapComponent {
   lastDeleteHighlightedFeature: Feature;
   bufferEdition: Array<[number, number]> = [];
   mintedGeoNfts: Array<Record<string, unknown>> = [];
+  isFeatureSelected = false;
 
   public attached(): void {
     // Update machine with the new actions
@@ -155,6 +156,11 @@ export class MapComponent {
       }
     });
 
+    // Set selected status
+    select.on("select", (e) => {
+      this.isFeatureSelected = e.selected.length > 0;
+    });
+
     // Increase the drawn features counter on draw end
     draw.on("drawend", (e) => {
       if (this.state.matches("edition")) {
@@ -165,6 +171,7 @@ export class MapComponent {
     this.map = map;
     this.editLayer = editLayer;
     this.previewLayer = previewLayer;
+    this.testLayer = testLayer;
     this.select = select;
     this.draw = draw;
     this.modify = modify;
@@ -178,11 +185,49 @@ export class MapComponent {
   // IDLE FUNCTIONS
   public createFoodforest(): void {
     this.stateTransition("CREATE_FOODFOREST");
+    this.select.getFeatures().clear();
+    this.select.setActive(false);
+  }
+
+  public updateSelectedFeature(): void {
+    const selectedFeature = this.select
+      .getFeatures()
+      .getArray()[0] as Feature<MultiPolygon>;
+
+    if (!selectedFeature) return;
+
+    // Separate multipart geometry into different polygons for individual edition
+    const selectedFeaturePolygons = selectedFeature
+      .getGeometry()
+      .getCoordinates()[0]
+      .map((polygonCoords) => {
+        const polygonFeature = new Feature<Polygon>({
+          geometry: new Polygon([polygonCoords]),
+        });
+        return polygonFeature;
+      });
+
+    this.metadata =
+      selectedFeature.getProperties() as typeof metadataDefaultValues;
+    this.editLayer.getSource().addFeatures(selectedFeaturePolygons);
+    this.testLayer.getSource().removeFeature(selectedFeature);
+    this.stateTransition("UPDATE_FOODFOREST");
+    this.sidebar = true;
+    this.select.getFeatures().clear();
+    this.select.setActive(false);
+    this.isFeatureSelected = false;
   }
 
   // METADATA FUNCTIONS
   public cancelMetadata(): void {
     this.metadata = metadataDefaultValues;
+
+    if (this.state.context.mode === "UPDATE") {
+      this.applyDrawnFeaturesToLayer(testLayer);
+      this.editLayer.getSource().clear();
+      this.select.setActive(true);
+    }
+
     this.stateTransition("CANCEL_METADATA");
   }
 
@@ -259,6 +304,7 @@ export class MapComponent {
   public mintGeoNFT(): void {
     this.stateTransition("MINT_GEONFT");
     this.applyDrawnFeaturesToLayer(this.previewLayer);
+    this.select.setActive(true);
     this.mintedGeoNfts.push(this.metadata);
     this.metadata = { ...metadataDefaultValues };
   }
@@ -295,7 +341,6 @@ export class MapComponent {
   private startDrawing(): void {
     this.draw.setActive(true);
     this.modify.setActive(false);
-    this.map.removeInteraction(this.select);
   }
 
   private stopDrawing(): void {
