@@ -184,6 +184,8 @@ export class MapComponent {
 
     // Remove the last drawn feature if it intersects with another feature
     editLayer.getSource().on("addfeature", (e) => {
+      if (!this.state.matches("edition")) return;
+
       const editLayerFeatures = this.editLayer
         .getSource()
         .getFeatures()
@@ -230,7 +232,7 @@ export class MapComponent {
     if (!selectedFeature) return;
 
     // Separate multipart geometry into different polygons for individual edition
-    const selectedFeaturePolygons = selectedFeature
+    const selectedFeatureAsPolygons = selectedFeature
       .getGeometry()
       .getCoordinates()[0]
       .map((polygonCoords) => {
@@ -241,13 +243,13 @@ export class MapComponent {
       });
 
     this.metadata = selectedFeature.getProperties() as Properties;
-    this.editLayer.getSource().addFeatures(selectedFeaturePolygons);
+    this.editLayer.getSource().addFeatures(selectedFeatureAsPolygons);
     this.ecologicalAssets.getSource().removeFeature(selectedFeature);
-    this.stateTransition("UPDATE_ECOLOGICAL_ASSET");
     this.sidebar = true;
     this.select.getFeatures().clear();
     this.select.setActive(false);
     this.isFeatureSelected = false;
+    this.stateTransition("UPDATE_ECOLOGICAL_ASSET");
   }
 
   public createWeatherStation(): void {
@@ -256,14 +258,13 @@ export class MapComponent {
 
   // METADATA FUNCTIONS
   public cancelMetadata(): void {
-    this.metadata = metadataDefaultValues;
-
     if (this.state.context.mode === "UPDATE") {
-      this.applyDrawnFeaturesToLayer(ecologicalAssets);
-      this.editLayer.getSource().clear();
-      this.select.setActive(true);
+      this.applyDrawnFeatureToLayer(this.ecologicalAssets);
     }
 
+    this.metadata = metadataDefaultValues;
+    this.clearEditLayer();
+    this.select.setActive(true);
     this.stateTransition("CANCEL_METADATA");
   }
 
@@ -288,8 +289,11 @@ export class MapComponent {
     this.confirmAction(
       "Are you sure you want to return? Edited features will be deleted",
       () => {
+        if (this.state.context.mode === "CREATE") {
+          this.clearEditLayer();
+        }
+
         this.stopDrawing();
-        this.clearEditLayer();
         this.stateTransition("CANCEL_EDITION");
         this.sidebar = true;
         this.sidebarButton = true;
@@ -339,7 +343,7 @@ export class MapComponent {
 
   public mintGeoNFT(): void {
     this.stateTransition("MINT_GEONFT");
-    this.applyDrawnFeaturesToLayer(this.previewLayer);
+    this.applyDrawnFeatureToLayer(this.previewLayer);
     this.select.setActive(true);
     this.mintedGeoNfts.push(this.metadata);
     this.metadata = { ...metadataDefaultValues };
@@ -403,14 +407,22 @@ export class MapComponent {
     }
   }
 
-  private applyDrawnFeaturesToLayer(
+  private applyDrawnFeatureToLayer(
     targetLayer: VectorLayer<VectorSource<Geometry>>
   ): void {
     const targetStyle = targetLayer.getStyle();
-    const drawnFeatures = this.editLayer.getSource().getFeatures();
-    this.editLayer.getSource().clear();
-    drawnFeatures.map((feature) => feature.setStyle(targetStyle));
-    targetLayer.getSource().addFeatures(drawnFeatures);
+    // Join all polygon features into a single multipolygon feature
+    const newMultiPolygonFeature = new Feature<MultiPolygon>({
+      geometry: new MultiPolygon([
+        this.editLayer
+          .getSource()
+          .getFeatures()
+          .map((feature) => feature.getGeometry().getCoordinates()[0]),
+      ]),
+    });
+    newMultiPolygonFeature.setStyle(targetStyle);
+    targetLayer.getSource().addFeature(newMultiPolygonFeature);
+    this.clearEditLayer();
   }
 
   // HELPERS
