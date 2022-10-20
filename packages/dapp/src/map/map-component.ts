@@ -1,5 +1,11 @@
 import { inject, computedFrom } from "aurelia-framework";
 import { v4 as uuidv4 } from "uuid";
+import {
+  polygon as turfPolygon,
+  multiPolygon as turfMultipolygon,
+} from "@turf/helpers";
+import turfBooleanIntersects from "@turf/boolean-intersects";
+import { Coordinate } from "ol/coordinate";
 import Map from "ol/Map";
 import View from "ol/View";
 import Feature from "ol/Feature";
@@ -13,7 +19,7 @@ import {
   defaults as defaultInteractions,
 } from "ol/interaction";
 import { defaults as defaultControls } from "ol/control";
-import { Geometry, Polygon, MultiPolygon } from "ol/geom";
+import { Geometry, Point, Polygon, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
   basemaps,
@@ -85,7 +91,7 @@ export class MapComponent {
     });
     this.service.machine = newMachine;
     // Uncomment to log every state transition
-    this.service.onTransition((state) => console.log(state.value));
+    // this.service.onTransition((state) => console.log(state.value));
     this.service.start();
 
     // Map setup
@@ -171,8 +177,27 @@ export class MapComponent {
 
     // Increase the drawn features counter on draw end
     draw.on("drawend", (e) => {
-      if (this.state.matches("edition")) {
-        this.drawnFeaturesCount++;
+      if (!this.state.matches("edition")) return;
+
+      this.drawnFeaturesCount++;
+    });
+
+    // Remove the last drawn feature if it intersects with another feature
+    editLayer.getSource().on("addfeature", (e) => {
+      const editLayerFeatures = this.editLayer
+        .getSource()
+        .getFeatures()
+        .slice(0, -1);
+      const newFeature = e.feature as Feature<Polygon>;
+
+      const isNewCoordinatesIntersect = editLayerFeatures.some((feature) => {
+        return this.isIntersecting(newFeature, feature);
+      });
+
+      if (isNewCoordinatesIntersect) {
+        alert("The new polygon cannot intersect with the existing ones");
+        this.editLayer.getSource().removeFeature(newFeature);
+        this.drawnFeaturesCount--;
       }
     });
 
@@ -243,7 +268,6 @@ export class MapComponent {
   }
 
   public submitMetadata(): void {
-    console.log("METADATA: ", this.metadata);
     this.stateTransition("SUBMIT_METADATA");
   }
 
@@ -407,6 +431,24 @@ export class MapComponent {
       month: "2-digit",
       year: "numeric",
     });
+  }
+
+  public isIntersecting(
+    polygon1: Feature<Polygon>,
+    polygon2: Feature<Polygon>
+  ): boolean {
+    // Must cast type to MultiPolygon to avoid turf error
+    const multiPolygon1 = polygon1.getGeometry() as unknown as MultiPolygon;
+    const multiPolygon2 = polygon2.getGeometry() as unknown as MultiPolygon;
+
+    const multiPolygonCoordinates1 = multiPolygon1.getCoordinates();
+    const multiPolygonCoordinates2 = multiPolygon2.getCoordinates();
+
+    const isIntersecting = turfBooleanIntersects(
+      turfMultipolygon(multiPolygonCoordinates1),
+      turfMultipolygon(multiPolygonCoordinates2)
+    );
+    return isIntersecting;
   }
 
   // GETTERS
