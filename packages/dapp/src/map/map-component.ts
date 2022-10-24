@@ -1,11 +1,7 @@
 import { inject, computedFrom } from "aurelia-framework";
 import { v4 as uuidv4 } from "uuid";
-import {
-  polygon as turfPolygon,
-  multiPolygon as turfMultipolygon,
-} from "@turf/helpers";
+import { multiPolygon as turfMultiPolygon } from "@turf/helpers";
 import turfBooleanIntersects from "@turf/boolean-intersects";
-import { Coordinate } from "ol/coordinate";
 import Map from "ol/Map";
 import View from "ol/View";
 import Feature from "ol/Feature";
@@ -19,7 +15,7 @@ import {
   defaults as defaultInteractions,
 } from "ol/interaction";
 import { defaults as defaultControls } from "ol/control";
-import { Geometry, Point, Polygon, MultiPolygon } from "ol/geom";
+import { Geometry, MultiPolygon } from "ol/geom";
 import { machine, machineInterpreter, MachineEventsType } from "./machine";
 import {
   basemaps,
@@ -63,7 +59,7 @@ export class MapComponent {
   sidebar = true;
   sidebarButton = true;
   metadata: Properties = { ...metadataDefaultValues, id: uuidv4() };
-  editLayer: VectorLayer<VectorSource<Polygon>>;
+  editLayer: VectorLayer<VectorSource<MultiPolygon>>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   ecologicalAssets: VectorLayer<VectorSource<Geometry>>;
   select: Select;
@@ -122,21 +118,27 @@ export class MapComponent {
       if (!this.isDeleteState) return;
 
       // Iterate over all layers intersecting the clicked pixel
-      map.forEachFeatureAtPixel(e.pixel, (feature: Feature<Polygon>, layer) => {
-        const layerId = layer.get("id");
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (feature: Feature<MultiPolygon>, layer) => {
+          const layerId = layer.get("id");
 
-        // Delete the feature only if the layer is the edit layer
-        if (layerId === "edit-layer") {
-          this.confirmAction("Delete feature? This action is permanent", () => {
-            editLayer.getSource().removeFeature(feature);
-            this.drawnFeaturesCount--;
+          // Delete the feature only if the layer is the edit layer
+          if (layerId === "edit-layer") {
+            this.confirmAction(
+              "Delete feature? This action is permanent",
+              () => {
+                editLayer.getSource().removeFeature(feature);
+                this.drawnFeaturesCount--;
 
-            if (this.editLayerIsEmpty) {
-              this.stateTransition("DRAW_FEATURE");
-            }
-          });
+                if (this.editLayerIsEmpty) {
+                  this.stateTransition("DRAW_FEATURE");
+                }
+              }
+            );
+          }
         }
-      });
+      );
     });
 
     // Highlight feature on hover when delete mode is active
@@ -186,17 +188,34 @@ export class MapComponent {
     editLayer.getSource().on("addfeature", (e) => {
       if (!this.state.matches("edition")) return;
 
-      const editLayerFeatures = this.editLayer
+      console.log("ADDING FEATURE");
+
+      // Remove the last feature because that is the one just added
+      const previousDrawnFeatures = this.editLayer
         .getSource()
         .getFeatures()
         .slice(0, -1);
-      const newFeature = e.feature as Feature<Polygon>;
-
-      const isNewCoordinatesIntersect = editLayerFeatures.some((feature) => {
-        return this.isIntersecting(newFeature, feature);
-      });
+      const newFeature = e.feature as Feature<MultiPolygon>;
+      console.log("PREVIOUS FEATURES", previousDrawnFeatures);
+      const isNewCoordinatesIntersect = previousDrawnFeatures.some(
+        (previousFeature) => {
+          console.log(
+            "NEW FEATURE COORDINATES: ",
+            newFeature.getGeometry().getCoordinates()
+          );
+          console.log(
+            "PREVIOUS FEATURE COORDINATES: ",
+            previousFeature.getGeometry().getCoordinates()
+          );
+          return this.isIntersecting(newFeature, previousFeature);
+        }
+      );
+      console.log("IS NEW COORDINATES INTERSECT: ", isNewCoordinatesIntersect);
 
       if (isNewCoordinatesIntersect) {
+        console.log("INSIDE IS NEW COORDINATES INTERSECT");
+        // In case the new polygon intersects with another polygon, remove the last drawn feature
+        // and decrease the drawn features counter
         alert("The new polygon cannot intersect with the existing ones");
         this.editLayer.getSource().removeFeature(newFeature);
         this.drawnFeaturesCount--;
@@ -231,17 +250,26 @@ export class MapComponent {
 
     if (!selectedFeature) return;
 
+    console.log("SELECTED FEATURE", selectedFeature);
     // Separate multipart geometry into different polygons for individual edition
+    console.log(
+      "SELECTED FEATURE GEOMETRY",
+      selectedFeature.getGeometry().getCoordinates()
+    );
     const selectedFeatureAsPolygons = selectedFeature
       .getGeometry()
       .getCoordinates()[0]
       .map((polygonCoords) => {
-        const polygonFeature = new Feature<Polygon>({
-          geometry: new Polygon([polygonCoords]),
+        const polygonFeature = new Feature<MultiPolygon>({
+          geometry: new MultiPolygon([[polygonCoords]]),
         });
         return polygonFeature;
       });
 
+    console.log("SELECTED FEATURE AS POLYGONS", selectedFeatureAsPolygons);
+    selectedFeatureAsPolygons.map((poly) =>
+      console.log(poly.getGeometry().getCoordinates())
+    );
     this.metadata = selectedFeature.getProperties() as Properties;
     this.editLayer.getSource().addFeatures(selectedFeatureAsPolygons);
     this.ecologicalAssets.getSource().removeFeature(selectedFeature);
@@ -417,7 +445,7 @@ export class MapComponent {
         this.editLayer
           .getSource()
           .getFeatures()
-          .map((feature) => feature.getGeometry().getCoordinates()[0]),
+          .map((feature) => feature.getGeometry().getCoordinates()[0][0]),
       ]),
     });
     newMultiPolygonFeature.setStyle(targetStyle);
@@ -446,21 +474,17 @@ export class MapComponent {
   }
 
   public isIntersecting(
-    polygon1: Feature<Polygon>,
-    polygon2: Feature<Polygon>
+    feature1: Feature<MultiPolygon>,
+    feature2: Feature<MultiPolygon>
   ): boolean {
-    // Must cast type to MultiPolygon to avoid turf error
-    const multiPolygon1 = polygon1.getGeometry() as unknown as MultiPolygon;
-    const multiPolygon2 = polygon2.getGeometry() as unknown as MultiPolygon;
+    const multiPolygonCoordinates1 = feature1.getGeometry().getCoordinates();
+    const multiPolygonCoordinates2 = feature2.getGeometry().getCoordinates();
 
-    const multiPolygonCoordinates1 = multiPolygon1.getCoordinates();
-    const multiPolygonCoordinates2 = multiPolygon2.getCoordinates();
-
-    const isIntersecting = turfBooleanIntersects(
-      turfMultipolygon(multiPolygonCoordinates1),
-      turfMultipolygon(multiPolygonCoordinates2)
+    const intersects = turfBooleanIntersects(
+      turfMultiPolygon(multiPolygonCoordinates1),
+      turfMultiPolygon(multiPolygonCoordinates2)
     );
-    return isIntersecting;
+    return intersects;
   }
 
   // GETTERS

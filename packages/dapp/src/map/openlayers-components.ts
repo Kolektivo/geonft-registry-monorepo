@@ -78,7 +78,7 @@ export const editLayer = new VectorLayer({
   properties: {
     id: "edit-layer",
   },
-  source: new VectorSource<Polygon>(),
+  source: new VectorSource<MultiPolygon>(),
   style: editLayerStyle,
 });
 
