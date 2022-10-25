@@ -64,22 +64,20 @@ const makeStrippedPattern = () => {
 };
 
 // Layers setup
-export const editLayerStyle = new Style({
-  fill: new Fill({
-    color: [0, 153, 255, 0.3],
-  }),
-  stroke: new Stroke({
-    color: [4, 65, 106],
-    width: 2,
-  }),
-});
-
 export const editLayer = new VectorLayer({
   properties: {
     id: "edit-layer",
   },
   source: new VectorSource<MultiPolygon>(),
-  style: editLayerStyle,
+  style: new Style({
+    fill: new Fill({
+      color: [0, 153, 255, 0.3],
+    }),
+    stroke: new Stroke({
+      color: [4, 65, 106],
+      width: 2,
+    }),
+  }),
 });
 
 export const previewLayer = new VectorLayer({

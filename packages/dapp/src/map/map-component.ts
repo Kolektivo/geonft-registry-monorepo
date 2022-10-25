@@ -26,7 +26,6 @@ import {
   select,
   draw,
   modify,
-  editLayerStyle,
   deleteHoverStyle,
   Basemap,
 } from "./openlayers-components";
@@ -60,6 +59,7 @@ export class MapComponent {
   sidebarButton = true;
   metadata: Properties = { ...metadataDefaultValues, id: uuidv4() };
   editLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  backupEditFeature: Feature<MultiPolygon>;
   previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
   ecologicalAssets: VectorLayer<VectorSource<Geometry>>;
   select: Select;
@@ -167,7 +167,7 @@ export class MapComponent {
         this.lastDeleteHighlightedFeature = foundFeature;
       } else {
         this.lastDeleteHighlightedFeature
-          ? this.lastDeleteHighlightedFeature.setStyle(editLayerStyle)
+          ? this.lastDeleteHighlightedFeature.setStyle(undefined)
           : (this.lastDeleteHighlightedFeature = undefined);
       }
     });
@@ -188,32 +188,19 @@ export class MapComponent {
     editLayer.getSource().on("addfeature", (e) => {
       if (!this.state.matches("edition")) return;
 
-      console.log("ADDING FEATURE");
-
       // Remove the last feature because that is the one just added
       const previousDrawnFeatures = this.editLayer
         .getSource()
         .getFeatures()
         .slice(0, -1);
       const newFeature = e.feature as Feature<MultiPolygon>;
-      console.log("PREVIOUS FEATURES", previousDrawnFeatures);
       const isNewCoordinatesIntersect = previousDrawnFeatures.some(
         (previousFeature) => {
-          console.log(
-            "NEW FEATURE COORDINATES: ",
-            newFeature.getGeometry().getCoordinates()
-          );
-          console.log(
-            "PREVIOUS FEATURE COORDINATES: ",
-            previousFeature.getGeometry().getCoordinates()
-          );
           return this.isIntersecting(newFeature, previousFeature);
         }
       );
-      console.log("IS NEW COORDINATES INTERSECT: ", isNewCoordinatesIntersect);
 
       if (isNewCoordinatesIntersect) {
-        console.log("INSIDE IS NEW COORDINATES INTERSECT");
         // In case the new polygon intersects with another polygon, remove the last drawn feature
         // and decrease the drawn features counter
         alert("The new polygon cannot intersect with the existing ones");
@@ -239,7 +226,7 @@ export class MapComponent {
   // IDLE FUNCTIONS
   public createEcologicalAsset(): void {
     this.stateTransition("CREATE_ECOLOGICAL_ASSET");
-    this.select.getFeatures().clear();
+    this.clearSelection();
     this.select.setActive(false);
   }
 
@@ -250,12 +237,9 @@ export class MapComponent {
 
     if (!selectedFeature) return;
 
-    console.log("SELECTED FEATURE", selectedFeature);
-    // Separate multipart geometry into different polygons for individual edition
-    console.log(
-      "SELECTED FEATURE GEOMETRY",
-      selectedFeature.getGeometry().getCoordinates()
-    );
+    this.backupEditFeature = selectedFeature.clone();
+
+    // Separate each multipolygon part into multiple features
     const selectedFeatureAsPolygons = selectedFeature
       .getGeometry()
       .getCoordinates()[0]
@@ -266,17 +250,12 @@ export class MapComponent {
         return polygonFeature;
       });
 
-    console.log("SELECTED FEATURE AS POLYGONS", selectedFeatureAsPolygons);
-    selectedFeatureAsPolygons.map((poly) =>
-      console.log(poly.getGeometry().getCoordinates())
-    );
     this.metadata = selectedFeature.getProperties() as Properties;
     this.editLayer.getSource().addFeatures(selectedFeatureAsPolygons);
     this.ecologicalAssets.getSource().removeFeature(selectedFeature);
     this.sidebar = true;
-    this.select.getFeatures().clear();
+    this.clearSelection();
     this.select.setActive(false);
-    this.isFeatureSelected = false;
     this.stateTransition("UPDATE_ECOLOGICAL_ASSET");
   }
 
@@ -287,12 +266,12 @@ export class MapComponent {
   // METADATA FUNCTIONS
   public cancelMetadata(): void {
     if (this.state.context.mode === "UPDATE") {
-      this.applyDrawnFeatureToLayer(this.ecologicalAssets);
+      this.revertDrawnFeatures();
     }
 
     this.metadata = metadataDefaultValues;
-    this.clearEditLayer();
     this.select.setActive(true);
+    this.clearEditLayer();
     this.stateTransition("CANCEL_METADATA");
   }
 
@@ -406,6 +385,11 @@ export class MapComponent {
   }
 
   // MAP FUNCTIONS
+  private clearSelection(): void {
+    this.select.getFeatures().clear();
+    this.isFeatureSelected = false;
+  }
+
   private startDrawing(): void {
     this.draw.setActive(true);
     this.modify.setActive(false);
@@ -438,7 +422,6 @@ export class MapComponent {
   private applyDrawnFeatureToLayer(
     targetLayer: VectorLayer<VectorSource<Geometry>>
   ): void {
-    const targetStyle = targetLayer.getStyle();
     // Join all polygon features into a single multipolygon feature
     const newMultiPolygonFeature = new Feature<MultiPolygon>({
       geometry: new MultiPolygon([
@@ -448,9 +431,15 @@ export class MapComponent {
           .map((feature) => feature.getGeometry().getCoordinates()[0][0]),
       ]),
     });
-    newMultiPolygonFeature.setStyle(targetStyle);
+    newMultiPolygonFeature.setStyle(undefined);
     targetLayer.getSource().addFeature(newMultiPolygonFeature);
     this.clearEditLayer();
+  }
+
+  private revertDrawnFeatures(): void {
+    this.backupEditFeature.setStyle(undefined);
+    this.ecologicalAssets.getSource().addFeature(this.backupEditFeature);
+    this.backupEditFeature = null;
   }
 
   // HELPERS
