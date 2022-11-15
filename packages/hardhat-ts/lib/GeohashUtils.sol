@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// import console.log
-import "hardhat/console.sol";
+error GeohashUtils__GeohashCodeNotFound();
 
 library GeohashUtils {
     // length of the geohash string
@@ -32,9 +31,9 @@ library GeohashUtils {
         uint8 _precision
     ) public pure returns (string memory) {
         bytes memory hashBytes = new bytes(_precision);
-        int8 bits = 0;
-        int8 bitsTotal = 0;
-        int8 hashValue = 0;
+        int8 bits;
+        int8 bitsTotal;
+        int8 hashValue;
         int64 maxLat = MAX_LAT;
         int64 minLat = MIN_LAT;
         int64 maxLon = MAX_LON;
@@ -123,10 +122,9 @@ library GeohashUtils {
         int64 mid;
         uint8 hashValue;
 
-        for (uint8 i = 0; i < bytes(_geohash).length; i++) {
+        for (uint8 i; i < bytes(_geohash).length; ++i) {
             string memory code = string(abi.encodePacked(bytes(_geohash)[i]));
-            hashValue = uint8(indexOf(GEOHASH_CODES, code));
-            require(hashValue >= 0);
+            hashValue = indexOf(GEOHASH_CODES, code);
 
             for (uint8 bits = 5; bits > 0; bits--) {
                 uint8 bit = (hashValue >> (bits - 1)) & 1;
@@ -134,17 +132,13 @@ library GeohashUtils {
                 if (isLon) {
                     mid = (maxLon + minLon) / 2;
 
-                    bit == 1
-                        ? minLon = mid
-                        : maxLon = mid;
+                    bit == 1 ? minLon = mid : maxLon = mid;
                 } else {
                     mid = (maxLat + minLat) / 2;
 
-                    bit == 1
-                        ? minLat = mid
-                        : maxLat = mid;
+                    bit == 1 ? minLat = mid : maxLat = mid;
                 }
-                
+
                 isLon = !isLon;
             }
         }
@@ -154,19 +148,19 @@ library GeohashUtils {
     function indexOf(string memory _string, string memory _char)
         internal
         pure
-        returns (int8) 
+        returns (uint8)
     {
         bytes memory _baseBytes = bytes(_string);
         bytes memory _valueBytes = bytes(_char);
 
         assert(_valueBytes.length == 1);
 
-        for (uint8 i = 0; i < _baseBytes.length; i++) {
+        for (uint8 i; i < _baseBytes.length; ++i) {
             if (_baseBytes[i] == _valueBytes[0]) {
-                return int8(i);
+                return i;
             }
         }
 
-        return -1;
+        revert GeohashUtils__GeohashCodeNotFound();
     }
 }

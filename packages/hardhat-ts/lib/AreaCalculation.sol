@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { Trigonometry } from "../lib/Trigonometry.sol";
-
+import {Trigonometry} from "../lib/Trigonometry.sol";
 
 library AreaCalculation {
     // Multiplications exponents to avoid decimals
@@ -19,11 +18,15 @@ library AreaCalculation {
      * @notice Calculate the area of a multi polygon coordinates
      * @param _coordinates Big Number integer coordinates of a multi polygon
      * @return Area measured in square meters
-    */
-    function multiPolygonArea(int256[2][][][] memory _coordinates) public pure returns (uint256) {
-        uint256 total = 0;
+     */
+    function multiPolygonArea(int256[2][][][] memory _coordinates)
+        public
+        pure
+        returns (uint256)
+    {
+        uint256 total;
 
-        for (uint256 i = 0; i < _coordinates.length; i++) {
+        for (uint256 i; i < _coordinates.length; ++i) {
             total += polygonArea(_coordinates[i]);
         }
 
@@ -34,14 +37,18 @@ library AreaCalculation {
      * @notice Calculate the area of a single polygon coordinates
      * @param _coordinates Big Number integer coordinates of a single polygon - an array of rings
      * @return Area measured in square meters
-    */
-    function polygonArea (int256[2][][] memory _coordinates) public pure returns (uint256) {
-        int256 total = 0;
-
-        if (_coordinates.length > 0) {
+     */
+    function polygonArea(int256[2][][] memory _coordinates)
+        public
+        pure
+        returns (uint256)
+    {
+        int256 total;
+        uint256 coordinatesLength = _coordinates.length;
+        if (coordinatesLength > 0) {
             total += abs(ringArea(_coordinates[0]));
 
-            for (uint256 i = 1; i < _coordinates.length; i++) {
+            for (uint256 i = 1; i < coordinatesLength; ++i) {
                 total -= abs(ringArea(_coordinates[i]));
             }
         }
@@ -55,9 +62,12 @@ library AreaCalculation {
      * @param _coordinates Big Number integer coordinates of a single polygon ring
      * @return Area measured in square meters
     */
-    function ringArea(int256[2][] memory _coordinates) private pure returns (int256) {
-        bool isValidPolygon = isPolygon(_coordinates);
-        require(isValidPolygon == true, "The coordinates are invalid");
+    function ringArea(int256[2][] memory _coordinates)
+        private
+        pure
+        returns (int256)
+    {
+        require(isPolygon(_coordinates), "The coordinates are invalid");
 
         uint256 coordsLength = _coordinates.length;
         int256[2] memory p1;
@@ -66,10 +76,10 @@ library AreaCalculation {
         uint256 lowerIndex;
         uint256 middleIndex;
         uint256 upperIndex;
-        int256 total = 0;
+        int256 total;
 
         if (coordsLength > 2) {
-            for (uint256 i = 0; i < coordsLength; i++) {
+            for (uint256 i; i < coordsLength; ++i) {
                 if (i == coordsLength - 2) {
                     // i = N-2
                     lowerIndex = coordsLength - 2;
@@ -99,7 +109,9 @@ library AreaCalculation {
             }
 
             // Must divide by all exponents applied before
-            total = total * EARTH_RADIUS**2 / (2 * RAD_EXP * SIN_EXP * PI_EXP * COORD_EXP);
+            total =
+                (total * EARTH_RADIUS**2) /
+                (2 * RAD_EXP * SIN_EXP * PI_EXP * COORD_EXP);
         }
         return total;
     }
@@ -108,7 +120,7 @@ library AreaCalculation {
      * @notice Calculate nano radians (radians * 10^9) of a certain degree angle.
      * @param _angle Degree angle (0-360º)
      * @return Nano radians
-    */
+     */
     function nanoRad(int256 _angle) private pure returns (int256) {
         return (_angle * PI * RAD_EXP) / (180);
     }
@@ -131,26 +143,28 @@ library AreaCalculation {
         int256 angleUnits = 1073741824;
         int256 maxAngle = 2147483647;
         int256 tAngle = (_angle * angleUnits) / (360 * COORD_EXP);
-        return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
+        return (Trigonometry.sin(uint256(tAngle)) * int256(SIN_EXP)) / maxAngle;
     }
 
     /**
      * @notice Returns the absolute value of the input
      * @param _value Input integer value
      * @return Absolute input value
-    */
+     */
     function abs(int256 _value) private pure returns (int256) {
-        return _value >= 0
-            ? _value
-            : -_value;
+        return _value >= 0 ? _value : -_value;
     }
 
     /**
      * @notice Checks to make sure first and last coordinates are the same
      * @param _coordinates Polygon ring
      * @return Boolean whether the coordinates represents a closed polygon or not
-    */
-    function isPolygon (int256[2][] memory _coordinates) public pure returns (bool) {
+     */
+    function isPolygon(int256[2][] memory _coordinates)
+        public
+        pure
+        returns (bool)
+    {
         uint256 length = _coordinates.length;
         if (length > 2) {
             // Coordinates of first coordinate of polygon

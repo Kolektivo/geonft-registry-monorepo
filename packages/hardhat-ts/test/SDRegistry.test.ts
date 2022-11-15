@@ -524,6 +524,12 @@ describe("registry", () => {
       expect(node.length).to.equal(1);
       expect(node[0]).to.equal(tokenId1);
     });
+    it("reverts if not owner add nft to geotree", async () => {
+      const otherOwnedSdRegistry = sdRegistry.connect(other);
+      await expect(
+        otherOwnedSdRegistry.addToGeotree(geohash1, tokenId1)
+      ).to.revertedWith("Ownable: caller is not the owner");
+    });
     it("update geohash", async () => {
       await sdRegistry.addToGeotree(geohash1, tokenId1);
 
@@ -540,6 +546,22 @@ describe("registry", () => {
 
       const newNode = await sdRegistry.getFromGeotree(geohash2);
       expect(newNode.length).to.equal(1);
+    });
+    it("reverts if not owner update geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(1);
+
+      // Call sdRegistry contract with other address
+      const otherOwnedSdRegistry = sdRegistry.connect(other);
+
+      // update geohash from geohash1 (d6nuzk8c) to geohash2 (d6nuzk8d) for tokenId1 (42)
+      const formerGeohash = geohash1;
+      const newGeohash = geohash2;
+      await expect(
+        otherOwnedSdRegistry.updateGeotree(formerGeohash, newGeohash, tokenId1)
+      ).to.revertedWith("Ownable: caller is not the owner");
     });
     it("remove data from node with geohash", async () => {
       await sdRegistry.addToGeotree(geohash1, tokenId1);
@@ -592,6 +614,20 @@ describe("registry", () => {
 
       const formerNode = await sdRegistry.getFromGeotree(geohash1);
       expect(formerNode.length).to.equal(1);
+    });
+    it("reverts if not owner remove data from geohash", async () => {
+      await sdRegistry.addToGeotree(geohash1, tokenId1);
+
+      const node = await sdRegistry.getFromGeotree(geohash1);
+      expect(node.length).to.equal(1);
+
+      // Call sdRegistry contract with other address
+      const otherOwnedSdRegistry = sdRegistry.connect(other);
+
+      // remove tokenId1 (42) from geohash d6nuzk8c
+      await expect(
+        otherOwnedSdRegistry.removeFromGeotree(geohash1, tokenId1)
+      ).to.revertedWith("Ownable: caller is not the owner");
     });
   });
 
