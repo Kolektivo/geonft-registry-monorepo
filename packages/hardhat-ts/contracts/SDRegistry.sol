@@ -1,302 +1,358 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { GeoNFT } from "./GeoNFT.sol";
-import { Trigonometry } from "../lib/Trigonometry.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {GeoNFT} from "./GeoNFT.sol";
+import {AreaCalculation} from "../lib/AreaCalculation.sol";
+import {GeohashUtils} from "../lib/GeohashUtils.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol"; // Utils to slice array
 
-contract SDRegistry is ReentrancyGuard, Ownable {
+contract SDRegistry is Ownable {
+    using BytesLib for bytes;
     // The GEONFT ERC721 token contract
     GeoNFT public geoNFT;
 
-    // Trigonometry functions library
-    // using Trigonometry for uint256;
-    // TODO: remove this list when quadtree is implemented
-    mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    uint private geoJsonMapSize;
-    // Exponents to avoid decimals
-    int256 private constant RAD_EXP = 1e9; // Radians exponent
-    int256 private constant SIN_EXP = 1e9; // Sine exponent
-    int256 private constant PI_EXP = 1e9; // Pi exponent
-    int256 private constant COORD_EXP = 1e9; // Coordinates exponent
-    int256 private constant PI = 3141592653;
-    int256 private constant EARTH_RADIUS = 6371008; // m
+    // length of the geohash string
+    uint8 public constant GEOHASH_LENGTH = 8;
+
+    // Array of registered token IDs
+    uint256[] private tokenArray;
+
+    struct Node {
+        uint256[] data;
+    }
+
+    mapping(string => Node) private geotree;
+    mapping(uint256 => string) private tokenGeohash; // mapping of tokenId to geohash
 
     /**
      * @notice Set up the Spatial Data Registry and prepopulate initial values
      */
-    
-    constructor(
-        GeoNFT _geoNFT
     // solhint-disable-next-line func-visibility
-    ) {
+    constructor(GeoNFT _geoNFT) {
         geoNFT = _geoNFT;
     }
 
-    event GeoNFTRegistered(uint256 tokenId, string geoJson, uint256 _area);
+    event GeoNFTRegistered(uint256 tokenId);
     event GeoNFTUnregistered(uint256 tokenId);
-    event GeoNFTTopologyUpdated(uint256 tokenId, string geoJson, uint256 _area);
+    event GeoNFTTopologyUpdated(uint256 tokenId, string geojson, uint256 _area);
 
     /**
      * @notice Register a GeoNFT in the Spatial Data Registry
-     * @param tokenId the index of the GeoNFT to register
-     * @return area of the GeoNFT in meters squared
+     * @param _tokenId the index of the GeoNFT to register
+     * @param _centroid Centroid of the polygon passed as [latitude, longitude]
      */
-    function registerGeoNFT(uint256 tokenId) 
-        external 
+    function registerGeoNFT(uint256 _tokenId, int64[2] memory _centroid)
+        external
         onlyOwner
-        returns (uint256 area)
     {
-        // retrieve the geoJson from the GeoNFT contract
-        string memory geoJson = geoNFT.geoJson(tokenId);
+        int64 lat = _centroid[0];
+        int64 lon = _centroid[1];
 
-        // add GeoNFT to the registry
-        uint256 _area = _register(tokenId, geoJson);
+        addToTokenArray(_tokenId);
 
-        emit GeoNFTRegistered(tokenId, geoJson, _area);
-        return _area;
+        // solhint-disable-next-line mark-callable-contracts
+        string memory geohash = GeohashUtils.encode(lat, lon, GEOHASH_LENGTH);
+        addToGeotree(geohash, _tokenId);
+        addToTokenGeohashMapping(_tokenId, geohash);
+
+        emit GeoNFTRegistered(_tokenId);
     }
 
     /**
      * @notice Unregister a GeoNFT from the Spatial Data Registry
-     * @param tokenId the index of the GeoNFT to unregister
-    */
-    function unregisterGeoNFT(uint256 tokenId) 
-        external 
-        onlyOwner 
-    {
-        // TODO: remove tokenId from quadtree instead of mapping
-        delete geoJsons[tokenId];
-        geoJsonMapSize--;
+     * @param _tokenId the index of the GeoNFT to unregister
+     */
+    function unregisterGeoNFT(uint256 _tokenId) external onlyOwner {
+        string memory geohash = tokenGeohash[_tokenId];
+        removeFromAllGeotreeSubhashes(geohash, _tokenId);
 
-        emit GeoNFTUnregistered(tokenId);
+        // Remove token ID from the global token array
+        uint256 tokenArrayLength = tokenArray.length;
+        if (tokenArrayLength == 1) {
+            tokenArray.pop();
+        } else {
+            uint256[] memory newTokenArray = new uint256[](
+                tokenArrayLength - 1
+            );
+            uint256 counter = 0;
+            for (uint256 i; i < tokenArrayLength; ++i) {
+                if (tokenArray[i] != _tokenId) {
+                    newTokenArray[counter] = tokenArray[i];
+                    counter++;
+                }
+            }
+
+            if (counter == tokenArrayLength - 1) {
+                tokenArray = newTokenArray;
+            }
+        }
+
+        // Remove token from the tokenGeohash mapping
+        delete tokenGeohash[_tokenId];
+        emit GeoNFTUnregistered(_tokenId);
     }
 
-    function _register(uint256 tokenId, string memory geoJson)
-        internal
-        returns (uint256 area)
-    {
-        // TODO: add tokenId to quadtree instead of mapping
-        geoJsons[tokenId] = geoJson;
-        geoJsonMapSize++;
-
-        // TODO: calculate area
-        uint256 _area = 10;
-
-        return _area;
+    /**
+     * @notice Checks if the token is registered by getting its value in the tokenGeohash mapping
+     * @param _tokenId The index of the GeoNFT to update
+     * @return tokenIsRegistered whether the token ID is registered or not
+     */
+    function isRegistered(uint256 _tokenId) external view returns (bool) {
+        string memory geohash = tokenGeohash[_tokenId];
+        // If token does not exists in tokenGeohash, it will return an empty string (the default value
+        // for string), with length = 0.
+        bool tokenIsRegistered = bytes(geohash).length > 0;
+        return tokenIsRegistered;
     }
 
     /**
      * @notice Update the topology of the GeoNFT
-     * @param tokenId the index of the GeoNFT to update
-    */
-    function updateGeoNFTTopology(uint256 tokenId) 
-        external 
-        onlyOwner
-        returns (uint256 area)        
-    {
-        // retrieve the geoJson from the GeoNFT contract
-        string memory geoJson = geoNFT.geoJson(tokenId);
-
-        // TODO: update topology in the quadtree
-        geoJsons[tokenId] = geoJson;
-
-        // TODO: calculate area
-        uint256 _area = 20;
-
-        emit GeoNFTTopologyUpdated(tokenId, geoJson, _area);
-        return _area;
-    }
-
-    // Return all the GeoNFTs in the registry
-    function getAllGeoNFTs()
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
-        // TODO: use quadtree to get all tokens
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
-        uint256 i;
-
-        for (i = 0; i < geoJsonMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
-    }
-
-    // Query registry by latitude and longitude
-    function queryGeoNFTsByLatLng(
-        // solhint-disable-next-line no-unused-vars        
-        int256 latitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 longitude
-    )
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
-        // TODO: use quadtree to search by lat/lng
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
-        uint256 i;
-
-        for (i = 0; i < geoJsonMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
-    }
-
-    // Query registry by bounding box
-    function queryGeoNFTsByBoundingBox(
-        // solhint-disable-next-line no-unused-vars
-        int256 minLatitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 minLongitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 maxLatitude,
-        // solhint-disable-next-line no-unused-vars        
-        int256 maxLongitude
-    )
-        public
-        view
-        returns (
-            uint256[] memory
-        )
-    {
-        // TODO: use quadtree to search by bounding box
-        uint256[] memory _tokenIds = new uint256[](geoJsonMapSize);
-        uint256 i;
-
-        for (i = 0; i < geoJsonMapSize; i++) {
-            _tokenIds[i] = i;
-        }
-        return (_tokenIds);
-    }
-
-    // Checks to make sure first and last coordinates are the same.
-    function isPolygon (int256[2][] memory _coordinates) public pure returns (bool) {
-        uint256 length = _coordinates.length;
-        if ((length > 2) &&
-            (_coordinates[0][0] == _coordinates[length - 1][0]) &&
-            (_coordinates[0][1] == _coordinates[length - 1][1])) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @notice Calculate the area of a multi polygon coordinates
-     * @param _coordinates Big Number integer coordinates of a multi polygon
-     * @return Area measured in square meters
-    */
-    function multiPolygonArea(int256[][][][] memory _coordinates) public pure returns (int256) {
-        int256 total = 0;
-
-        for (uint256 i = 0; i < _coordinates.length; i++) {
-            total += polygonArea(_coordinates[i]);
-        }
-
-        return total;
-    }
-
-    /**
-     * @notice Calculate the area of a single polygon coordinates
-     * @param _coordinates Big Number integer coordinates of a single polygon
-     * @return Area measured in square meters
-    */
-    function polygonArea (int256[][][] memory _coordinates) public pure returns (int256) {
-        int256 total = 0;
-
-        if (_coordinates.length > 0) {
-            total += abs(ringArea(_coordinates[0]));
-
-            for (uint256 i = 1; i < _coordinates.length; i++) {
-                total -= abs(ringArea(_coordinates[i]));
-            }
-        }
-        return total;
-    }
-
-    // Obtained from Turf.js area function 
-    // (https://github.com/Turfjs/turf/blob/master/packages/turf-area/index.ts)
-    function ringArea(int256[][] memory _coordinates) private pure returns (int256) {
-        uint256 coordsLength = _coordinates.length;
-        int256[] memory p1;
-        int256[] memory p2;
-        int256[] memory p3;
-        uint256 lowerIndex;
-        uint256 middleIndex;
-        uint256 upperIndex;
-        int256 total = 0;
-
-        if (coordsLength > 2) {
-            for (uint256 i = 0; i < coordsLength; i++) {
-                if (i == coordsLength - 2) {
-                    // i = N-2
-                    lowerIndex = coordsLength - 2;
-                    middleIndex = coordsLength - 1;
-                    upperIndex = 0;
-                } else if (i == coordsLength - 1) {
-                    // i = N-1
-                    lowerIndex = coordsLength - 1;
-                    middleIndex = 0;
-                    upperIndex = 1;
-                } else {
-                    // i = 0 to N-3
-                    lowerIndex = i;
-                    middleIndex = i + 1;
-                    upperIndex = i + 2;
-                }
-                p1 = _coordinates[lowerIndex];
-                p2 = _coordinates[middleIndex];
-                p3 = _coordinates[upperIndex];
-
-                int256 v1 = nanoRad(p3[0]);
-                int256 v2 = nanoRad(p1[0]);
-                int256 v3 = nanoSin(p2[1]);
-
-                int256 subTotal = (v1 - v2) * v3;
-                total += subTotal;
-            }
-
-            total = total * EARTH_RADIUS**2 / (2 * RAD_EXP * SIN_EXP * PI_EXP * COORD_EXP);
-        }
-        return total;
-    }
-
-    // Return nano radians (radians * 10^9) of a certain degree angle (coordinate)
-    function nanoRad(int256 _angle) private pure returns (int256) {
-        return (_angle * PI * RAD_EXP) / (180);
-    }
-
-    /**
-    The sine of an angle is given in a range [-1, 1]. The argument of the sine function 
-    is usually radians, which exists in a range [0, 2π rad]. Since this is not possible in 
-    Solidity, the following function returns the angle in 'nano' units (sine * 10^9). To do 
-    so, the sine is calculated using integer values. Instead of using a circle divided 
-    in 360 angle units (degrees), it assumes a circle divided in 16384 angle units (tAngle).
-    To convert from degrees to tAngle units we need to do the following:
-        tAngle = (degrees * 16384) / 360;
-    The returning value exists on a range [-32676, 32676] (signed 16-bit). Therefore, to 
-    finally get the sine value, we need to divide the sin() function by 32676;
-    */
-    function nanoSin(int256 _angle) private pure returns (int256) {
-        int256 angleUnits = 1073741824;
-        int256 maxAngle = 2147483647;
-        int256 tAngle = (_angle * angleUnits) / (360 * COORD_EXP);
+     * @param _tokenId The index of the GeoNFT to update
+     * @param _coordinates Array of polygon rings
+     * @param _geojson Strigified geojson of the new topology
+     */
+    function updateGeoNFTTopology(
+        uint256 _tokenId,
+        int256[2][][] memory _coordinates,
+        int64[2] memory _centroid,
+        string memory _geojson
+    ) external onlyOwner {
         // solhint-disable-next-line mark-callable-contracts
-        return Trigonometry.sin(uint256(tAngle)) * int(SIN_EXP) / maxAngle;
+        uint256 _area = AreaCalculation.polygonArea(_coordinates);
+
+        // Update GeoTree if geohash is different
+        int64 lat = _centroid[0];
+        int64 lon = _centroid[1];
+        string memory formerGeohash = tokenGeohash[_tokenId];
+        // solhint-disable-next-line mark-callable-contracts
+        string memory newGeohash = GeohashUtils.encode(
+            lat,
+            lon,
+            GEOHASH_LENGTH
+        );
+        bool geohashIsTheSame = areEqualStrings(formerGeohash, newGeohash);
+
+        if (!geohashIsTheSame) {
+            removeFromAllGeotreeSubhashes(newGeohash, _tokenId);
+            addToGeotree(newGeohash, _tokenId);
+            tokenGeohash[_tokenId] = newGeohash;
+        }
+
+        emit GeoNFTTopologyUpdated(_tokenId, _geojson, _area);
     }
 
-    // Returns absolute value of input
-    function abs(int256 _value) private pure returns (int256) {
-        return _value >= 0
-            ? _value
-            : -_value;
+    /**
+     * @notice Return all the GeoNFT ids in the registry
+     * @return geoNFTsArray Array of all registered token IDs
+     */
+    function getAllGeoNFTs()
+        external
+        view
+        returns (uint256[] memory geoNFTsArray)
+    {
+        return tokenArray;
+    }
+
+    /**
+     * @notice Query registry by latitude, longitude and geohash depth level
+     * @param _latitude Latitude
+     * @param _longitude Longitude
+     * @param _precision Precision level of the geohash searching
+     * @return geoNFTsArray Array of all registered token IDs
+     */
+    function queryGeoNFTsByLatLng(
+        int64 _latitude,
+        int64 _longitude,
+        uint8 _precision
+    ) external view returns (uint256[] memory) {
+        return
+            getFromGeotree(
+                // solhint-disable-next-line mark-callable-contracts
+                GeohashUtils.encode(_latitude, _longitude, _precision)
+            );
+    }
+
+    /**
+     * @notice Add token ID to the general token array
+     * @param _tokenId Token ID
+     */
+    function addToTokenArray(uint256 _tokenId) private {
+        tokenArray.push(_tokenId);
+    }
+
+    /**
+     * @notice Add token ID to the global token array
+     * @param _tokenId Token ID
+     */
+    function addToTokenGeohashMapping(uint256 _tokenId, string memory _geohash)
+        private
+    {
+        tokenGeohash[_tokenId] = _geohash;
+    }
+
+    /**
+     * @notice Add uint data by geohash to its relative subtree
+     * @param _geohash the geohash
+     * @param _data the uint data
+     */
+    function addToGeotree(string memory _geohash, uint256 _data)
+        public
+        onlyOwner
+    {
+        // require the length of the _geohash is GEOHASH_LENGTH
+        require(bytes(_geohash).length == GEOHASH_LENGTH);
+
+        // geohash characters splitted into an array
+        bytes memory geohashArray = bytes(_geohash);
+        // geohash substring used each level of the subtree
+        // string memory subhash;
+
+        // iterates over all 8 levels of the geohash and insert/append data
+        // to each of those levels indexed by its subhash
+        uint256 geohashArrayLength = geohashArray.length;
+        for (uint8 i; i < geohashArrayLength; ++i) {
+            // create subhash according to the depth level by slicing original geohash;
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
+            // solhint-disable-next-line
+            string memory subhash = string(geohashArray.slice(0, i + 1));
+
+            // lookup existing node
+            Node storage node = geotree[subhash];
+
+            // if data already in node, continue
+            if (dataExistsInNode(node, _data)) {
+                continue;
+            }
+            // if node does not exist, create it
+            uint256 nodeDataLength = node.data.length;
+            if (nodeDataLength == 0) {
+                node.data = new uint256[](1);
+                node.data[0] = _data;
+                geotree[subhash] = node;
+            } else {
+                // if node exists, add data to it
+                uint256[] memory newData = new uint256[](nodeDataLength + 1);
+                for (uint256 j; j < nodeDataLength; ++j) {
+                    newData[j] = node.data[j];
+                }
+                newData[nodeDataLength] = _data;
+                node.data = newData;
+                geotree[subhash] = node;
+            }
+        }
+    }
+
+    /**
+     * @notice Get a data by geohash
+     * @param _geohash the geohash
+     */
+    function getFromGeotree(string memory _geohash)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        Node storage node = geotree[_geohash];
+        return node.data;
+    }
+
+    /**
+     * @notice Update geohash
+     * @param _formergeohash the former geohash
+     * @param _newgeohash the new geohash
+     * @param _data the uint data
+     */
+    function updateGeotree(
+        string memory _formergeohash,
+        string calldata _newgeohash,
+        uint256 _data
+    ) public onlyOwner {
+        // remove data from former geohash
+        removeFromGeotree(_formergeohash, _data);
+
+        // add data to new node
+        addToGeotree(_newgeohash, _data);
+    }
+
+    /**
+     * @notice Remove data from node with specified geohash
+     * @param _geohash geohash
+     * @param _data the uint data
+     */
+    function removeFromGeotree(string memory _geohash, uint256 _data)
+        public
+        onlyOwner
+    {
+        // lookup existing node
+        Node storage node = geotree[_geohash];
+
+        // if data wasn't in node, return
+        if (!dataExistsInNode(node, _data)) {
+            return;
+        }
+
+        // if node contains only one value, delete node
+        uint256 nodeDataLength = node.data.length;
+        if (nodeDataLength == 1) {
+            delete geotree[_geohash];
+        } else {
+            // if node contains more than one value, rebuild data array
+            uint256[] memory newData = new uint256[](nodeDataLength - 1);
+            uint256 counter = 0;
+            for (uint256 i; i < nodeDataLength - 1; ++i) {
+                if (node.data[i] != _data) {
+                    newData[counter] = node.data[i];
+                    counter++;
+                }
+            }
+            node.data = newData;
+            geotree[_geohash] = node;
+        }
+    }
+
+    function removeFromAllGeotreeSubhashes(
+        string memory _geohash,
+        uint256 _tokenId
+    ) private {
+        // geohash characters splitted into an array
+        bytes memory geohashArray = bytes(_geohash);
+        uint256 geohashArrayLength = geohashArray.length;
+        // require the length of the _geohash is GEOHASH_LENGTH
+        require(geohashArrayLength == GEOHASH_LENGTH);
+
+        for (uint8 i; i < geohashArrayLength; ++i) {
+            // create subhash at each depth level from 0 to GEOHASH_LENGTH by slicing original geohash;
+            // subhash of 'gc7j98fg' at level 3 would be -> 'gc7';
+            removeFromGeotree(string(geohashArray.slice(0, i + 1)), _tokenId);
+        }
+    }
+
+    /**
+     * @notice Check if data in node
+     * @param _node node
+     * @param _data the uint data
+     */
+    function dataExistsInNode(Node memory _node, uint256 _data)
+        internal
+        pure
+        returns (bool)
+    {
+        uint256 nodeDataLength = _node.data.length;
+        for (uint256 i; i < nodeDataLength; ++i) {
+            if (_node.data[i] == _data) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function areEqualStrings(string memory _string1, string memory _string2)
+        private
+        pure
+        returns (bool)
+    {
+        return
+            keccak256(abi.encodePacked(_string1)) ==
+            keccak256(abi.encodePacked(_string2));
     }
 }

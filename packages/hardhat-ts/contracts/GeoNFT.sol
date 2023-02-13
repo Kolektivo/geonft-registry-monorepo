@@ -13,15 +13,20 @@ contract GeoNFT is
     ERC721Enumerable,
     ERC721URIStorage,
     ERC721Burnable,
-    Ownable {
+    Ownable
+{
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIdCounter;
 
+    struct EcologicalIndex {
+        string indexType;
+        int256 indexValue;
+    }
+
     // GeoNFT token properties
     mapping(uint256 => string) private geoJsons; // mapping of tokenId to geoJson
-    mapping(uint256 => uint8) private indexValues; // mapping of tokenId to index
-    mapping(uint256 => string) private indexTypes; // mapping of tokenId to index type
+    mapping(uint256 => EcologicalIndex) private ecologicalIndexMap;
 
     // solhint-disable-next-line no-empty-blocks, func-visibility
     constructor() ERC721("GEONFT Minter", "GEONFT") {}
@@ -37,41 +42,20 @@ contract GeoNFT is
     ) public {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
 
         // set geoJson
         geoJsons[tokenId] = _geoJson;
 
         // default index value to 0 type to area_m2
-        indexValues[tokenId] = 0;
-        indexTypes[tokenId] = "area_m2";
+        // TODO?: Refactor to Struct to unify value and type?
+        EcologicalIndex memory ecologicalIndex = EcologicalIndex("area_m2", 0);
+        ecologicalIndexMap[tokenId] = ecologicalIndex;
 
+        // indexValues[tokenId] = 0;
+        // indexTypes[tokenId] = "area_m2";
+
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-    }
-
-    // Returns an array of tokenIds
-    function getAllTokens()
-        public
-        view
-        returns (
-            uint256[] memory,
-            string[] memory,
-            string[] memory
-        )
-    {
-        uint256 totalTokens = totalSupply();
-        uint256[] memory _tokenIds = new uint256[](totalTokens);
-        string[] memory _uris = new string[](totalTokens);
-        string[] memory _geoJsons = new string[](totalTokens);
-        uint256 i;
-
-        for (i = 0; i < totalTokens; i++) {
-            // solhint-disable-next-line mark-callable-contracts
-            _tokenIds[i] = ERC721Enumerable.tokenByIndex(i);
-            _uris[i] = tokenURI(_tokenIds[i]);
-            _geoJsons[i] = geoJsons[_tokenIds[i]];
-        }
-        return (_tokenIds, _uris, _geoJsons);
     }
 
     // Returns an array of tokenIds, URIs for an owner address
@@ -89,9 +73,8 @@ contract GeoNFT is
         uint256[] memory _tokenIds = new uint256[](totalTokensForOwner);
         string[] memory _uris = new string[](totalTokensForOwner);
         string[] memory _geoJsons = new string[](totalTokensForOwner);
-        uint256 i;
 
-        for (i = 0; i < totalTokensForOwner; i++) {
+        for (uint256 i; i < totalTokensForOwner; ++i) {
             // solhint-disable-next-line mark-callable-contracts
             _tokenIds[i] = ERC721Enumerable.tokenOfOwnerByIndex(owner, i);
             _uris[i] = tokenURI(_tokenIds[i]);
@@ -114,15 +97,22 @@ contract GeoNFT is
         geoJsons[tokenId] = _geoJson;
     }
 
-    function setIndexValue(uint256 tokenId, uint8 indice) external onlyOwner {
-        indexValues[tokenId] = indice;
+    function getEcologicalIndex(uint256 _tokenId)
+        public
+        view
+        returns (EcologicalIndex memory)
+    {
+        return ecologicalIndexMap[_tokenId];
     }
 
-    function setIndexType(uint256 tokenId, string memory indiceType)
-        external
-        onlyOwner
-    {
-        indexTypes[tokenId] = indiceType;
+    function setEcologicalIndex(
+        uint256 _tokenId,
+        string memory _indexType,
+        int256 _indexValue
+    ) external onlyOwner {
+        EcologicalIndex storage ecologicalIndex = ecologicalIndexMap[_tokenId];
+        ecologicalIndex.indexType = _indexType;
+        ecologicalIndex.indexValue = _indexValue;
     }
 
     // The following functions are overrides required by Solidity.
@@ -151,31 +141,9 @@ contract GeoNFT is
         return super.tokenURI(tokenId);
     }
 
-    function geoJson(uint256 tokenId)
-        public
-        view
-        returns (string memory)
-    {
+    function geoJson(uint256 tokenId) public view returns (string memory) {
         string memory _geoJson = geoJsons[tokenId];
         return _geoJson;
-    }
-
-    function indexValue(uint256 tokenId)
-        public
-        view
-        returns (uint8)
-    {
-        uint8 _indexValue = indexValues[tokenId];
-        return _indexValue;
-    }
-
-    function indexType(uint256 tokenId)
-        public
-        view
-        returns (string memory)
-    {
-        string memory _indexType = indexTypes[tokenId];
-        return _indexType;
     }
 
     function supportsInterface(bytes4 interfaceId)

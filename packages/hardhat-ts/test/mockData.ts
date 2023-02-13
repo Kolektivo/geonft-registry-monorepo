@@ -1,4 +1,3 @@
-/* eslint-disable node/no-missing-import */
 import { FeatureCollection, Polygon, MultiPolygon } from "geojson";
 
 /**
@@ -1073,6 +1072,56 @@ export const GEOJSON3_POLYGON: FeatureCollection<Polygon> = {
             [-68.967689496358858, 12.143941237281359],
             [-68.967846330556341, 12.143954306797816],
             [-68.968190494489718, 12.143736481523529],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
+export const GEOJSON_INVALID_POLYGON1: FeatureCollection<Polygon> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {
+        fid: 1,
+        position: "CURAZAO",
+        area_m2: 449411638.06331575,
+        order: 1,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-69.15370080990094, 12.391964777866605],
+            [-69.157212618903188, 12.389623571865103],
+            [-69.162772983156756, 12.379380795608535],
+            [-69.155164063651881, 12.37118657460328],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
+export const GEOJSON_INVALID_POLYGON2: FeatureCollection<Polygon> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: {
+        fid: 1,
+        position: "CURAZAO",
+        area_m2: 449411638.06331575,
+        order: 1,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-69.15370080990094, 12.391964777866605],
+            [-69.15370080990094, 12.391964777866605],
           ],
         ],
       },
