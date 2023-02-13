@@ -148,7 +148,7 @@ export class MapComponent {
       let foundLayer;
       let foundFeature;
 
-      // Check if mouse is over a edit layer feature
+      // Check if mouse is over an edit layer feature
       map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
         const layerId = layer.get("id");
 
@@ -178,22 +178,25 @@ export class MapComponent {
     });
 
     // Increase the drawn features counter on draw end
-    draw.on("drawend", (e) => {
+    draw.on("drawend", () => {
       if (!this.state.matches("edition")) return;
 
       this.drawnFeaturesCount++;
     });
 
     // Remove the last drawn feature if it intersects with another feature
+    // This is based on the premise that features cannot intersect
     editLayer.getSource().on("addfeature", (e) => {
       if (!this.state.matches("edition")) return;
 
-      // Remove the last feature because that is the one just added
+      // Create a subset of the features without the last one (the one just added)
       const previousDrawnFeatures = this.editLayer
         .getSource()
         .getFeatures()
         .slice(0, -1);
       const newFeature = e.feature as Feature<MultiPolygon>;
+
+      // Check if the last feature intersects with any of the previous features
       const isNewCoordinatesIntersect = previousDrawnFeatures.some(
         (previousFeature) => {
           return this.isIntersecting(newFeature, previousFeature);
@@ -240,6 +243,8 @@ export class MapComponent {
     this.backupEditFeature = selectedFeature.clone();
 
     // Separate each multipolygon part into multiple features
+    // This is done to allow the user to modify/delete each polygon part individually
+    // Besided being single polygons, they are created as MultiPolygons for compatibility
     const selectedFeatureAsPolygons = selectedFeature
       .getGeometry()
       .getCoordinates()[0]
@@ -431,6 +436,7 @@ export class MapComponent {
           .map((feature) => feature.getGeometry().getCoordinates()[0][0]),
       ]),
     });
+    // Add the new multipolygon feature to the target layer
     newMultiPolygonFeature.setStyle(undefined);
     targetLayer.getSource().addFeature(newMultiPolygonFeature);
     this.clearEditLayer();
@@ -443,7 +449,10 @@ export class MapComponent {
   }
 
   // HELPERS
+  // Update the state machine to a new state
   private stateTransition(newStateEvent: MachineEventsType): void {
+    // The state machine is immutable, so we need to create a new state first,
+    // then update the "state" variable of the component
     const newState = this.service.send(newStateEvent);
     this.state = newState;
   }

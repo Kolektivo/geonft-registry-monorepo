@@ -30,7 +30,7 @@ $font-primary: "Poppins", sans-serif;
     top: 0;
     right: 0;
     z-index: 9;
-    transition: .3s;
+    transition: 0.3s;
 
     &.closed {
       margin-right: -#{$width};
@@ -74,7 +74,7 @@ $font-primary: "Poppins", sans-serif;
         border-radius: 6px;
         font-family: $font-primary;
         font-weight: 700;
-        
+
         &:enabled {
           cursor: pointer;
         }
@@ -134,41 +134,41 @@ $font-primary: "Poppins", sans-serif;
                 font-style: italic;
               }
             }
-
-            // .already-registered 
           }
         }
       }
 
-      .metadata, .metadata-ws {
+      .metadata,
+      .metadata-ws {
         form {
           display: flex;
           flex-direction: column;
-  
+
           label {
             margin-bottom: 8px;
           }
-  
-          input, textarea {
+
+          input,
+          textarea {
             font-family: $font-primary;
             padding: 8px 16px;
             color: black;
             background-color: $grey-200;
             border-color: $grey-200;
-  
+
             &:focus {
               outline: 2px solid $grey-300;
             }
-  
+
             &:not(:last-child) {
               margin-bottom: 24px;
             }
           }
-  
+
           textarea {
             resize: vertical;
           }
-  
+
           .buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -235,7 +235,7 @@ $font-primary: "Poppins", sans-serif;
         border-radius: 6px;
         font-family: $font-primary;
         background-color: $grey-200;
-        
+
         &:enabled {
           cursor: pointer;
 

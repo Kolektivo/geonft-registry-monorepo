@@ -1,5 +1,22 @@
 import { assign, createMachine, interpret } from "xstate";
 
+// Edition has been modeled as a state machine to handle the different
+// states of the edition process. This helps to clarify the possible
+// states and transitions between them. Also, it avoids impossible states or transitions.
+
+// The machine has 5 main states:
+// - idle: the initial state, where the user can choose to create or update
+//   an ecological asset.
+// - metadata: the state where the user can fill the metadata of the ecological
+//   asset.
+// - edition: the state where the user can draw, modify or delete the features of
+//   the ecological asset.
+// - preview: the state where the user can preview the ecological asset before
+//   submitting it.
+// - previewWs: the state where the user can preview the weather station before
+//   submitting it.
+// For mor info about xstate and state machines, see https://xstate.js.org/docs/
+
 // EA = Ecological asset
 // WS = Weather station
 export type MachineEventsType =
@@ -26,6 +43,7 @@ type MachineContxt = { mode: MachineContextValues };
 
 export const machine = createMachine(
   {
+    // to add type-safety to the machine
     tsTypes: {} as import("./machine.typegen").Typegen0,
     schema: {
       context: {} as MachineContxt,
@@ -118,6 +136,7 @@ export const machine = createMachine(
     predictableActionArguments: true,
   },
   {
+    // Define empty actions is needed to override them in the component
     actions: {
       enterEdition: () => null,
       enterDraw: () => null,

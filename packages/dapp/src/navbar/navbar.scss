@@ -3,7 +3,6 @@
 $menu-open-duration: 0.1s;
 
 .navbar-container {
-  // position: fixed;
   width: -webkit-fill-available;
   width: -moz-available;
   margin-bottom: 10px;
@@ -156,7 +155,7 @@ $menu-open-duration: 0.1s;
 }
 
 @media screen and (max-width: 1072px) {
-  .navbar-container {  
+  .navbar-container {
     grid-template-columns: calc(#{$BodyPaddingLeftRightMobile} + 50px) 1fr auto;
     grid-template-areas: "logo products connect" "subPages subPages subPages";
 
@@ -200,8 +199,8 @@ $menu-open-duration: 0.1s;
       grid-area: hamburger-menu;
     }
 
-    &>.products,
-    &>.productSubpages {
+    & > .products,
+    & > .productSubpages {
       display: none;
     }
   }
