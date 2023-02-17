@@ -1,7 +1,183 @@
 <template>
-  <div class="page mapContainer">
-    <div class="map-wrap" ref="mapWrap">
-      <div class="map" ref="mapDiv">
+  <div class="page">
+    <div class="map-wrap">
+      <!-- UPDATE BUTTON -->
+      <button 
+        if.bind="isFeatureSelected"
+        class="update-feature-button" 
+        click.trigger="updateSelectedFeature()"
+      >
+        Update
+      </button>
+      <!------ EDIT TOOLS ------>
+      <div class="edition-tools" if.bind="isEditionState">
+        <div class="draw-options" if.bind="isDrawState">
+          <button click.trigger="undo()">
+            Undo
+          </button>
+        </div>
+        <button
+          click.trigger="drawFeature()"
+          disabled.bind="isDrawState"
+          class.bind="isDrawState && 'draw-enabled'"
+        >
+          Draw
+        </button>
+        <button 
+          click.trigger="modifyFeatures()" 
+          disabled.bind="isModifyState || editLayerIsEmpty"
+          class.bind="isModifyState && 'modify-enabled'"
+        >
+          Modify
+        </button>
+        <button
+          click.trigger="deleteFeature()"
+          disabled.bind="isDeleteState || editLayerIsEmpty"
+          class.bind="isDeleteState && 'delete-enabled'"
+        >
+          Delete
+        </button>
+        <button click.trigger="returnToMetadata()">
+          Return
+        </button>
+        <button
+          click.trigger="finishEdition()"
+          disabled.bind="editLayerIsEmpty"
+        >
+          Finish
+        </button>
+      </div>
+      <!------ MODIFY HELP PANEL ------>
+      <div class="modify-help" if.bind="isModifyState">
+        <p>Ctrl + Click to delete a vertex</p>
+      </div>
+      <!------ SIDEBAR ------>
+      <div id="sidebar" class="sidebar" class.bind="sidebar ? '' : 'closed'">
+        <button 
+          click.trigger="toggleSidebar()" 
+          if.bind="sidebarButton"
+          class="sidebar-button"
+        >
+          ${sidebar ? "X" : "-"}
+        </button>
+        <div class="sidebar-content">
+          <div class="idle" if.bind="isIdleState">
+            <h2>GeoNFT's</h2>
+            <div class="buttons">
+              <button click.trigger="createEcologicalAsset()">Add Ecological asset</button>
+              <!-- click.trigger="createWeatherStation()" -->
+              <button>Add Weather station</button>
+            </div>
+            <p if.bind="mintedGeoNfts.length === 0" class="no-nfts-found">
+              <i>No GeoNFTs minted yet</i>
+            </p>
+            <ul if.bind="mintedGeoNfts.length >= 0" class="minted-geonfts">
+              <li class="minted-geonft" repeat.for="geoNft of mintedGeoNfts">
+                <div class="geonft-data">
+                  <span>${geoNft.name}</span>
+                  <span>${formatDate(geoNft.date)}</span>
+                </div>
+                <button disabled.bind="geoNft.registered">
+                  ${
+                    geoNft.registered
+                      ? "Registered"
+                      : "Register"
+                  }
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div class="metadata" if.bind="isMetadataState">
+            <h2>Enter metadata</h2>
+
+            <form role="form">
+              <h3>Basic information</h3>
+              <label for="metadata-name">Name</label>
+              <input id="metadata-name" type="text" value.bind="metadata.name">
+
+              <label for="metadata-description">Description</label>
+              <textarea 
+                id="metadata-description" 
+                value.bind="metadata.description" 
+                cols="20" 
+                rows="5"
+              /></textarea>
+
+              <label for="metadata-location-address">Location address</label>
+              <input id="metadata-location-address" type="text" value.bind="metadata.locationAddress">
+
+              <h3>Contact info</h3>
+
+              <label for="metadata-email">Email</label>
+              <input id="metadata-email" type="email" value.bind="metadata.email">
+
+              <label for="metadata-phone-number">Phone number</label>
+              <input id="metadata-phone-number" type="number" value.bind="phoneNumber">
+
+              <h3>Food forest information</h3>
+
+              <label for="metadata-number-managers">Number of managers</label>
+              <input 
+                id="metadata-number-managers" 
+                type="number"
+                pattern="\d*"
+                inputmode="numeric"
+                min="0"
+                required
+                value.bind="metadata.numberManagers"
+              >
+
+              <label for="metadata-date">Date established</label>
+              <input id="metadata-date" type="date" value="metadata.date" value.bind="metadata.date">
+
+              <div class="buttons">
+                <button click.trigger="cancelMetadata()">Cancel</button>
+                <button click.trigger="submitMetadata()" type="submit">Continue</button>
+              </div>
+            </form>
+          </div>
+          <div class="metadata-ws" if.bind="isMetadataWsState">
+            <h2>Enter metadata</h2>
+
+            <form role="form">
+              <h3>Weather station information</h3>
+              <label for="metadata-name">Name</label>
+              <input id="metadata-name" type="text" value.bind="ws.name">
+
+              <label for="metadata-latitude">Latitude</label>
+              <input id="metadata-latitude" type="text" value.bind="ws.latitude">
+
+              <label for="metadata-latitude">Latitude</label>
+              <input id="metadata-latitude" type="text" value.bind="ws.longitude">
+
+              <div class="buttons">
+                <button click.trigger="cancelMetadata()">Cancel</button>
+                <button click.trigger="submitMetadata()" type="submit">Continue</button>
+              </div>
+            </form>
+          </div>
+          <div class="preview" if.bind="isPreviewState">
+            <h2>PREVIEW</h2>
+            <p repeat.for="item of getFormattedMetadata()">
+              ${item.label}: <b>${item.value}</b>
+            </p>
+            <div class="buttons">
+              <button click.trigger="cancelPreview()">
+                Return
+              </button>
+              <button click.trigger="mintGeoNFT()">
+                ${
+                  state.context.mode === "CREATE"
+                    ? "Mint GeoNFT"
+                    : "Update GeoNFT"
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!------ MAP ------>
+      <div id="map" class="map">
       </div>
     </div>
   </div>

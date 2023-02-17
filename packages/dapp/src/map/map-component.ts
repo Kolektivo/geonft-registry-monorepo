@@ -1,394 +1,538 @@
-import { inject, LogManager, View } from "aurelia-framework";
-import { Logger } from "aurelia-logging";
-import { Map, NavigationControl, Popup } from "maplibre-gl";
-import { default as mapEnv } from '../../config/map.json';
+import { inject, computedFrom } from "aurelia-framework";
+import { v4 as uuidv4 } from "uuid";
+import { multiPolygon as turfMultiPolygon } from "@turf/helpers";
+import turfBooleanIntersects from "@turf/boolean-intersects";
+import Map from "ol/Map";
+import View from "ol/View";
+import Feature from "ol/Feature";
+import { fromLonLat } from "ol/proj";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import {
+  Select,
+  Draw,
+  Modify,
+  defaults as defaultInteractions,
+} from "ol/interaction";
+import { defaults as defaultControls } from "ol/control";
+import { Geometry, MultiPolygon } from "ol/geom";
+import { machine, machineInterpreter, MachineEventsType } from "./machine";
+import {
+  basemaps,
+  ecologicalAssets,
+  ecologicalAssetsCentroids,
+  editLayer,
+  previewLayer,
+  select,
+  draw,
+  modify,
+  deleteHoverStyle,
+  Basemap,
+} from "./openlayers-components";
+import { Properties } from "./data";
+import "ol/ol.css";
 import "./map-component.scss";
+
+const metadataDefaultValues: Properties = {
+  registered: false,
+  name: "",
+  description: "",
+  locationAddress: "",
+  email: "",
+  phoneNumber: undefined,
+  numberManagers: undefined,
+  date: new Date().toISOString().split("T")[0],
+};
+
+const initMintedGeoNfts: Array<Properties> = ecologicalAssets
+  .getSource()
+  .getFeatures()
+  .map((feature) => feature.getProperties() as Properties);
 
 @inject(Element)
 export class MapComponent {
-  private logger: Logger = LogManager.getLogger("components.map");
-
-  private element: HTMLElement;
-
   public mapDiv: HTMLDivElement;
-  map: Map | undefined;
-
-  constructor(element: HTMLElement) {
-    this.element = element;
-  }
-
-  public created(owningView: View, myView: View): void {
-    this.logger.info("Created");
-  }
-
-  public bind(bindingContext, overrideContext): void {
-    this.logger.debug("Bind");
-  }
+  map: Map;
+  service = machineInterpreter;
+  state = machineInterpreter.initialState;
+  sidebar = true;
+  sidebarButton = true;
+  metadata: Properties = { ...metadataDefaultValues, id: uuidv4() };
+  editLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  backupEditFeature: Feature<MultiPolygon>;
+  previewLayer: VectorLayer<VectorSource<MultiPolygon>>;
+  ecologicalAssets: VectorLayer<VectorSource<Geometry>>;
+  select: Select;
+  draw: Draw;
+  modify: Modify;
+  currentBasemap: Basemap = "cartographic";
+  drawnFeaturesCount = 0;
+  lastDeleteHighlightedFeature: Feature;
+  bufferEdition: Array<[number, number]> = []; // Array of coordinates
+  mintedGeoNfts: Array<Properties> = initMintedGeoNfts;
+  isFeatureSelected = false;
 
   public attached(): void {
-    const initialState = { lng: -428.95, lat: 12.138, zoom: 12 };
+    // Update machine with the new actions
+    // They cannot be defined before because they access class variables and methods
+    const newMachine = machine.withConfig({
+      actions: {
+        enterEdition: () => this.enterEdition(),
+        enterDraw: () => this.enterDraw(),
+        exitDraw: () => this.exitDraw(),
+        enterModify: () => this.enterModify(),
+        exitModify: () => this.exitModify(),
+        enterPreview: () => this.enterPreview(),
+      },
+    });
+    this.service.machine = newMachine;
+    // Uncomment to log every state transition
+    // this.service.onTransition((state) => console.log(state.value));
+    this.service.start();
 
-    this.logger.debug(mapEnv.apiKey);
-
-    this.map = new Map({
-      container: this.mapDiv,
-      style: `https://api.maptiler.com/maps/streets/style.json?key=${mapEnv.apiKey}`,
-      center: [initialState.lng, initialState.lat],
-      zoom: initialState.zoom,
+    // Map setup
+    const initialCenter = [-68.95, 12.208];
+    const initialZoom = 11;
+    const showAttribution = true;
+    const initialBasemap = basemaps[this.currentBasemap];
+    const map = new Map({
+      layers: [
+        initialBasemap,
+        editLayer,
+        previewLayer,
+        ecologicalAssets,
+        ecologicalAssetsCentroids,
+      ],
+      target: "map",
+      view: new View({
+        center: fromLonLat(initialCenter),
+        zoom: initialZoom,
+      }),
+      interactions: defaultInteractions().extend([select, draw, modify]),
+      controls: defaultControls({ attribution: showAttribution }),
     });
 
-    this.map.addControl(new NavigationControl());
+    // EVENTS
+    // Deletes feature on click when delete mode is active
+    map.on("click", (e) => {
+      if (!this.isDeleteState) return;
 
-    this.map.on('load', () => {
-      if (this.map) {
-        this.map.loadImage(
-          '/kolektivo_sun.png',
-          (error, image: HTMLImageElement | ArrayBufferView | { width: number; height: number; data: Uint8Array | Uint8ClampedArray; } | ImageData | ImageBitmap) => {
-          if (error) throw error;
-          if (this.map) {
-            // Add the image to the map style.
-            this.map.addImage('sun', image);
+      // Iterate over all layers intersecting the clicked pixel
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (feature: Feature<MultiPolygon>, layer) => {
+          const layerId = layer.get("id");
 
-            this.map.addSource('weatherstations', {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: [
-                  {
-                    type: 'Feature',
-                    properties: {
-                      name: 'Dinah Veeris Food Forest (sensorID: 3A)',
-                      description:
-                        'stationID: IWILLE45<br>time: 2022-03-28 11:34:55<br>humidity:67<br>temp:29<br>windSpeed:9<br>windGust:15',
-                      icon: 'sun',
-                      iconSize: [75, 45],
-                    },
-                    geometry: {
-                      type: 'Point',
-                      coordinates: [-68.822, 12.094],
-                    },
-                  },
-                  {
-                    type: 'Feature',
-                    properties: {
-                      name: 'Scherpenheuvel Boye Farm (sensorID: 0E)',
-                      description:
-                        'stationID: IWILLE44<br>time: 2022-03-28 11:34:55<br>humidity:67<br>temp:29<br>windSpeed:9<br>windGust:15',
-                      icon: 'sun',
-                      iconSize: [75, 45],
-                    },
-                    geometry: {
-                      type: 'Point',
-                      coordinates: [-68.87, 12.11],
-                    },
-                  },
-                  {
-                    type: 'Feature',
-                    properties: {
-                      name: "Klarvin's Food Forest - Galactic Farm Station (Barber bou) (sensorID: C2)",
-                      description:
-                        'stationID: IBOUBA1<br>time: 2022-03-28 11:34:55<br>humidity:67<br>temp:29<br>windSpeed:9<br>windGust:15',
-                      icon: 'sun',
-                      iconSize: [75, 45],
-                    },
-                    geometry: {
-                      type: 'Point',
-                      coordinates: [-69.1, 12.29],
-                    },
-                  },
-                ],
-              },
-            });
+          // Delete the feature only if the layer is the edit layer
+          if (layerId === "edit-layer") {
+            this.confirmAction(
+              "Delete feature? This action is permanent",
+              () => {
+                editLayer.getSource().removeFeature(feature);
+                this.drawnFeaturesCount--;
 
-            this.map.addLayer({
-              id: 'weatherstations',
-              type: 'symbol',
-              source: 'weatherstations',
-              layout: {
-                'icon-image': '{icon}',
-                'icon-size': 0.05,
-                'icon-allow-overlap': true,
-              },
-            });
-
-            this.map.on('click', 'weatherstations', (e) => {
-              if (this.map && e.features && e.features[0].geometry.type === 'Point') {
-                // Copy coordinates array.
-                const coordinates = e.features[0].geometry.coordinates.slice();
-                const description = e.features[0].properties['description'];
-
-                // Ensure that if the map is zoomed out such that multiple
-                // copies of the feature are visible, the popup appears
-                // over the copy being pointed to.
-                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-                  coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                if (this.editLayerIsEmpty) {
+                  this.stateTransition("DRAW_FEATURE");
                 }
-
-                new Popup()
-                  .setLngLat([coordinates[0], coordinates[1]])
-                  .setHTML(description)
-                  .addTo(this.map);
               }
-            });
-
-            // Change the cursor to a pointer when the mouse is over the places layer.
-            this.map.on('mouseenter', 'weatherstations', () => {
-              if (this.map) {
-                this.map.getCanvas().style.cursor = 'pointer';
-              }
-            });
-
-            // Change it back to a pointer when it leaves.
-            this.map.on('mouseleave', 'weatherstations', () => {
-              if (this.map) {
-                this.map.getCanvas().style.cursor = '';
-              }
-            });
-
+            );
           }
-        });
+        }
+      );
+    });
 
-          this.map.loadImage(
-            '/kolektivo_tree_green.png',
-            (error, image2: HTMLImageElement | ArrayBufferView | { width: number; height: number; data: Uint8Array | Uint8ClampedArray; } | ImageData | ImageBitmap) => {
-            if (error) throw error;
-            if (this.map) {
-              // Add the image to the map style.
-            this.map.addImage('image_tree_green', image2);
+    // Highlight feature on hover when delete mode is active
+    map.on("pointermove", (e) => {
+      if (!this.isDeleteState) return;
 
-            this.map.addSource('foodforests', {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: [
-                  {
-                    type: 'Feature',
-                    properties: {
-                      name: 'Food Forest 1',
-                      description:
-                        'Food Forest 1<br><img width=\'200\' src=\'\\ff1.jpg\'><br>300 m²<br>3-4 Managers<br>Established in 2018',
-                      icon: 'image_tree_green',
-                      status: 'approved'
-                    },
-                    geometry: {
-                      type: 'Polygon',
-                      coordinates: [
-                        [
-                          [
-                            -428.93541499972343,
-                            12.110363491120767
-                          ],
-                          [
-                            -428.93546998500824,
-                            12.110321530841098
-                          ],
-                          [
-                            -428.9354766905307,
-                            12.110244166558177
-                          ],
-                          [
-                            -428.9354056119919,
-                            12.110210073816223
-                          ],
-                          [
-                            -428.935339897871,
-                            12.110244166558177
-                          ],
-                          [
-                            -428.93533587455744,
-                            12.110329398394029
-                          ],
-                          [
-                            -428.93541499972343,
-                            12.110363491120767
-                          ]
-                        ]
-                      ]
-                    },
-                  },
-                  {
-                    type: 'Feature',
-                    properties: {
-                      name: 'Food Forest 2',
-                      description:
-                        'pending',
-                      icon: 'image_tree_green',
-                      status: 'pending'
-                    },
-                    geometry: {
-                      type: 'MultiPolygon',
-                      coordinates: [
-                        [
-                          [
-                            [
-                              -428.8906744122505,
-                              12.147418397582491
-                            ],
-                            [
-                              -428.8907468318939,
-                              12.147347599447487
-                            ],
-                            [
-                              -428.8907213509083,
-                              12.14723615790054
-                            ],
-                            [
-                              -428.8905939459801,
-                              12.147198136656193
-                            ],
-                            [
-                              -428.89051884412766,
-                              12.147280734524921
-                            ],
-                            [
-                              -428.89055103063583,
-                              12.147379065287602
-                            ],
-                            [
-                              -428.8906744122505,
-                              12.147418397582491
-                            ]
-                          ],
-                        ],
-                        [
-                          [
-                            [
-                              -428.8905443251133,
-                              12.147381687440772
-                            ],
-                            [
-                              -428.89051616191864,
-                              12.147279423447841
-                            ],
-                            [
-                              -428.89041021466255,
-                              12.147224358204612
-                            ],
-                            [
-                              -428.8903096318245,
-                              12.147300400680368
-                            ],
-                            [
-                              -428.8903257250786,
-                              12.147409220047532
-                            ],
-                            [
-                              -428.8904584944248,
-                              12.147449863414236
-                            ],
-                            [
-                              -428.8905443251133,
-                              12.147381687440772
-                            ]
-                          ],
-                        ],
-                        [
-                          [
-                            [
-                              -428.8901272416115,
-                              12.147367265597998
-                            ],
-                            [
-                              -428.89017820358276,
-                              12.147195514501217
-                            ],
-                            [
-                              -428.8900186121464,
-                              12.147116849839737
-                            ],
-                            [
-                              -428.8899327814579,
-                              12.147217802817746
-                            ],
-                            [
-                              -428.8899743556976,
-                              12.147334488679682
-                            ],
-                            [
-                              -428.8901272416115,
-                              12.147367265597998
-                            ]
-                          ],
-                        ],
-                      ]
-                    },
-                  },
-                ],
-              },
-            });
+      let foundLayer;
+      let foundFeature;
 
-            this.map.addLayer({
-              id: 'foodforests-icon',
-              type: 'symbol',
-              source: 'foodforests',
-              maxzoom: 16,
-              layout: {
-                'icon-image': '{icon}',
-                'icon-size': .5,
-                'icon-allow-overlap': true,
-              },
-            });
+      // Check if mouse is over an edit layer feature
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        const layerId = layer.get("id");
 
-            this.map.addLayer({
-              id: 'foodforests-approved',
-              type: 'fill',
-              source: 'foodforests',
-              minzoom: 16,
-              paint: {
-                'fill-outline-color': '#000',
-                'fill-color': 'green',
-                'fill-opacity': .5
-              },
-              'filter': ['==', ['get', 'status'], 'approved']
-            });
+        if (layerId === "edit-layer") {
+          foundLayer = layer;
+          foundFeature = feature;
+          return;
+        }
+      });
 
-            this.map.on('click', 'foodforests-approved', (e) => {
-              if (this.map && e.features) {
-                const description = e.features[0].properties['description'];
-
-                new Popup()
-                  .setLngLat(e.lngLat)
-                  .setHTML(description)
-                  .addTo(this.map);
-              }
-            });
-
-            this.map.addLayer({
-              id: 'foodforests-pending',
-              type: 'fill',
-              source: 'foodforests',
-              minzoom: 16,
-              paint: {
-                'fill-outline-color': '#000',
-                'fill-color': 'yellow',
-                'fill-opacity': .5
-              },
-              'filter': ['==', ['get', 'status'], 'pending']
-            });
-
-            this.map.on('click', 'foodforests-pending', (e) => {
-              if (this.map && e.features) {
-                const description = e.features[0].properties['description'];
-
-                new Popup()
-                  .setLngLat(e.lngLat)
-                  .setHTML(description)
-                  .addTo(this.map);
-              }
-            });
-          }
-        });
+      // If mouse is over an edit layer feature, set its style to delete hover style and set it
+      // as the last delete highlighted feature. Otherwise, reset last delete highlighted feature
+      // to its default style
+      if (foundLayer) {
+        foundFeature.setStyle(deleteHoverStyle);
+        this.lastDeleteHighlightedFeature = foundFeature;
+      } else {
+        this.lastDeleteHighlightedFeature
+          ? this.lastDeleteHighlightedFeature.setStyle(undefined)
+          : (this.lastDeleteHighlightedFeature = undefined);
       }
     });
-    this.logger.debug("Attached");
+
+    // Set selected status
+    select.on("select", (e) => {
+      this.isFeatureSelected = e.selected.length > 0;
+    });
+
+    // Increase the drawn features counter on draw end
+    draw.on("drawend", () => {
+      if (!this.state.matches("edition")) return;
+
+      this.drawnFeaturesCount++;
+    });
+
+    // Remove the last drawn feature if it intersects with another feature
+    // This is based on the premise that features cannot intersect
+    editLayer.getSource().on("addfeature", (e) => {
+      if (!this.state.matches("edition")) return;
+
+      // Create a subset of the features without the last one (the one just added)
+      const previousDrawnFeatures = this.editLayer
+        .getSource()
+        .getFeatures()
+        .slice(0, -1);
+      const newFeature = e.feature as Feature<MultiPolygon>;
+
+      // Check if the last feature intersects with any of the previous features
+      const isNewCoordinatesIntersect = previousDrawnFeatures.some(
+        (previousFeature) => {
+          return this.isIntersecting(newFeature, previousFeature);
+        }
+      );
+
+      if (isNewCoordinatesIntersect) {
+        // In case the new polygon intersects with another polygon, remove the last drawn feature
+        // and decrease the drawn features counter
+        alert("The new polygon cannot intersect with the existing ones");
+        this.editLayer.getSource().removeFeature(newFeature);
+        this.drawnFeaturesCount--;
+      }
+    });
+
+    this.map = map;
+    this.editLayer = editLayer;
+    this.previewLayer = previewLayer;
+    this.ecologicalAssets = ecologicalAssets;
+    this.select = select;
+    this.draw = draw;
+    this.modify = modify;
   }
 
-  public detached(): void {
-    this.logger.debug("Detached");
+  // UI FUNCTIONS
+  public toggleSidebar(): void {
+    this.sidebar = !this.sidebar;
   }
 
-  public unbind(): void {
-    this.logger.debug("Unbind");
+  // IDLE FUNCTIONS
+  public createEcologicalAsset(): void {
+    this.stateTransition("CREATE_ECOLOGICAL_ASSET");
+    this.clearSelection();
+    this.select.setActive(false);
   }
 
+  public updateSelectedFeature(): void {
+    const selectedFeature = this.select
+      .getFeatures()
+      .getArray()[0] as Feature<MultiPolygon>;
+
+    if (!selectedFeature) return;
+
+    this.backupEditFeature = selectedFeature.clone();
+
+    // Separate each multipolygon part into multiple features
+    // This is done to allow the user to modify/delete each polygon part individually
+    // Besided being single polygons, they are created as MultiPolygons for compatibility
+    const selectedFeatureAsPolygons = selectedFeature
+      .getGeometry()
+      .getCoordinates()[0]
+      .map((polygonCoords) => {
+        const polygonFeature = new Feature<MultiPolygon>({
+          geometry: new MultiPolygon([[polygonCoords]]),
+        });
+        return polygonFeature;
+      });
+
+    this.metadata = selectedFeature.getProperties() as Properties;
+    this.editLayer.getSource().addFeatures(selectedFeatureAsPolygons);
+    this.ecologicalAssets.getSource().removeFeature(selectedFeature);
+    this.sidebar = true;
+    this.clearSelection();
+    this.select.setActive(false);
+    this.stateTransition("UPDATE_ECOLOGICAL_ASSET");
+  }
+
+  public createWeatherStation(): void {
+    this.stateTransition("CREATE_WEATHER_STATION");
+  }
+
+  // METADATA FUNCTIONS
+  public cancelMetadata(): void {
+    if (this.state.context.mode === "UPDATE") {
+      this.revertDrawnFeatures();
+    }
+
+    this.metadata = metadataDefaultValues;
+    this.select.setActive(true);
+    this.clearEditLayer();
+    this.stateTransition("CANCEL_METADATA");
+  }
+
+  public submitMetadata(): void {
+    this.stateTransition("SUBMIT_METADATA");
+  }
+
+  // EDITION FUNCTIONS
+  public drawFeature(): void {
+    this.stateTransition("DRAW_FEATURE");
+  }
+
+  public modifyFeatures(): void {
+    this.stateTransition("MODIFY_FEATURE");
+  }
+
+  public deleteFeature(): void {
+    this.stateTransition("DELETE_FEATURE");
+  }
+
+  public returnToMetadata(): void {
+    this.confirmAction(
+      "Are you sure you want to return? Edited features will be deleted",
+      () => {
+        if (this.state.context.mode === "CREATE") {
+          this.clearEditLayer();
+        }
+
+        this.stopDrawing();
+        this.stateTransition("CANCEL_EDITION");
+        this.sidebar = true;
+        this.sidebarButton = true;
+      }
+    );
+  }
+
+  public finishEdition(): void {
+    this.stateTransition("FINISH_EDITION");
+  }
+
+  // PREVIEW FUNCTIONS
+  public getFormattedMetadata(): Array<{ label: string; value: string }> {
+    const NOT_DEFINED = "Not defined";
+
+    return [
+      {
+        label: "Name",
+        value: this.metadata.name || NOT_DEFINED,
+      },
+      {
+        label: "Description",
+        value: this.metadata.description || NOT_DEFINED,
+      },
+      {
+        label: "Location address",
+        value: this.metadata.locationAddress || NOT_DEFINED,
+      },
+      {
+        label: "Phone number",
+        value: this.metadata.phoneNumber?.toString() || NOT_DEFINED,
+      },
+      {
+        label: "Number of managers",
+        value: this.metadata.numberManagers?.toString() || NOT_DEFINED,
+      },
+      {
+        label: "Date established",
+        value: new Date(this.metadata.date).toLocaleDateString("en-US"),
+      },
+    ];
+  }
+
+  public cancelPreview(): void {
+    this.stateTransition("CANCEL_PREVIEW");
+  }
+
+  public mintGeoNFT(): void {
+    this.stateTransition("MINT_GEONFT");
+    this.applyDrawnFeatureToLayer(this.previewLayer);
+    this.select.setActive(true);
+    this.mintedGeoNfts.push(this.metadata);
+    this.metadata = { ...metadataDefaultValues };
+  }
+
+  // ACTIONS
+  private enterEdition(): void {
+    this.sidebar = false;
+    this.sidebarButton = false;
+  }
+
+  private enterDraw(): void {
+    this.startDrawing();
+  }
+
+  private exitDraw(): void {
+    this.stopDrawing();
+  }
+
+  private enterModify(): void {
+    this.modify.setActive(true);
+  }
+
+  private exitModify(): void {
+    this.modify.setActive(false);
+  }
+
+  private enterPreview(): void {
+    this.sidebar = true;
+    this.sidebarButton = true;
+    // Focus view on editLayer?
+  }
+
+  // MAP FUNCTIONS
+  private clearSelection(): void {
+    this.select.getFeatures().clear();
+    this.isFeatureSelected = false;
+  }
+
+  private startDrawing(): void {
+    this.draw.setActive(true);
+    this.modify.setActive(false);
+  }
+
+  private stopDrawing(): void {
+    this.draw.setActive(false);
+  }
+
+  private clearEditLayer(): void {
+    this.editLayer.getSource().clear();
+  }
+
+  public undo(): void {
+    const sketchLineCoords = this.draw["sketchLineCoords_"];
+    const lastPoint = sketchLineCoords.slice(-1);
+    this.bufferEdition.push(lastPoint);
+    this.draw.removeLastPoint();
+  }
+
+  // NOTE: Experimental
+  public redo(): void {
+    const lastUndoPoint = this.bufferEdition.pop();
+    if (lastUndoPoint) {
+      this.draw["sketchLineCoords_"].push(lastUndoPoint[0]);
+      // TODO: Refresh render to show changes
+    }
+  }
+
+  private applyDrawnFeatureToLayer(
+    targetLayer: VectorLayer<VectorSource<Geometry>>
+  ): void {
+    // Join all polygon features into a single multipolygon feature
+    const newMultiPolygonFeature = new Feature<MultiPolygon>({
+      geometry: new MultiPolygon([
+        this.editLayer
+          .getSource()
+          .getFeatures()
+          .map((feature) => feature.getGeometry().getCoordinates()[0][0]),
+      ]),
+    });
+    // Add the new multipolygon feature to the target layer
+    newMultiPolygonFeature.setStyle(undefined);
+    targetLayer.getSource().addFeature(newMultiPolygonFeature);
+    this.clearEditLayer();
+  }
+
+  private revertDrawnFeatures(): void {
+    this.backupEditFeature.setStyle(undefined);
+    this.ecologicalAssets.getSource().addFeature(this.backupEditFeature);
+    this.backupEditFeature = null;
+  }
+
+  // HELPERS
+  // Update the state machine to a new state
+  private stateTransition(newStateEvent: MachineEventsType): void {
+    // The state machine is immutable, so we need to create a new state first,
+    // then update the "state" variable of the component
+    const newState = this.service.send(newStateEvent);
+    this.state = newState;
+  }
+
+  private confirmAction(text: string, callback: () => void) {
+    if (confirm(text)) {
+      callback();
+    }
+  }
+
+  public formatDate(stringDate: string): string {
+    return new Date(stringDate).toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
+
+  public isIntersecting(
+    feature1: Feature<MultiPolygon>,
+    feature2: Feature<MultiPolygon>
+  ): boolean {
+    const multiPolygonCoordinates1 = feature1.getGeometry().getCoordinates();
+    const multiPolygonCoordinates2 = feature2.getGeometry().getCoordinates();
+
+    const intersects = turfBooleanIntersects(
+      turfMultiPolygon(multiPolygonCoordinates1),
+      turfMultiPolygon(multiPolygonCoordinates2)
+    );
+    return intersects;
+  }
+
+  // GETTERS
+  @computedFrom("state.value")
+  public get isIdleState(): boolean {
+    return this.state.value === "idle";
+  }
+
+  @computedFrom("state.value")
+  public get isMetadataState(): boolean {
+    return this.state.value === "metadata";
+  }
+
+  @computedFrom("state.value")
+  public get isMetadataWsState(): boolean {
+    return this.state.value === "metadataWs";
+  }
+
+  @computedFrom("state.value")
+  public get isEditionState(): boolean {
+    return this.state.matches("edition");
+  }
+
+  @computedFrom("state.value")
+  public get isModifyState(): boolean {
+    return this.state.matches("edition.modify");
+  }
+
+  @computedFrom("state.value")
+  public get isDrawState(): boolean {
+    return this.state.matches("edition.draw");
+  }
+
+  @computedFrom("state.value")
+  public get isDeleteState(): boolean {
+    return this.state.matches("edition.delete");
+  }
+
+  @computedFrom("drawnFeaturesCount")
+  public get editLayerIsEmpty(): boolean {
+    return this.editLayer.getSource().isEmpty();
+  }
+
+  @computedFrom("state.value")
+  public get isPreviewState(): boolean {
+    return this.state.value === "preview";
+  }
+
+  @computedFrom("bufferEdition.length")
+  public get isBufferEditionEmpty(): boolean {
+    return this.bufferEdition.length === 0;
+  }
 }

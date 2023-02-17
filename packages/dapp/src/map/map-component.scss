@@ -1,22 +1,299 @@
 @import "styles/styles.scss";
 
-.page.mapContainer {
+$grey-100: #d8d8d8;
+$grey-200: #b1b1b1;
+$grey-300: #636363;
+
+$font-primary: "Poppins", sans-serif;
+
+.page {
+  position: relative;
+  font-family: $font-primary;
+  color: black;
+
+  h2 {
+    font-size: 40px;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .sidebar {
+    $width: 440px;
+
+    position: fixed;
+    height: 100vh;
+    width: $width;
+    top: 0;
+    right: 0;
+    z-index: 9;
+    transition: 0.3s;
+
+    &.closed {
+      margin-right: -#{$width};
+    }
+
+    .sidebar-button {
+      position: absolute;
+      margin-left: -50px;
+      margin-top: 70px;
+      padding: 4px 8px;
+      background-color: $grey-200;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+
+      &:hover {
+        background-color: darken($color: $grey-200, $amount: 10);
+      }
+    }
+
+    .sidebar-content {
+      height: 100%;
+      padding: 0 40px 24px;
+      background-color: $grey-100;
+      overflow-y: auto;
+      box-sizing: border-box;
+
+      h2 {
+        margin-bottom: 0px;
+      }
+
+      h3 {
+        margin-top: 40px;
+      }
+
+      button {
+        border: none;
+        background-color: $grey-200;
+        padding: 16px;
+        border-radius: 6px;
+        font-family: $font-primary;
+        font-weight: 700;
+
+        &:enabled {
+          cursor: pointer;
+        }
+
+        &:hover {
+          background-color: darken($color: $grey-200, $amount: 10);
+        }
+      }
+
+      .idle {
+        .buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          margin-top: 24px;
+          margin-bottom: 48px;
+        }
+
+        .no-nfts-found {
+          text-align: center;
+        }
+
+        .minted-geonfts {
+          list-style: none;
+          padding-left: 0;
+
+          .minted-geonft {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+
+            &:not(:last-child) {
+              margin-bottom: 36px;
+            }
+
+            .geonft-data span {
+              display: block;
+
+              &:first-child {
+                font-weight: bold;
+              }
+
+              &:last-child {
+                font-size: 14px;
+                font-style: italic;
+              }
+            }
+
+            button {
+              padding: 6px 12px;
+              font-size: 14px;
+              width: 30%;
+
+              &:disabled {
+                background-color: lighten($color: $grey-200, $amount: 10);
+                font-weight: normal;
+                font-style: italic;
+              }
+            }
+          }
+        }
+      }
+
+      .metadata,
+      .metadata-ws {
+        form {
+          display: flex;
+          flex-direction: column;
+
+          label {
+            margin-bottom: 8px;
+          }
+
+          input,
+          textarea {
+            font-family: $font-primary;
+            padding: 8px 16px;
+            color: black;
+            background-color: $grey-200;
+            border-color: $grey-200;
+
+            &:focus {
+              outline: 2px solid $grey-300;
+            }
+
+            &:not(:last-child) {
+              margin-bottom: 24px;
+            }
+          }
+
+          textarea {
+            resize: vertical;
+          }
+
+          .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 48px;
+          }
+        }
+      }
+
+      .preview {
+        .buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          margin-top: 48px;
+        }
+      }
+    }
+  }
+
   .map-wrap {
     position: relative;
     width: 100%;
-    height: calc(100vh - 77px); /* calculate height of the screen minus the heading */
-  }
+    height: 650px; /* calculate height of the screen minus the heading */
 
-  .map {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-  }
+    $box-padding: 20px;
 
-  .watermark {
-    position: absolute;
-    left: 10px;
-    bottom: 10px;
-    z-index: 999;
+    .update-feature-button {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      background-color: $grey-200;
+      z-index: 99;
+
+      &:hover {
+        background-color: darken($color: $grey-100, $amount: 10);
+      }
+
+      &:enabled {
+        cursor: pointer;
+      }
+    }
+
+    .edition-tools {
+      position: absolute;
+      top: 100px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      background-color: $grey-100;
+      gap: 16px;
+      padding: $box-padding;
+      box-sizing: border-box;
+      border-radius: 6px;
+      z-index: 99;
+
+      button {
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-family: $font-primary;
+        background-color: $grey-200;
+
+        &:enabled {
+          cursor: pointer;
+
+          &:hover {
+            background-color: lighten($color: $grey-200, $amount: 5);
+          }
+        }
+      }
+
+      .draw-enabled {
+        color: black;
+        background-color: rgba(0, 153, 255, 0.4);
+      }
+
+      .modify-enabled {
+        color: black;
+        background-color: rgba(orange, 0.4);
+      }
+
+      .delete-enabled {
+        color: black;
+        background-color: rgba(252, 22, 22, 0.4);
+      }
+
+      .draw-options {
+        position: absolute;
+        top: $box-padding;
+        right: -100%;
+        margin-right: 40px;
+        height: fit-content;
+
+        button {
+          background-color: rgba(white, 0.7);
+
+          &:hover {
+            background-color: white;
+          }
+        }
+      }
+    }
+
+    .modify-help {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background-color: lightgray;
+      z-index: 99;
+
+      p {
+        margin: 0;
+      }
+    }
+
+    .map {
+      width: 100%;
+      height: 100%;
+    }
   }
 }
